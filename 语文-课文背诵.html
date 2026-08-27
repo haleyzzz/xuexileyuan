@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📝 语文课文背诵</title>
+<style>
+  :root{
+    --pink:#ff8fab; --orange:#ff9f1c; --green:#06d6a0; --blue:#4cc9f0;
+    --purple:#b292ff; --ink:#3d3a4b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(135deg,#fff8ef,#fdeff4);color:var(--ink);
+    padding:18px;max-width:560px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  .back{position:fixed;left:14px;top:14px;z-index:30;border:none;background:rgba(255,255,255,.85);
+    border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink)}
+  header{background:linear-gradient(120deg,var(--pink),var(--orange));color:#fff;
+    border-radius:24px;padding:20px;text-align:center;box-shadow:0 8px 22px rgba(255,143,171,.4)}
+  header h1{font-size:22px}
+  .date{font-size:14px;opacity:.95;margin-top:4px}
+  .stats{display:flex;gap:10px;margin:14px 0}
+  .stat{flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center;
+    box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .stat .num{font-size:26px;font-weight:800;color:var(--orange)}
+  .stat .lbl{font-size:12px;color:#999;margin-top:2px}
+  h2{font-size:17px;margin:18px 4px 10px;display:flex;align-items:center;gap:8px}
+
+  .texts{display:flex;flex-direction:column;gap:12px}
+  .tx{background:#fff;border-radius:20px;box-shadow:0 4px 12px rgba(0,0,0,.06);
+    overflow:hidden;border:3px solid transparent;transition:border-color .2s}
+  .tx.done{border-color:var(--pink)}
+  .tfront{padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer}
+  .tfront .temoji{font-size:34px;flex-shrink:0}
+  .tfront .ttxt{flex:1}
+  .tfront .tname{font-size:17px;font-weight:800}
+  .tfront .tsrc{font-size:13px;color:#aaa;margin-top:3px}
+  .tfront .tarrow{font-size:22px;color:var(--orange);flex-shrink:0}
+  .kind{display:inline-block;font-size:11px;font-weight:800;color:#fff;border-radius:8px;
+    padding:2px 8px;margin-left:8px;vertical-align:middle}
+  .kind-课文{background:var(--orange)}
+  .kind-文言文{background:var(--purple)}
+  .tback{padding:4px 16px 16px}
+  .tback .tbody{font-size:16px;font-weight:600;line-height:1.95;color:var(--ink);
+    background:#fffaf3;border-radius:12px;padding:12px;text-align:justify}
+  .tback .tnote{font-size:13px;color:#777;line-height:1.7;margin:10px 0;background:#fff6f9;border-radius:12px;padding:10px}
+  .tback .tbtns{display:flex;gap:10px;margin-top:6px}
+  .tback .tbtns button{flex:1;border:none;border-radius:14px;padding:10px;font-size:14px;
+    font-family:inherit;cursor:pointer;font-weight:700;color:#fff}
+  .b-read{background:var(--purple)}
+  .b-back{background:var(--orange)}
+  .tmark{width:100%;border:none;border-top:1px solid #f0f0f0;background:#fff;
+    padding:12px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;color:#bbb}
+  .tx.done .tmark{color:var(--pink);background:#fff0f5}
+  .mark-ic{display:inline-block;width:20px}
+
+  .progress{height:14px;background:#ffe3ec;border-radius:10px;overflow:hidden;margin:14px 0 4px}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--pink),var(--orange));
+    border-radius:10px;transition:width .4s}
+  .prog-txt{font-size:13px;color:#888;text-align:center}
+  .reset{background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;
+    text-decoration:underline;display:block;margin:10px auto 0;font-family:inherit}
+  .tip{font-size:12px;color:#aaa;text-align:center;margin-top:14px;line-height:1.6}
+  .confetti{position:fixed;top:-40px;font-size:24px;pointer-events:none;z-index:99;
+    animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:.2}}
+  .celebrate{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;
+    align-items:center;justify-content:center;z-index:100}
+  .celebrate .box2{background:#fff;border-radius:24px;padding:28px 34px;text-align:center;animation:pop .4s;max-width:320px}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate h3{font-size:24px;margin-bottom:8px}
+  .celebrate p{color:#888;font-size:14px;line-height:1.6}
+  .celebrate button{margin-top:16px;border:none;background:var(--orange);color:#fff;
+    padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+
+  /* 年级筛选条 */
+  .grades{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;margin-top:2px}
+  .grades button{flex:0 0 auto;border:2px solid #ffd6e3;background:#fff;color:#d98aa3;
+    border-radius:14px;padding:6px 12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit}
+  .grades button.on{background:linear-gradient(120deg,var(--pink),var(--orange));color:#fff;border-color:transparent}
+  .gbadge{display:inline-block;font-size:10px;font-weight:800;color:#fff;background:var(--blue);
+    border-radius:7px;padding:1px 6px;margin-left:6px;vertical-align:middle}
+</style>
+<script>
+/* iOS 朗读稳定性补丁：保留 utterance 全局引用防 GC 静音 + 朗读前 resume()（与 speech.js 同逻辑，本页未引 speech.js 故内联） */
+(function(){ if(window.__ttsPatched) return; window.__ttsPatched=true;
+  if(!window.speechSynthesis) return;
+  var _sp=window.speechSynthesis.speak.bind(window.speechSynthesis);
+  window.speechSynthesis.speak=function(u){ try{window.speechSynthesis.resume();}catch(e){} window.__ttsUtt=u; return _sp(u); };
+})();
+</script>
+</head>
+<body>
+
+
+
+<header>
+  <h1>📝 语文课文背诵</h1>
+  <div class="date" id="dateStr">今天</div>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="num" id="doneNum">0</div><div class="lbl">✅ 已背</div></div>
+  <div class="stat"><div class="num" id="totalNum">0</div><div class="lbl">📚 篇目总数</div></div>
+  <div class="stat"><div class="num" id="pctNum">0%</div><div class="lbl">📈 完成度</div></div>
+</div>
+
+<nav class="grades" id="grades"></nav>
+
+<h2>📖 背诵小卡片</h2>
+<div class="texts" id="texts"></div>
+
+<div class="progress"><i id="progBar"></i></div>
+<div class="prog-txt" id="progTxt">完成 0 / 0 篇</div>
+
+<button class="reset" onclick="resetAll()">↺ 重置所有标记</button>
+<div class="tip">点卡片看译文/背诵提示，点「朗读」听一听，背下来就点「已背」🌸<br>含教材要求背诵的课文段落与文言文，数据按小朋友分别保存。</div>
+
+<div class="celebrate" id="celeb">
+  <div class="box2">
+    <h3>🎉 小背霸！</h3>
+    <p>课文全背下来啦，肚子里装满好词好句！</p>
+    <button onclick="closeCeleb()">继续背诵 💪</button>
+  </div>
+</div>
+
+<script>
+/* 教材要求背诵的课文段落 + 文言文（统编版，覆盖三~四年级） */
+var TEXTS=[
+  /* —— 课文段落 —— */
+  {id:'yanzi',emoji:'🕊️',name:'燕子（节选）',src:'三年级下',kind:'课文',
+    body:'一身乌黑光亮的羽毛，一对俊俏轻快的翅膀，加上剪刀似的尾巴，凑成了那样可爱的活泼的小燕子。<br><br>二三月的春日里，轻风微微地吹拂着，如毛的细雨由天上洒落着，千条万条的柔柳，红的白的黄的花，青的草，绿的叶，都像赶集似的聚拢来，形成了烂漫无比的春天。<br><br>小燕子带了它的剪刀似的尾巴，在阳光满地时，斜飞于旷亮无比的天空，叽的一声，已由这里的稻田上，飞到那边的高柳下了。',
+    note:'背诵提示：按「外形→春天→飞行」三层记。注意「吹拂」「聚拢」「旷亮」等词。'},
+  {id:'hehua',emoji:'🌸',name:'荷花（节选）',src:'三年级下',kind:'课文',
+    body:'荷花已经开了不少了。荷叶挨挨挤挤的，像一个个碧绿的大圆盘。白荷花在这些大圆盘之间冒出来。有的才展开两三片花瓣儿。有的花瓣儿全展开了，露出嫩黄色的小莲蓬。有的还是花骨朵儿，看起来饱胀得马上要破裂似的。<br><br>这么多的白荷花，一朵有一朵的姿势。看看这一朵，很美；看看那一朵，也很美。如果把眼前的一池荷花看作一大幅活的画，那画家的本领可真了不起。',
+    note:'背诵提示：抓「挨挨挤挤」「冒」「有的…有的…有的…」的排比。注意「莲蓬」「饱胀」写法。'},
+  {id:'huoshao',emoji:'🔥',name:'火烧云（节选）',src:'三年级下',kind:'课文',
+    body:'这地方的火烧云变化极多，一会儿红彤彤的，一会儿金灿灿的，一会儿半紫半黄，一会儿半灰半百合色。葡萄灰、梨黄、茄子紫，这些颜色天空都有。还有些说也说不出来、见也没见过的颜色。<br><br>一会儿，天空出现一匹马，马头向南，马尾向西。马是跪着的，像等人骑上它的背，它才站起来似的。过了两三秒钟，那匹马大起来了。',
+    note:'背诵提示：先记颜色词（红彤彤、金灿灿…），再记「马」的动态变化。注意「彤」「跪」字。'},
+  {id:'huazhong',emoji:'🌼',name:'花钟（节选）',src:'三年级下',kind:'课文',
+    body:'鲜花朵朵，争奇斗艳，芬芳迷人。要是我们留心观察，就会发现，一天之内，不同的花开放的时间是不同的。凌晨四点，牵牛花吹起了紫色的小喇叭；五点左右，艳丽的蔷薇绽开了笑脸；七点，睡莲从梦中醒来……',
+    note:'背诵提示：按时间顺序记花开（四点牵牛花、五点蔷薇、七点睡莲）。注意「蔷薇」「绽」字。'},
+  {id:'qiutian',emoji:'🍂',name:'秋天的雨（节选）',src:'三年级上',kind:'课文',
+    body:'秋天的雨，有一盒五彩缤纷的颜料。你看，它把黄色给了银杏树，黄黄的叶子像一把把小扇子，扇哪扇哪，扇走了夏天的炎热。它把红色给了枫树，红红的枫叶像一枚枚邮票，飘哇飘哇，邮来了秋天的凉爽。',
+    note:'背诵提示：记「颜料」带来的颜色（黄—银杏、红—枫叶）。注意「缤」「扇」「邮」字。'},
+  {id:'dayeziran',emoji:'🍃',name:'大自然的声音（节选）',src:'三年级上',kind:'课文',
+    body:'风，是大自然的音乐家。他会在森林里演奏他的手风琴。当他翻动树叶，树叶便像歌手一样，唱出各种不同的歌曲。不一样的树叶，有不一样的声音；不一样的季节，有不一样的音乐。',
+    note:'背诵提示：中心句「风是音乐家」，再记「树叶像歌手」。注意「演奏」「琴」字。'},
+  {id:'guanchao',emoji:'🌊',name:'观潮（节选）',src:'四年级上',kind:'课文',
+    body:'那条白线很快地向我们移来，逐渐拉长，变粗，横贯江面。再近些，只见白浪翻滚，形成一堵两丈多高的水墙。浪潮越来越近，犹如千万匹白色战马齐头并进，浩浩荡荡地飞奔而来；那声音如同山崩地裂，好像大地都被震得颤动起来。',
+    note:'背诵提示：按「白线→水墙→战马」由远及近。注意「贯」「崩」字。'},
+  {id:'zouyueliang',emoji:'🌕',name:'走月亮（节选）',src:'四年级上',kind:'课文',
+    body:'细细的溪水，流着山草和野花的香味，流着月光。灰白色的鹅卵石，布满河床。哟，卵石间有多少可爱的小水塘啊，每个小水塘，都抱着一个月亮！',
+    note:'背诵提示：记「溪水—鹅卵石—小水塘抱月亮」的画面。注意「鹅卵石」写法。'},
+  {id:'fanxing',emoji:'✨',name:'繁星（节选）',src:'四年级上',kind:'课文',
+    body:'我爱月夜，但我也爱星天。从前在家乡七八月的夜晚，在庭院里纳凉的时候，我最爱看天上密密麻麻的星星。望着星天，我就会忘记一切，仿佛回到了母亲的怀里似的。',
+    note:'背诵提示：中心「爱月夜也爱星天」，再记「仿佛回到母亲怀里」。注意「纳凉」「密密麻麻」。'},
+  {id:'haishang',emoji:'🌅',name:'海上日出（节选）',src:'四年级下',kind:'课文',
+    body:'天空还是一片浅蓝，很浅很浅的。转眼间，天水相接的地方出现了一道红霞。红霞的范围慢慢扩大，越来越亮。我知道太阳要从天边升起来了，便不转眼地望着那里。',
+    note:'背诵提示：按「浅蓝→红霞→扩大变亮→太阳要出来」的顺序。注意「转眼间」「不转眼」。'},
+  {id:'lv',emoji:'💚',name:'绿（艾青）',src:'四年级下',kind:'课文',
+    body:'好像绿色的墨水瓶倒翻了，到处是绿的……<br>到哪儿去找这么多的绿：墨绿、浅绿、嫩绿、翠绿、淡绿、粉绿……绿得发黑、绿得出奇。<br>所有的绿集中起来，挤在一起，重叠在一起，静静地交叉在一起。',
+    note:'背诵提示：先记「绿的种类」（墨绿浅绿嫩绿…），再记「集中、挤、重叠、交叉」。注意诗人艾青。'},
+  {id:'baihua',emoji:'🌳',name:'白桦（叶赛宁）',src:'四年级下',kind:'课文',
+    body:'在我的窗前，有一棵白桦，仿佛涂上银霜，披了一身雪花。毛茸茸的枝头，雪绣的花边潇洒，串串花穗齐绽，洁白的流苏如画。',
+    note:'背诵提示：记「银霜」「雪花」「毛茸茸枝头」「流苏如画」的意象。注意作者叶赛宁（苏联）。'},
+
+  /* —— 文言文 —— */
+  {id:'sima',emoji:'🪨',name:'司马光',src:'三年级上·文言文',kind:'文言文',
+    body:'群儿戏于庭，一儿登瓮，足跌没水中。众皆弃去，光持石击瓮破之，水迸，儿得活。',
+    note:'译文：一群小孩在庭院里玩耍，一个小孩爬上水缸，失足掉进缸里淹着了。其他孩子都吓跑了，司马光拿起石头砸破水缸，水流出来，小孩得救了。<br>停顿：群儿/戏于庭，一儿/登瓮，足跌/没水中。众/皆弃去，光/持石/击瓮/破之，水迸，儿/得活。'},
+  {id:'shouzhu',emoji:'🐰',name:'守株待兔',src:'三年级下·文言文',kind:'文言文',
+    body:'宋人有耕者。田中有株。兔走触株，折颈而死。因释其耒而守株，冀复得兔。兔不可复得，而身为宋国笑。',
+    note:'译文：宋国有个农夫。田里有个树桩。一只兔子跑来撞上树桩，折断脖子死了。他便放下农具守在树桩旁，希望再得到兔子。兔子当然不能再得到，他自己却被宋国人嘲笑。<br>停顿：宋人/有耕者。田中/有株。兔走/触株，折颈/而死。因/释其耒/而守株，冀/复得兔。兔/不可复得，而/身为宋国笑。'},
+  {id:'jingwei',emoji:'🐦',name:'精卫填海',src:'四年级上·文言文',kind:'文言文',
+    body:'炎帝之少女，名曰女娃。女娃游于东海，溺而不返，故为精卫，常衔西山之木石，以堙于东海。',
+    note:'译文：炎帝的小女儿，名字叫女娃。女娃去东海游玩，淹死在海里没有回来，所以化为精卫鸟，常常衔西山的树枝和石子，用来填塞东海。<br>停顿：炎帝之/少女，名曰/女娃。女娃/游于东海，溺而/不返，故为/精卫，常衔/西山之木石，以/堙于东海。'},
+  {id:'wangrong',emoji:'🍒',name:'王戎不取道旁李',src:'四年级上·文言文',kind:'文言文',
+    body:'王戎七岁，尝与诸小儿游。看道边李树多子折枝，诸儿竞走取之，唯戎不动。人问之，答曰："树在道边而多子，此必苦李。"取之，信然。',
+    note:'译文：王戎七岁时，曾经和小朋友一起玩耍。看见路边李树结满果子压弯枝条，孩子们争着跑去摘，只有王戎不动。有人问他，他说："树长在路边却有很多果子，这一定是苦李子。"摘来一尝，果然如此。<br>停顿：王戎/七岁，尝/与诸小儿/游。看道边李树/多子折枝，诸儿/竞走取之，唯/戎不动。人/问之，答曰："树在道边/而多子，此必/苦李。"取之，信然。'},
+  {id:'nangying',emoji:'🪲',name:'囊萤夜读',src:'四年级下·文言文',kind:'文言文',
+    body:'胤恭勤不倦，博学多通。家贫不常得油，夏月则练囊盛数十萤火以照书，以夜继日焉。',
+    note:'译文：车胤谦逊勤勉不知疲倦，知识广博学问精通。家里贫穷不能常买到灯油，夏天的夜晚就用白绢口袋装几十只萤火虫来照着读书，夜以继日地苦读。<br>停顿：胤/恭勤不倦，博学/多通。家贫/不常得油，夏月/则练囊/盛数十萤火/以照书，以夜继日/焉。'},
+  {id:'tiechu',emoji:'⚒️',name:'铁杵成针',src:'四年级下·文言文',kind:'文言文',
+    body:'磨针溪，在象耳山下。世传李太白读书山中，未成，弃去。过是溪，逢老媪方磨铁杵。问之，曰："欲作针。"太白感其意，还卒业。',
+    note:'译文：磨针溪，在象耳山下。世上传说李白在山中读书，没有完成学业，就放弃离开了。经过这条溪，遇见一位老妇人正在磨铁棒。问她在做什么，她说："想把它磨成针。"李白被她的意志感动，回去完成了学业。<br>停顿：磨针溪，在/象耳山下。世传/李太白/读书山中，未成，弃去。过/是溪，逢/老媪/方磨铁杵。问之，曰："欲作针。"太白/感其意，还/卒业。'},
+
+  /* —— 四年级下册补充篇目 —— */
+  {id:'txl',emoji:'🌈',name:'在天晴了的时候',src:'四年级下',kind:'课文',
+    body:'在天晴了的时候，<br>该到小径中去走走：<br>给雨润过的泥路，一定是凉爽又温柔；<br>炫耀着新绿的小草，已一下子洗净了尘垢；<br>不再胆怯的小白菊，慢慢地抬起它们的头，<br>试试寒，试试暖，然后一瓣瓣地绽透；<br>抖去水珠的凤蝶儿，在木叶间自在闲游，<br>把它的饰彩的智慧书页，曝着阳光一开一收。<br><br>到小径中去走走吧，在天晴了的时候：<br>赤着脚，携着手，踏着新泥，涉过溪流。<br>新阳推开了阴霾了，溪水在温风中晕皱，<br>看山间移动的暗绿——云的脚迹——它也在闲游。',
+    note:'背诵提示：按「雨后小径景物（泥路、小草、小白菊、凤蝶儿）→ 邀你同游 → 新阳推开阴霾」的顺序。注意诗人戴望舒，语言清新。'},
+  {id:'tnsmh',emoji:'🎨',name:'童年的水墨画',src:'三年级下',kind:'课文',
+    body:'溪边<br>垂柳把溪水当作梳妆的镜子，山溪像绿玉带一样平静。人影给溪水染绿了，钓竿上立着一只红蜻蜓。忽然扑腾一声人影碎了，草地上蹦跳着鱼儿和笑声。<br><br>江上<br>像刚下水的鸭群，扇动翅膀拍水戏耍。一双双小手拨动着浪花，你拨我溅笑哈哈。是哪个"水葫芦"一下钻入水中，出水时只见一阵水花两排银牙。<br><br>林中<br>松树刚洗过澡一身清清爽爽，松针上一串串雨珠明明亮亮。小蘑菇钻出泥土戴一顶斗笠，像一朵朵山花在树下开放。是谁一声欢叫把雨珠抖落，只见松林里一个个斗笠像蘑菇一样。',
+    note:'背诵提示：三幅画面（溪边钓鱼、江上戏水、林中采蘑），抓「垂柳/山溪」「水葫芦」「小蘑菇戴斗笠」等意象。注意作者张继楼。'}
+
+  /* ===== 补齐：1-6年级教材要求背诵的现代文段落 + 高年级文言文 ===== */
+  ,{id:'autumn',emoji:'🍂',name:'秋天（节选）',src:'一年级上',kind:'课文',
+    body:'天气凉了，树叶黄了，一片片叶子从树上落下来。<br>天空那么蓝，那么高。一群大雁往南飞，一会儿排成个“人”字，一会儿排成个“一”字。<br>啊！秋天来了！',
+    note:'背诵提示：按「天气→天空→大雁→感叹」顺序。注意“凉”“雁”字。'}
+  ,{id:'boat',emoji:'🌙',name:'小小的船',src:'一年级上',kind:'课文',
+    body:'弯弯的月儿小小的船，<br>小小的船儿两头尖。<br>我在小小的船里坐，<br>只看见闪闪的星星蓝蓝的天。',
+    note:'背诵提示：记“弯弯的月儿→小小的船→坐船里→星星蓝天”的画面。'}
+  ,{id:'hua',emoji:'🖼️',name:'画',src:'一年级上',kind:'课文',
+    body:'远看山有色，近听水无声。<br>春去花还在，人来鸟不惊。',
+    note:'背诵提示：四句对仗（远—近、山—水、春—人、花—鸟）。这是一首谜语诗。'}
+  ,{id:'season',emoji:'🌿',name:'四季（节选）',src:'一年级上',kind:'课文',
+    body:'草芽尖尖，他对小鸟说：“我是春天。”<br>荷叶圆圆，他对青蛙说：“我是夏天。”<br>谷穗弯弯，他鞠着躬说：“我是秋天。”<br>雪人大肚子一挺，他顽皮地说：“我就是冬天。”',
+    note:'背诵提示：四季各用一种事物代言（草芽—春、荷叶—夏、谷穗—秋、雪人—冬）。'}
+  ,{id:'tree',emoji:'🌳',name:'树之歌（节选）',src:'二年级上',kind:'课文',
+    body:'杨树高，榕树壮，梧桐树叶像手掌。<br>枫树秋天叶儿红，松柏四季披绿装。<br>木棉喜暖在南方，桦树耐寒守北疆。<br>银杏水杉活化石，金桂开花满院香。',
+    note:'背诵提示：按树木特点记（高、壮、红、绿、暖、寒、活化石、香）。'}
+  ,{id:'tianjia',emoji:'🌾',name:'田家四季歌（节选）',src:'二年级上',kind:'课文',
+    body:'春季里，春风吹，花开草长蝴蝶飞。麦苗儿多嫩，桑叶儿正肥。<br>夏季里，农事忙，采了蚕桑又插秧。早起勤耕作，归来戴月光。<br>秋季里，稻上场，谷像黄金粒粒香。身体虽辛苦，心里喜洋洋。<br>冬季里，雪初晴，新制棉衣暖又轻。一年农事了，大家笑盈盈。',
+    note:'背诵提示：按春→夏→秋→冬记农事（花开、采桑插秧、打谷、制棉衣）。'}
+  ,{id:'plant',emoji:'🌱',name:'植物妈妈有办法（节选）',src:'二年级上',kind:'课文',
+    body:'孩子如果已经长大，就得告别妈妈，四海为家。<br>牛马有脚，鸟有翅膀，植物旅行又用什么办法？<br>蒲公英妈妈准备了降落伞，把它送给自己的娃娃。只要有风轻轻吹过，孩子们就乘着风纷纷出发。',
+    note:'背诵提示：记“植物怎么旅行”——蒲公英靠风（降落伞）。注意“降”“乘”字。'}
+  ,{id:'spring',emoji:'🌸',name:'找春天（节选）',src:'二年级下',kind:'课文',
+    body:'春天来了！春天来了！<br>我们几个孩子脱掉棉袄，冲出家门，奔向田野，去寻找春天。<br>春天像个害羞的小姑娘，遮遮掩掩，躲躲藏藏。我们仔细地找哇，找哇。',
+    note:'背诵提示：记“脱掉—冲出—奔向—寻找”的动作，春天像害羞的小姑娘。'}
+  ,{id:'leifeng',emoji:'❤️',name:'雷锋叔叔，你在哪里（节选）',src:'二年级下',kind:'课文',
+    body:'沿着长长的小溪，寻找雷锋的足迹。<br>小溪说，昨天，他曾路过这里，抱着迷路的孩子，冒着蒙蒙的细雨。<br>顺着弯弯的小路，寻找雷锋的足迹。<br>小路说，昨天，他曾路过这里，背着年迈的大娘，踏着路上的荆棘。',
+    note:'背诵提示：按“小溪（抱孩子）→小路（背大娘）”两幅画面记。'}
+  ,{id:'horse',emoji:'🐎',name:'一匹出色的马（节选）',src:'二年级下',kind:'课文',
+    body:'一个春天的傍晚，妈妈牵着妹妹，爸爸牵着我，一起到郊外去散步。<br>河水碧绿碧绿的，微风吹过，泛起层层波纹。<br>河岸上垂下来的柳叶，拂过妈妈和爸爸的头发，我和妹妹看着都笑了。',
+    note:'背诵提示：记“傍晚散步—碧绿河水—柳叶拂发”的温馨画面。'}
+  ,{id:'colordream',emoji:'🎨',name:'彩色的梦（节选）',src:'二年级下',kind:'课文',
+    body:'我有一大把彩色的梦，有的长，有的圆，有的硬。<br>他们躺在铅笔盒里聊天，一打开，就在白纸上跳蹦。<br>脚尖滑过的地方，大块的草坪，绿了；大朵的野花，红了；大片的天空，蓝了。',
+    note:'背诵提示：记“彩色梦在铅笔盒里—脚尖滑过—草坪绿野花红天空蓝”。'}
+  ,{id:'ritan',emoji:'🏞️',name:'日月潭（节选）',src:'二年级上',kind:'课文',
+    body:'日月潭是我国台湾省最大的一个湖。它在台中附近的高山上。<br>那里群山环绕，树木茂盛，周围有许多名胜古迹。<br>日月潭很深，湖水碧绿。湖中央有个美丽的小岛，把湖水分成两半，北边像圆圆的太阳，叫日潭；南边像弯弯的月亮，叫月潭。',
+    note:'背诵提示：先记位置（台湾、高山），再记“北日潭、南月潭”的形状。'}
+  ,{id:'putao',emoji:'🍇',name:'葡萄沟（节选）',src:'二年级上',kind:'课文',
+    body:'新疆吐鲁番有个地方叫葡萄沟。那里出产水果。<br>五月有杏子，七八月有香梨、蜜桃、沙果，到了八九月份，人们最喜爱的葡萄成熟了。<br>葡萄一大串一大串地挂在绿叶底下，有红的、白的、紫的、暗红的、淡绿的，五光十色，美丽极了。',
+    note:'背诵提示：记“地点→水果季节→葡萄五光十色”。注意“吐鲁番”“蜜”字。'}
+  ,{id:'xisha',emoji:'🐠',name:'富饶的西沙群岛（节选）',src:'三年级上',kind:'课文',
+    body:'西沙群岛位于南海的西北部，是我国海南省三沙市的一部分。那里风景优美，物产丰富，是个可爱的地方。<br>海底的岩石上长着各种各样的珊瑚，有的像绽开的花朵，有的像分枝的鹿角。海参到处都是，在海底懒洋洋地蠕动。',
+    note:'背诵提示：记“位置（南海西北部）→特点（风景优美物产丰富）→珊瑚像花朵/鹿角”。'}
+  ,{id:'grass',emoji:'🌿',name:'金色的草地（节选）',src:'三年级上',kind:'课文',
+    body:'我们住在乡下，窗前是一大片草地。草地上长满了蒲公英。<br>蒲公英盛开的时候，这片草地就变成金色的了。<br>有一天，我起得很早去钓鱼，发现草地并不是金色的，而是绿色的。中午回家的时候，草地又变绿了。',
+    note:'背诵提示：记“草地变色”的奇妙（盛开金、早晚绿），观察要细心。'}
+  ,{id:'country',emoji:'🏡',name:'乡下人家（节选）',src:'四年级下',kind:'课文',
+    body:'乡下人家总爱在屋前搭一瓜架，或种丝瓜，或种南瓜，让那些瓜藤攀上棚架，爬上屋檐。<br>当花儿落了的时候，藤上便结出了青的、红的瓜，它们一个个挂在房前，衬着那长长的藤，绿绿的叶。',
+    note:'背诵提示：记“屋前瓜架—瓜藤攀檐—结出青红瓜”的朴实画面。'}
+  ,{id:'skylight',emoji:'🪟',name:'天窗（节选）',src:'四年级下',kind:'课文',
+    body:'乡下的房子只有前面一排木板窗。暖和的晴天，木板窗扇扇打开，光线和空气都有了。<br>碰着大风大雨，或者北风呼呼叫的冬天，木板窗只好关起来，屋子里就像地洞似的。<br>于是乡下人在屋顶开一个小方洞，装一块玻璃，叫做天窗。',
+    note:'背诵提示：记“木板窗—关窗如地洞—开天窗”的由来。'}
+  ,{id:'cat',emoji:'🐱',name:'猫（节选）',src:'四年级下',kind:'课文',
+    body:'猫的性格实在有些古怪。说它老实吧，它的确有时候很乖。它会找个暖和的地方，成天睡大觉，无忧无虑，什么事也不过问。<br>可是，它决定要出去玩玩，就会出走一天一夜，任凭谁怎么呼唤，它也不肯回来。',
+    note:'背诵提示：抓“古怪”的总起句，再记“老实（睡大觉）—贪玩（出走一天一夜）”的对比。'}
+  ,{id:'grassland',emoji:'🌾',name:'草原（节选）',src:'六年级上',kind:'课文',
+    body:'这次，我看到了草原。那里的天比别处的更可爱，空气是那么清鲜，天空是那么明朗，使我总想高歌一曲，表示我满心的愉快。<br>在天底下，一碧千里，而并不茫茫。四面都有小丘，平地是绿的，小丘也是绿的。',
+    note:'背诵提示：记“天更可爱—空气清鲜—一碧千里”的开阔意境。注意作者老舍。'}
+  ,{id:'runtu',emoji:'🌟',name:'少年闰土（节选）',src:'六年级上',kind:'课文',
+    body:'深蓝的天空中挂着一轮金黄的圆月，下面是海边的沙地，都种着一望无际的碧绿的西瓜。<br>其间有一个十一二岁的少年，项带银圈，手捏一柄钢叉，向一匹猹尽力的刺去。那猹却将身一扭，反从他的胯下逃走了。',
+    note:'背诵提示：记“深蓝天空—金黄圆月—碧绿西瓜—少年刺猹”的经典画面。注意作者鲁迅。'}
+  ,{id:'congcong',emoji:'⏳',name:'匆匆（节选）',src:'六年级下',kind:'课文',
+    body:'燕子去了，有再来的时候；杨柳枯了，有再青的时候；桃花谢了，有再开的时候。<br>但是，聪明的，你告诉我，我们的日子为什么一去不复返呢？<br>是有人偷了他们罢：那是谁？又藏在何处呢？是他们自己逃走了罢：现在又到了哪里呢？',
+    note:'背诵提示：以“燕子—杨柳—桃花”排比起兴，引出对时光流逝的追问。注意作者朱自清。'}
+  ,{id:'service',emoji:'🚩',name:'为人民服务（节选）',src:'六年级下',kind:'课文',
+    body:'我们的共产党和共产党所领导的八路军、新四军，是革命的队伍。我们这个队伍完全是为着解放人民的，是彻底地为人民的利益工作的。<br>张思德同志就是我们这个队伍中的一个同志。',
+    note:'背诵提示：记中心句“完全、彻底地为人民的利益工作”，张思德是典范。注意作者毛泽东。'}
+  ,{id:'moonlight',emoji:'🌙',name:'月光曲（节选）',src:'六年级上',kind:'课文',
+    body:'有一年秋天，贝多芬去各地旅行演出，来到莱茵河边的一个小镇上。<br>一天夜晚，他在幽静的小路上散步，听到断断续续的钢琴声从一所茅屋里传出来，弹的正是他的曲子。',
+    note:'背诵提示：记“贝多芬散步—幽静小路—茅屋传出钢琴声”的开端。'}
+
+  /* —— 五、六年级文言文 —— */
+  ,{id:'yang',emoji:'🦊',name:'杨氏之子',src:'五年级下·文言文',kind:'文言文',
+    body:'梁国杨氏子九岁，甚聪惠。孔君平诣其父，父不在，乃呼儿出。为设果，果有杨梅。孔指以示儿曰：“此是君家果。”儿应声答曰：“未闻孔雀是夫子家禽。”',
+    note:'译文：梁国姓杨家的孩子九岁，很聪明。孔君平来拜访他父亲，父亲不在，就叫孩子出来。孩子给客人摆果品，里面有杨梅。孔君平指着杨梅说：“这是你家的果子。”孩子马上回答：“没听说过孔雀是您家的鸟。”<br>停顿：梁国/杨氏子/九岁，甚/聪惠。孔君平/诣其父，父/不在，乃/呼儿出。为/设果，果/有杨梅。孔/指以示儿/曰：“此/是君家果。”儿/应声答曰：“未闻/孔雀/是夫子家禽。”'}
+  ,{id:'maodun',emoji:'🛡️',name:'自相矛盾',src:'五年级下·文言文',kind:'文言文',
+    body:'楚人有鬻盾与矛者，誉之曰：“吾盾之坚，物莫能陷也。”又誉其矛曰：“吾矛之利，于物无不陷也。”或曰：“以子之矛，陷子之盾，何如？”其人弗能应也。',
+    note:'译文：楚国有个卖盾和矛的人，夸他的盾说：“我的盾很坚固，没有什么能刺穿它。”又夸他的矛说：“我的矛很锋利，没有什么刺不穿。”有人问：“用你的矛刺你的盾，会怎样？”那人答不上来。<br>停顿：楚人/有/鬻盾与矛者，誉之/曰：“吾盾/之坚，物/莫能陷也。”又/誉其矛/曰：“吾矛/之利，于物/无不陷也。”或曰：“以/子之矛，陷/子之盾，何如？”其人/弗能应也。'}
+  ,{id:'xueyi',emoji:'♟️',name:'学弈',src:'六年级下·文言文',kind:'文言文',
+    body:'弈秋，通国之善弈者也。使弈秋诲二人弈，其一人专心致志，惟弈秋之为听；一人虽听之，一心以为有鸿鹄将至，思援弓缴而射之。虽与之俱学，弗若之矣。',
+    note:'译文：弈秋是全国最擅长下棋的人。让他教两人下棋，其中一人专心致志只听弈秋的；另一人虽也在听，却一心以为有天鹅要飞来，想拿弓箭去射。虽然一起学，却不如人家。<br>停顿：弈秋，通国/之善弈者也。使/弈秋/诲二人弈，其一人/专心致志，惟/弈秋之为听；一人/虽听之，一心以为/有鸿鹄将至，思/援弓缴/而射之。虽/与之俱学，弗若之矣。'}
+  ,{id:'liangxiao',emoji:'☀️',name:'两小儿辩日',src:'六年级下·文言文',kind:'文言文',
+    body:'孔子东游，见两小儿辩斗，问其故。一儿曰：“我以日始出时去人近，而日中时远也。”一儿曰：“我以日初出远，而日中时近也。”',
+    note:'译文：孔子到东方游历，见两个小孩争论，问原因。一个说：“太阳刚出来时离人近，中午时远。”另一个说：“太阳刚出来时远，中午时近。”<br>停顿：孔子/东游，见/两小儿/辩斗，问/其故。一儿曰：“我以/日始出时/去人近，而/日中时/远也。”一儿曰：“我以/日初出/远，而/日中时/近也。”'}
+  ,{id:'boya',emoji:'🎶',name:'伯牙鼓琴',src:'六年级上·文言文',kind:'文言文',
+    body:'伯牙鼓琴，锺子期听之。方鼓琴而志在太山，锺子期曰：“善哉乎鼓琴，巍巍乎若太山。”少选之间而志在流水，锺子期又曰：“善哉乎鼓琴，汤汤乎若流水。”',
+    note:'译文：伯牙弹琴，锺子期听他弹。伯牙正弹琴心里想着高山，锺子期说：“弹得好啊，高峻得像泰山。”不一会儿心里想着流水，锺子期又说：“弹得好啊，浩荡得像流水。”<br>停顿：伯牙/鼓琴，锺子期/听之。方/鼓琴/而志在太山，锺子期/曰：“善哉乎/鼓琴，巍巍乎/若太山。”少选之间/而志在流水，锺子期/又曰：“善哉乎/鼓琴，汤汤乎/若流水。”'}
+,
+  {
+  id: 'kouermu',
+  emoji: '👀',
+  name: '口耳目（节选）',
+  src: '一年级上',
+  kind: '课文',
+  body: '口、耳、目、手、足、站如松，坐如钟。行如风，卧如弓。<br><br>人的五件宝：手足口耳目，学习和劳动，天天离不了。',
+  note: '背诵提示：按「五官→姿势→五件宝」记。口耳目手脚，站坐行卧。'
+  },
+  {
+  id: 'heyeruanyuan',
+  emoji: '🪷',
+  name: '荷叶圆圆',
+  src: '一年级下',
+  kind: '课文',
+  body: '荷叶圆圆的，绿绿的。小水珠说：“荷叶是我的摇篮。”小蜻蜓说：“荷叶是我的停机坪。”小青蛙说：“荷叶是我的歌台。”小鱼儿说：“荷叶是我的凉伞。”',
+  note: '背诵提示：抓住“圆圆的、绿绿的”和四个角色的拟人说法。'
+  },
+  {
+  id: 'wuzainali',
+  emoji: '🌫️',
+  name: '雾在哪里',
+  src: '二年级上',
+  kind: '课文',
+  body: '从前有一片雾，他是个又淘气又顽皮的孩子。有一天，雾飞到海上，说道：“我要把大海藏起来。”于是，他把大海藏了起来。',
+  note: '背诵提示：按“淘气的孩子→藏大海→藏天空”的情节记。'
+  },
+  {
+  id: 'daxiangerduo',
+  emoji: '🐘',
+  name: '大象的耳朵',
+  src: '二年级下',
+  kind: '课文',
+  body: '大象有一对大耳朵，像扇子似的耷拉着。小兔子说：“你看，我的耳朵是竖着的，你的耳朵一定是出毛病了。”大象说：“我生来就是这样啊。”',
+  note: '背诵提示：记“耷拉的大耳朵像扇子”和动物们的对话。'
+  },
+  {
+  id: 'daqingtree',
+  emoji: '🌳',
+  name: '大青树下的小学',
+  src: '三年级上',
+  kind: '课文',
+  body: '早晨，从山坡上，从坪坝里，从一条条开着绒球花和太阳花的小路上，走来了许多小学生。大家穿戴不同，来到学校，都成了好朋友。',
+  note: '背诵提示：按“从……从……从……”的排比句式记上学场景。'
+  },
+  {
+  id: 'yulai',
+  emoji: '📖',
+  name: '小英雄雨来（节选）',
+  src: '四年级下',
+  kind: '课文',
+  body: '雨来最喜爱这条还乡河。每到夏天，雨来和铁头、三钻儿，还有很多小朋友，好像一群鱼，在河里钻上钻下，藏猫猫，狗刨，立浮，仰浮。',
+  note: '背诵提示：记“雨来喜爱还乡河”和孩子们游泳的场面。'
+  },
+  {
+  id: 'luohuasheng',
+  emoji: '🥜',
+  name: '落花生',
+  src: '五年级上',
+  kind: '课文',
+  body: '父亲说：“你们看，花生不像桃子、石榴、苹果那样，把鲜红嫩绿的果实高高地挂在枝上，使人一见就生爱慕之心。”',
+  note: '背诵提示：记父亲对比花生与桃石榴苹果的话，体会借物喻理。'
+  },
+  {
+  id: 'naxyqtian',
+  emoji: '🗓️',
+  name: '那个星期天',
+  src: '六年级下',
+  kind: '课文',
+  body: '那是个春天的早晨，阳光明媚。母亲答应带我出去。我藏在大门后，藏了很久，等待母亲买完菜回来。',
+  note: '背诵提示：按“春天早晨→母亲答应→我等待”的心情变化记。'
+  },
+  {
+  id: 'caochong',
+  emoji: '⚖️',
+  name: '曹冲称象',
+  src: '二年级下',
+  kind: '课文',
+  body: '曹操的儿子曹冲才七岁，他站出来说：“我有个办法。把大象赶到船上，看船身下沉多少，在船舷上画一条线。再把大象赶上岸，往船上装石头，装到画线的地方为止。然后称船上的石头，石头有多重，大象就有多重。”',
+  note: '背诵提示：按“赶象上船画线→装石到线→称石知象重”三步记。'
+  },
+  {
+  id: 'zhuden',
+  emoji: '🪵',
+  name: '朱德的扁担',
+  src: '二年级上',
+  kind: '课文',
+  body: '朱德同志也跟战士们一块儿去挑粮。他穿着草鞋，戴着斗笠，挑起粮食，跟大家一块儿爬山。大家疼爱他，就把他的扁担藏了起来。',
+  note: '背诵提示：记“草鞋、斗笠、挑粮爬山”和战士藏扁担的情节。'
+  },
+  {id:'xinganling',emoji:'🌲',name:'美丽的小兴安岭（节选）',src:'三年级上',kind:'课文',body:'我国东北的小兴安岭，有数不清的红松、白桦、栎树……几百里连成一片，就像绿色的海洋。<br>春天，树木抽出新的枝条，长出嫩绿的叶子。山上的积雪融化了，雪水汇成小溪，淙淙地流着。',note:'背诵提示：按“总写森林—春天景物”的顺序记。'},
+  {id:'naturevoice',emoji:'🎵',name:'大自然的声音（节选）',src:'三年级上',kind:'课文',body:'风，是大自然的音乐家。他会在森林里演奏他的手风琴。当他翻动树叶，树叶便像歌手一样，唱出各种不同的歌曲。',note:'背诵提示：抓住“风是音乐家”这个比喻来记。'},
+  {id:'simaguang',emoji:'🏺',name:'司马光',src:'三年级上',kind:'文言文',body:'群儿戏于庭，一儿登瓮，足跌没水中。众皆弃去，光持石击瓮破之，水迸，儿得活。',note:'背诵提示：按“群儿戏—一儿落水—众弃去—光击瓮—儿得活”五步记。'},
+  {id:'huabao',emoji:'🫧',name:'肥皂泡（节选）',src:'三年级下',kind:'课文',body:'小的时候，游戏的种类很多，其中我最爱玩的是吹肥皂泡。<br>这肥皂泡，吹起来很美丽，五色的浮光，在那轻清透明的球面上乱转。',note:'背诵提示：记“最爱吹肥皂泡”和“五色浮光”的描写。'},
+  {id:'huozhaoyun',emoji:'🌅',name:'火烧云（节选）',src:'三年级下',kind:'课文',body:'晚饭过后，火烧云上来了。霞光照得小孩子的脸红红的。大白狗变成红的了，红公鸡变成金的了。<br>这地方的火烧云变化极多，一会儿红彤彤的，一会儿金灿灿的。',note:'背诵提示：先记“晚饭过后”，再记颜色变化的词语。'},
+  {id:'zhaozhou',emoji:'🌉',name:'赵州桥（节选）',src:'三年级下',kind:'课文',body:'赵州桥非常雄伟。桥长五十多米，有九米多宽，中间行车马，两旁走人。<br>这座桥不但坚固，而且美观。桥面两侧有石栏，栏板上雕刻着精美的图案。',note:'背诵提示：记“雄伟—坚固—美观”三层结构。'},
+  {id:'seaworld',emoji:'🌊',name:'海底世界（节选）',src:'三年级下',kind:'课文',body:'你可知道，大海的深处是怎样的？<br>海底真是个景色奇异、物产丰富的世界。',note:'背诵提示：记设问开头\'你可知道……\'，再接\'景色奇异、物产丰富\'。'},
+  {id:'shuimo',emoji:'🎨',name:'童年的水墨画（节选）',src:'三年级下',kind:'课文',body:'垂柳把溪水当作梳妆的镜子，山溪像绿玉带一样平静。<br>人影给溪水染绿了，钓竿上立着一只红蜻蜓。',note:'背诵提示：记\'溪水如镜—人影染绿—红蜻蜓\'的画面顺序。'},
+  {id:'shixin',emoji:'🤝',name:'我不能失信（节选）',src:'三年级下',kind:'课文',body:'第二天，宋庆龄一家准备到一位朋友家去做客。<br>她想起昨天答应小珍要教她叠花篮，就留在家里，没有去。',note:'背诵提示：记\'答应教小珍叠花篮—信守诺言留家里\'的情节。'},
+  {id:'zouyuelliang',emoji:'🌕',name:'走月亮（节选）',src:'四年级上',kind:'课文',body:'细细的溪水，流着山草和野花的香味，流着月光。<br>哟，卵石间有多少可爱的小水塘啊，每个小水塘都抱着一个月亮！',note:'背诵提示：记\'溪水流香—水塘抱月\'的柔美画面。'},
+  {"id":"patiandfeng","emoji":"🏔️","name":"爬天都峰（节选）","src":"三年级上","kind":"课文","body":"假日里，爸爸带我去黄山，爬天都峰。<br>我站在天都峰脚下抬头望：啊，峰顶这么高，在云彩上面哩！我爬得上去吗？再看看笔陡的石级，石级边上的铁链，似乎是从天上挂下来的，真叫人发颤！<br>忽然听到背后有人叫我：\"小朋友，你也来爬天都峰？\"","note":"背诵提示：按「望峰—发颤—遇同伴」顺序。注意「陡」「颤」「铁链」。"},
+  {"id":"huique","emoji":"🕊️","name":"灰雀（节选）","src":"三年级上","kind":"课文","body":"有一年冬天，列宁在郊外养病。他每天到公园散步。公园里有一棵高大的白桦树，树上有三只灰雀：两只胸脯是粉红的，一只胸脯是深红的。它们在树枝间来回跳动，婉转地歌唱，非常惹人喜爱。","note":"背诵提示：记「三只灰雀」的颜色（粉红、深红）与「婉转歌唱」。注意「桦」「婉」。"},
+  {"id":"budong","emoji":"📖","name":"不懂就要问（节选）","src":"三年级上","kind":"课文","body":"孙中山小时候在私塾读书。那时候上课，先生念，学生跟着念，咿咿呀呀，像唱歌一样。学生读熟了，先生就让他们一个一个地背诵。","note":"背诵提示：记「私塾读书—先生念学生跟—读熟背诵」流程。注意「私塾」「咿咿呀呀」。"},
+  {"id":"simaoguang","emoji":"🏺","name":"司马光（全文）","src":"三年级上","kind":"课文","body":"群儿戏于庭，一儿登瓮，足跌没水中。众皆弃去，光持石击瓮破之，水迸，儿得活。","note":"背诵提示：四句：「戏于庭→登瓮没水→众弃去→持石破瓮」。注意「瓮」「迸」。"},
+  {"id":"zhangsheng","emoji":"👏","name":"掌声（节选）","src":"三年级上","kind":"课文","body":"上小学的时候，我们班有位叫英子的同学。她很文静，总是默默地坐在教室的一角。上课前，她早早地就来到教室，下课后，她又总是最后一个离开。","note":"背诵提示：抓「文静—默默坐一角—早来晚走」。注意「英子」「默默」。"},
+  {"id":"xishao","emoji":"🏝️","name":"富饶的西沙群岛（节选）","src":"三年级上","kind":"课文","body":"西沙群岛是南海上的一群岛屿，是我国的海防前哨。那里风景优美，物产丰富，是个可爱的地方。<br>西沙群岛一带海水五光十色，瑰丽无比：有深蓝的，淡青的，浅绿的，杏黄的。一块块，一条条，相互交错着。","note":"背诵提示：先记总起「风景优美物产丰富」，再记海水「五光十色」。注意「瑰丽」「交错」。"},
+  {"id":"xxaling","emoji":"🌲","name":"美丽的小兴安岭（节选）","src":"三年级上","kind":"课文","body":"我国东北的小兴安岭，有数不清的红松、白桦、栎树……几百里连成一片，就像绿色的海洋。<br>春天，树木抽出新的枝条，长出嫩绿的叶子。山上的积雪融化了，雪水汇成小溪，淙淙地流着。","note":"背诵提示：按「总起—春天」记。注意「抽出」「淙淙」。"},
+  {"id":"haibin","emoji":"🌊","name":"海滨小城（节选）","src":"三年级上","kind":"课文","body":"我的家乡在广东，是一座海滨小城。人们走到街道尽头，就可以看见浩瀚的大海。天是蓝的，海也是蓝的。海天交界的水平线上，有棕色的机帆船和银白色的军舰来来往往。","note":"背诵提示：记「海滨—大海—天蓝海蓝—船舰」。注意「浩瀚」「棕色」。"},
+  {"id":"sshtai","emoji":"⚕️","name":"手术台就是阵地（节选）","src":"三年级上","kind":"课文","body":"1939年春，齐会战斗打响了。气焰嚣张的日军刚刚到齐会镇，就挨了当头一棒，被我军消灭了五百多人。<br>敌人不断反扑，战斗非常激烈。","note":"背诵提示：记「齐会战斗—日军挨棒—反扑激烈」。注意「嚣张」「反扑」。"},
+  {"id":"shuihmo","emoji":"🎣","name":"童年的水墨画（节选）","src":"三年级下","kind":"课文","body":"垂柳把溪水当作梳妆的镜子，山溪像绿玉带一样平静。<br>人影给溪水染绿了，钓竿上立着一只红蜻蜓。<br>忽然扑腾一声人影碎了，草地上蹦跳着鱼儿和笑声。","note":"背诵提示：按「溪水如镜—人影染绿—扑腾碎影」记。注意「梳妆」「染绿」。"},
+  {"id":"feizao","emoji":"🫧","name":"肥皂泡（节选）","src":"三年级下","kind":"课文","body":"这肥皂泡，吹起来很美丽，五色的浮光在那轻清透明的球面上乱转。若是扇得好，一个大球会分裂成两三个玲珑娇软的小球，四散分飞。<br>有时吹得太大了，扇得太急了，这脆薄的球，会扯成长圆的形式，颤巍巍的，光影零乱。","note":"背诵提示：记「浮光乱转—分裂小球—扯成长圆」。注意「玲珑」「颤巍巍」。"},
+  {"id":"wobuxinx","emoji":"🕊️","name":"我不能失信（节选）","src":"三年级下","kind":"课文","body":"一个星期天，宋庆龄一家用过早餐，准备到一位朋友家去做客。二女儿宋庆龄特别高兴，她早就盼着到这位伯伯家去了。伯伯家养的鸽子，尖尖的嘴巴，红红的眼睛，漂亮极啦！","note":"背诵提示：记「宋庆龄—盼去伯伯家—鸽子漂亮」。注意「宋庆龄」「鸽子」。"},
+  {"id":"maque","emoji":"🐦","name":"麻雀（节选）","src":"四年级上","kind":"课文","body":"老麻雀像一块石头似的落在猎狗面前。它挓挲起全身的羽毛，绝望地尖叫着。<br>可是因为紧张，它浑身发抖了，发出嘶哑的声音。它呆立着不动，准备着一场搏斗。","note":"背诵提示：记「像石头落下—挓挲羽毛—呆立搏斗」。注意「挓挲」「嘶哑」。"},
+  {"id":"pashanhujiao","emoji":"🌿","name":"爬山虎的脚（节选）","src":"四年级上","kind":"课文","body":"爬山虎的脚长在茎上。茎上长叶柄的地方，反面伸出枝状的六七根细丝，这些细丝很像蜗牛的触角。<br>细丝跟新叶子一样，也是嫩红的。这就是爬山虎的脚。","note":"背诵提示：记脚的位置「茎上叶柄反面」和样子「枝状细丝像触角」。注意「叶柄」「嫩红」。"},
+  {"id":"xishuaidezhuzhai","emoji":"🦗","name":"蟋蟀的住宅（节选）","src":"四年级上","kind":"课文","body":"居住在草地上的蟋蟀，差不多和蝉一样有名。它的出名不光由于它的唱歌，还由于它的住宅。<br>蟋蟀和它们不同，不肯随遇而安。它常常慎重地选择住址，一定要排水优良，并且有温和的阳光。","note":"背诵提示：记「出名两原因—不肯随遇而安—慎重选址」。注意「慎重」「优良」。"},
+  {"id":"jingweitianhai","emoji":"🕊️","name":"精卫填海（全文）","src":"四年级上","kind":"课文","body":"炎帝之少女，名曰女娃。女娃游于东海，溺而不返，故为精卫，常衔西山之木石，以堙于东海。","note":"背诵提示：五句「炎帝少女—女娃游东海—溺而不返—故为精卫—衔木石堙海」。注意「溺」「衔」「堙」。"},
+  {"id":"weizhonghua","emoji":"📕","name":"为中华之崛起而读书（节选）","src":"四年级上","kind":"课文","body":"少年周恩来疑惑不解，问道：「那不是我们中国的地方吗？为什么不能去那儿玩呢？」<br>他忘不了在中国人自己的土地上，中国人却受欺负的一幕，于是立下了远大志向：为中华之崛起而读书！","note":"背诵提示：记「疑惑发问—受欺一幕—立志读书」。注意「崛起」。"},
+  {"id":"qiutiandeyu","emoji":"🍂","name":"秋天的雨（节选）","src":"三年级上","kind":"课文","body":"秋天的雨，是一把钥匙。它带着清凉和温柔，轻轻地，轻轻地，趁你没留意，把秋天的大门打开了。<br>秋天的雨，有一盒五彩缤纷的颜料。你看，它把黄色给了银杏树，把红色给了枫树。","note":"背诵提示：记「钥匙开门—五彩颜料」。注意「钥匙」「趁」「五彩缤纷」。"},
+  {"id":"daranandeshengyin","emoji":"🎵","name":"大自然的声音（节选）","src":"三年级上","kind":"课文","body":"风，是大自然的音乐家，他会在森林里演奏他的手风琴。<br>水，也是大自然的音乐家。下雨的时候，他喜欢玩打击乐器。小溪淙淙地流向河流，河流潺潺地流向大海。","note":"背诵提示：记「风—手风琴」「水—打击乐器」两大句。注意「淙淙」「潺潺」。"},
+  {"id":"shouzhudaitu","emoji":"🐇","name":"守株待兔（全文）","src":"三年级下","kind":"课文","body":"宋人有耕者。田中有株。兔走触株，折颈而死。因释其耒而守株，冀复得兔。兔不可复得，而身为宋国笑。","note":"背诵提示：四层「田中有株—兔触株死—守株冀兔—身为宋笑」。注意「耒」「冀」。"}
+];
+
+var CHILD='user', KEY='';
+var gradeFilter=0;
+var GRADE_CN={'一':1,'二':2,'三':3,'四':4,'五':5,'六':6};
+function gradeOf(t){ var c=t.src&&t.src.charAt(0); return GRADE_CN[c]||0; }
+function gradeLabel(g){ return g?('G'+g):''; }
+function renderGrades(){
+  var html='<button class="'+(gradeFilter===0?'on':'')+'" onclick="setGrade(0)">全部</button>';
+  for(var g=1;g<=6;g++){ html+='<button class="'+(gradeFilter===g?'on':'')+'" onclick="setGrade('+g+')">'+g+'年级</button>'; }
+  document.getElementById('grades').innerHTML=html;
+}
+function setGrade(g){ gradeFilter=g; renderGrades(); render(); }
+function getStore(){ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; } }
+function setStore(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
+function isDone(id){ return !!getStore()[id]; }
+
+/* ============ 断点续学（记住上次展开/朗读的那篇）============ */
+function saveLast(i){ try{ localStorage.setItem(KEY+'_last', String(i)); }catch(e){} }
+function loadLast(){ try{ var v=parseInt(localStorage.getItem(KEY+'_last'),10); if(!isNaN(v)&&v>=0&&v<TEXTS.length) return v; }catch(e){} return null; }
+function resetLast(){ try{ localStorage.removeItem(KEY+'_last'); }catch(e){} var t=document.getElementById('resumeTip'); if(t) t.remove(); }
+function mountResumeBanner(){
+  var li=loadLast(); if(li==null) return;
+  var h=document.querySelector('header'); if(!h) return;
+  var tip=document.createElement('div'); tip.id='resumeTip';
+  tip.style.cssText='margin:10px 16px 0;background:#fff7e6;border:1px solid #ffd166;color:#8a6d00;font-size:13px;border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:10px';
+  tip.innerHTML='📍 上次读到第 '+(li+1)+' 篇（共 '+TEXTS.length+'）';
+  var btn=document.createElement('button'); btn.type='button'; btn.textContent='↺ 收起并重置';
+  btn.style.cssText='border:none;background:#ff9f1c;color:#fff;border-radius:10px;padding:6px 12px;font-size:13px;font-family:inherit;cursor:pointer;font-weight:700';
+  btn.onclick=resetLast;
+  tip.appendChild(btn);
+  h.insertAdjacentElement('afterend', tip);
+}
+
+function render(){
+  var html='';
+  TEXTS.forEach(function(t,i){
+    if(gradeFilter && gradeOf(t)!==gradeFilter) return;
+    var done=isDone(t.id);
+    html+='<div class="tx'+(done?' done':'')+'" id="tx-'+i+'">'+
+      '<div class="tfront" onclick="flip('+i+')">'+
+        '<span class="temoji">'+t.emoji+'</span>'+
+        '<div class="ttxt"><div class="tname">'+t.name+'<span class="kind kind-'+t.kind+'">'+t.kind+'</span><span class="gbadge">'+gradeLabel(gradeOf(t))+'</span></div>'+
+        '<div class="tsrc">'+t.src+'</div></div>'+
+        '<span class="tarrow">👉</span>'+
+      '</div>'+
+      '<div class="tback" id="back-'+i+'" hidden>'+
+        '<div class="tbody">'+t.body+'</div>'+
+        '<div class="tnote">'+t.note+'</div>'+
+        '<div class="tbtns"><button class="b-read" onclick="speak('+i+')">🔊 朗读</button>'+
+        '<button class="b-back" onclick="flip('+i+')">⬅️ 收起</button></div>'+
+      '</div>'+
+      '<button class="tmark" onclick="mark('+i+')">'+
+        '<span class="mark-ic">'+(done?'✅':'⬜')+'</span>'+(done?' 已背':' 标记已背')+'</button>'+
+    '</div>';
+  });
+  document.getElementById('texts').innerHTML=html;
+  updateStats();
+}
+function flip(i){
+  var b=document.getElementById('back-'+i);
+  if(b.hidden){ b.hidden=false; document.getElementById('tx-'+i).querySelector('.tarrow').textContent='👆'; saveLast(i); }
+  else { b.hidden=true; document.getElementById('tx-'+i).querySelector('.tarrow').textContent='👉'; }
+}
+function speak(i){
+  var t=TEXTS[i];
+  saveLast(i);
+  var text=(t.name+'。'+t.body.replace(/<br><br>/g,'。').replace(/<br>/g,'，')).replace(/[，]+\./g,'。').replace(/[，。]+/g,function(m){return m.charAt(0);});
+  try{
+    var u=new SpeechSynthesisUtterance(text);
+    u.lang='zh-CN'; u.rate=0.82; u.pitch=1;
+    window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+function mark(i){
+  var t=TEXTS[i];
+  var store=getStore();
+  if(store[t.id]){ delete store[t.id]; } else { store[t.id]=Date.now(); }
+  setStore(store);
+  render();
+  if(Object.keys(getStore()).length===TEXTS.length){ celebrate(); }
+}
+function updateStats(){
+  var done=Object.keys(getStore()).length, total=TEXTS.length, pct=total?Math.round(done/total*100):0;
+  document.getElementById('doneNum').textContent=done;
+  document.getElementById('totalNum').textContent=total;
+  document.getElementById('pctNum').textContent=pct+'%';
+  document.getElementById('progBar').style.width=pct+'%';
+  document.getElementById('progTxt').textContent='完成 '+done+' / '+total+' 篇';
+}
+function resetAll(){ if(confirm('确定清空所有“已背”标记？')){ setStore({}); render(); } }
+function celebrate(){
+  var emo=['🎉','✨','🌸','🌟','📝','⭐','🌺','💮'];
+  for(var k=0;k<26;k++){
+    (function(){
+      var c=document.createElement('div'); c.className='confetti';
+      c.textContent=emo[Math.floor(Math.random()*emo.length)];
+      c.style.left=Math.random()*100+'vw';
+      c.style.animationDuration=(2+Math.random()*2)+'s';
+      document.body.appendChild(c);
+      setTimeout(function(){ c.remove(); },4200);
+    })();
+  }
+  document.getElementById('celeb').querySelector('p').textContent = TEXTS.length+' 篇课文全背下来啦，肚子里装满好词好句！';
+  document.getElementById('celeb').style.display='flex';
+}
+function closeCeleb(){ document.getElementById('celeb').style.display='none'; }
+
+(function(){
+  var s=Portal.getSession();
+  CHILD=(s&&s.child)?s.child:'user';
+  KEY='chinese-text-'+CHILD;
+  var d=new Date();
+  var wk=['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+  document.getElementById('dateStr').textContent=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+wk;
+  renderGrades();
+  render();
+  var li=loadLast(); if(li!=null) flip(li);
+  mountResumeBanner();
+})();
+</script>
+</body>
+</html>

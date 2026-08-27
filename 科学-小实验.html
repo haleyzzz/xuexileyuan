@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔬 科学小实验</title>
+<style>
+  :root{
+    --green:#06d6a0; --blue:#4cc9f0; --purple:#b292ff; --yellow:#ffd166;
+    --orange:#ff9f1c; --pink:#ff8fab; --ink:#3d3a4b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(135deg,#eafff7,#eef4ff);color:var(--ink);
+    padding:18px;max-width:560px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  .back{position:fixed;left:14px;top:14px;z-index:30;border:none;background:rgba(255,255,255,.85);
+    border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink)}
+  header{background:linear-gradient(120deg,var(--green),var(--purple));color:#fff;
+    border-radius:24px;padding:20px;text-align:center;box-shadow:0 8px 22px rgba(6,214,160,.4)}
+  header h1{font-size:22px}
+  .date{font-size:14px;opacity:.95;margin-top:4px}
+  .stats{display:flex;gap:10px;margin:14px 0}
+  .stat{flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center;
+    box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .stat .num{font-size:26px;font-weight:800;color:var(--green)}
+  .stat .lbl{font-size:12px;color:#999;margin-top:2px}
+  h2{font-size:17px;margin:18px 4px 10px;display:flex;align-items:center;gap:8px}
+
+  .exps{display:flex;flex-direction:column;gap:12px}
+  .exp{background:#fff;border-radius:20px;box-shadow:0 4px 12px rgba(0,0,0,.06);
+    overflow:hidden;border:3px solid transparent;transition:border-color .2s}
+  .exp.done{border-color:var(--green)}
+  .efront{padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer}
+  .efront .eemoji{font-size:38px;flex-shrink:0}
+  .efront .etxt{flex:1}
+  .efront .ename{font-size:16px;font-weight:800}
+  .efront .emats{font-size:12px;color:#aaa;margin-top:3px;line-height:1.5}
+  .efront .earrow{font-size:22px;color:var(--purple);flex-shrink:0}
+  .eback{padding:4px 16px 16px}
+  .eback .row{margin:10px 0}
+  .eback .row b{display:inline-block;font-size:13px;color:#fff;background:var(--blue);
+    border-radius:999px;padding:2px 10px;margin-bottom:4px}
+  .eback .row .v{font-size:14px;color:#555;line-height:1.6}
+  .eback .why .v{color:var(--purple)}
+  .ebtns{display:flex;gap:10px;margin-top:8px}
+  .ebtns button{flex:1;border:none;border-radius:14px;padding:10px;font-size:14px;
+    font-family:inherit;cursor:pointer;font-weight:700;color:#fff}
+  .b-back{background:var(--blue)}
+  .b-flip{background:var(--purple)}
+  .emark{width:100%;border:none;border-top:1px solid #f0f0f0;background:#fff;
+    padding:12px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;color:#bbb}
+  .exp.done .emark{color:var(--green);background:#eafff6}
+  .mark-ic{display:inline-block;width:20px}
+
+  .progress{height:14px;background:#e0f5ee;border-radius:10px;overflow:hidden;margin:14px 0 4px}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--blue));
+    border-radius:10px;transition:width .4s}
+  .prog-txt{font-size:13px;color:#888;text-align:center}
+  .reset{background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;
+    text-decoration:underline;display:block;margin:10px auto 0;font-family:inherit}
+  .tip{font-size:12px;color:#aaa;text-align:center;margin-top:14px;line-height:1.6}
+  .confetti{position:fixed;top:-40px;font-size:24px;pointer-events:none;z-index:99;
+    animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:.2}}
+  .celebrate{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;
+    align-items:center;justify-content:center;z-index:100}
+  .celebrate .box2{background:#fff;border-radius:24px;padding:28px 34px;text-align:center;animation:pop .4s;max-width:320px}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate h3{font-size:24px;margin-bottom:8px}
+  .celebrate p{color:#888;font-size:14px;line-height:1.6}
+  .celebrate button{margin-top:16px;border:none;background:var(--green);color:#fff;
+    padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+</style>
+</head>
+<body>
+
+
+
+<header>
+  <h1>🔬 科学小实验</h1>
+  <div class="date" id="dateStr">今天</div>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="num" id="doneNum">0</div><div class="lbl">✅ 做过</div></div>
+  <div class="stat"><div class="num" id="totalNum">0</div><div class="lbl">📦 实验总数</div></div>
+  <div class="stat"><div class="num" id="pctNum">0%</div><div class="lbl">📈 完成度</div></div>
+</div>
+
+<h2>🧪 动手做实验</h2>
+<div class="exps" id="exps"></div>
+
+<div class="progress"><i id="progBar"></i></div>
+<div class="prog-txt" id="progTxt">完成 0 / 0 个</div>
+
+<button class="reset" onclick="resetAll()">↺ 重置所有标记</button>
+<div class="tip">每个实验都用家里现成的材料，在爸妈陪同下做最安全 🛡️<br>数据按小朋友分别保存，不会上传。</div>
+
+<div class="celebrate" id="celeb">
+  <div class="box2">
+    <h3>🎉 小小科学家！</h3>
+    <p>52 个实验全做过啦，你已经是真正的科学探险家！</p>
+    <button onclick="closeCeleb()">继续探索 💪</button>
+  </div>
+</div>
+
+<script>
+var EXPERIMENTS=[
+  {id:'milk',emoji:'🌈',name:'彩虹牛奶',mats:['牛奶','食用色素','洗洁精','盘子','棉签'],
+    steps:'盘里倒一层薄薄的牛奶，滴几滴不同颜色的色素，棉签蘸一点洗洁精轻点牛奶中心。',
+    pheno:'色素像烟花一样向四周炸开，画出彩色花纹。',
+    why:'洗洁精破坏了牛奶表面的张力，带着色素快速扩散开来。'},
+  {id:'volcano',emoji:'🌋',name:'苏打火山',mats:['小苏打','白醋','杯子','盘子','色素'],
+    steps:'杯里放一勺小苏打，滴几滴色素，缓缓倒入白醋。',
+    pheno:'冒出大量泡泡，顺着杯壁溢出来像火山喷发。',
+    why:'小苏打（碳酸氢钠）和醋（酸）反应，生成二氧化碳气体。'},
+  {id:'needle',emoji:'🪡',name:'浮针不沉',mats:['一碗水','一根针','纸巾'],
+    steps:'把针轻轻放在纸巾上，连纸一起平放到水面，等纸巾慢慢沉下去。',
+    pheno:'纸巾沉了，针却稳稳浮在水面上。',
+    why:'水的表面张力像一张看不见的薄膜，托住了又轻又平的针。'},
+  {id:'egg',emoji:'🥚',name:'盐水浮蛋',mats:['清水','盐','生鸡蛋','杯子'],
+    steps:'杯里装清水放入鸡蛋（会沉底），一勺一勺加盐搅拌，直到鸡蛋浮起。',
+    pheno:'盐水越来越浓，鸡蛋慢慢浮到了水面。',
+    why:'加盐后水的密度变大，超过鸡蛋密度就能把它托起来。'},
+  {id:'balloon',emoji:'🧲',name:'气球吸纸',mats:['气球','碎纸片'],
+    steps:'气球在头发上快速摩擦几十下，靠近桌上的碎纸片。',
+    pheno:'碎纸片被气球吸了起来。',
+    why:'摩擦使气球带上静电，能吸引轻小的纸屑。'},
+  {id:'coin',emoji:'💡',name:'硬币消失',mats:['玻璃杯','水','硬币'],
+    steps:'硬币放桌上，杯子倒扣压住它，从杯口缓缓倒满水，斜着从侧面看。',
+    pheno:'从某个角度看，硬币好像“消失”了。',
+    why:'光从水进入空气时发生折射，角度够大时全部反射，就看不见硬币了。'},
+  {id:'hot',emoji:'🌡️',name:'热水往上飘',mats:['冷热水各一杯','色素','硬纸片'],
+    steps:'热水杯加色素倒扣在冷水杯上，抽掉中间的硬纸片。',
+    pheno:'带颜色的热水向上穿过冷水升起。',
+    why:'热水密度小、冷水密度大，所以热水会浮在冷水上面。'},
+  {id:'seed',emoji:'🌱',name:'种子发芽',mats:['绿豆或黄豆','湿纸巾','密封袋'],
+    steps:'种子放湿纸巾上卷起来，装进密封袋，放温暖窗台，每天观察。',
+    pheno:'几天后冒出白根和小芽。',
+    why:'种子吸足水分、温度合适就会萌发长大。'},
+  {id:'lemon',emoji:'🫧',name:'柠檬气泡',mats:['柠檬','小苏打','小勺'],
+    steps:'柠檬切半挖个小坑，放一小勺小苏打，挤柠檬汁进去。',
+    pheno:'坑里冒出许多小气泡。',
+    why:'柠檬酸遇到小苏打，反应放出了二氧化碳。'},
+  {id:'ice',emoji:'🧊',name:'提冰的线',mats:['冰块','细线','盐','杯子'],
+    steps:'线横搭在冰块上，在线和冰接触的地方撒点盐，等十几秒轻轻提线。',
+    pheno:'线像被冻住一样，能把冰块提起来。',
+    why:'盐让冰局部融化，水再结冰时就把线粘住了。'},
+  {id:'steth',emoji:'🔔',name:'纸杯听诊器',mats:['气球','纸筒','胶带'],
+    steps:'气球剪开绷紧贴在纸筒一端当鼓膜，另一端贴耳朵听自己胸口。',
+    pheno:'心跳“咚咚”声被放大了。',
+    why:'心跳的振动通过固体（纸筒）传导，比空气传得更清楚。'},
+  {id:'layer',emoji:'🌊',name:'彩虹分层',mats:['白糖','水','色素（红黄蓝）','几个杯子'],
+    steps:'调出由稀到浓的糖水各加一种颜色，用勺子背慢慢一层层叠放。',
+    pheno:'不同颜色分层不混，像一道彩虹。',
+    why:'糖水浓度不同密度就不同，浓的沉在下面、稀的浮在上面。'},
+
+  /* ===== 补充实验 ===== */
+  {id:'paper',emoji:'🧻',name:'纸片托水',mats:['玻璃杯','水','硬纸片'],
+    steps:'杯子装满水，盖一张硬纸片，用手压住迅速倒扣。',
+    pheno:'松开手，纸片托着水不掉下来。',
+    why:'大气压从下面托住纸片，比杯里水压更强。'},
+  {id:'chopstick',emoji:'🥢',name:'筷子折了',mats:['筷子','水','玻璃杯'],
+    steps:'杯里装半杯水，斜着把筷子插进去，从侧面看。',
+    pheno:'筷子像在水面处折断了。',
+    why:'光从水进入空气发生折射，看起来位置偏了。'},
+  {id:'balloon2',emoji:'🎈',name:'气球分开',mats:['两个气球','绳子'],
+    steps:'吹两个气球绑好，相距几厘米，同时向中间吹气。',
+    pheno:'两个气球反而向两边分开。',
+    why:'中间气流快压强小，外侧空气把它们推开（伯努利原理）。'},
+  {id:'egg2',emoji:'🥚',name:'醋泡鸡蛋',mats:['生鸡蛋','白醋','杯子'],
+    steps:'鸡蛋放进杯子，倒满白醋没过鸡蛋，放一晚。',
+    pheno:'蛋壳冒泡变软，能轻轻捏扁。',
+    why:'醋和蛋壳的碳酸钙反应，把硬壳溶解掉了。'},
+  {id:'arrow',emoji:'➡️',name:'箭头反向',mats:['玻璃杯','水','画箭头的纸'],
+    steps:'纸上画个向右的箭头，杯装水后把纸放杯后看。',
+    pheno:'箭头看起来朝左了。',
+    why:'水杯像凸透镜，水让光的折射把像颠倒了。'},
+  {id:'sugar',emoji:'🍬',name:'糖不见了',mats:['温水','白糖','勺子'],
+    steps:'温水里加一勺白糖，搅拌一会儿。',
+    pheno:'糖慢慢消失，水变甜了。',
+    why:'糖溶解在水里，变成看不见的微小颗粒分散开。'},
+  {id:'magnet',emoji:'🧲',name:'磁铁寻宝',mats:['磁铁','混合的米和小铁钉'],
+    steps:'把磁铁伸进米和铁钉混合物里搅一搅。',
+    pheno:'铁钉被吸到磁铁上，米粒留下。',
+    why:'磁铁只吸引铁等铁磁物质，不吸米。'},
+  {id:'shadow',emoji:'🖐️',name:'手影戏',mats:['手电筒','白墙'],
+    steps:'关灯，手电照向白墙，用手摆出小动物形状。',
+    pheno:'墙上出现小狗、兔子等影子。',
+    why:'光被手挡住，墙上没照到的地方就成了影子。'},
+  {id:'heat',emoji:'🥄',name:'勺子传热',mats:['金属勺','热水','黄油'],
+    steps:'勺柄抹一点黄油，把勺头浸进热水里等一会儿。',
+    pheno:'黄油慢慢融化往勺柄流。',
+    why:'金属导热快，把热从勺头传到勺柄。'},
+  {id:'float',emoji:'⛵',name:'橡皮泥船',mats:['橡皮泥','水','碗'],
+    steps:'把橡皮泥捏成碗状小船，轻轻放水面。',
+    pheno:'捏成块的橡皮泥会沉，捏成船却能浮。',
+    why:'船形排开更多水，浮力变大就浮起来了。'},
+  {id:'capillary',emoji:'🧻',name:'纸巾爬水',mats:['纸巾','水','色素','两个杯子'],
+    steps:'一杯装彩色水，纸巾一头浸水里，另一头搭到空杯。',
+    pheno:'彩色水沿纸巾爬到空杯里。',
+    why:'毛细现象：水顺着纸巾纤维的细小缝隙往上爬。'},
+  {id:'bubble',emoji:'🫧',name:'自制泡泡',mats:['洗洁精','水','甘油','吸管'],
+    steps:'洗洁精加水加一点甘油调匀，用吸管蘸着吹。',
+    pheno:'吹出又大又不易破的泡泡。',
+    why:'甘油让水膜更韧，洗洁精降低表面张力形成泡泡。'}
+  ,{id:'paperwipe',emoji:'📄',name:'不会湿的纸',mats:['纸团','杯子','水盆'],steps:'纸团塞杯底，杯口朝下竖直压入水中再取出。',pheno:'纸团是干的。',why:'杯内空气把水挡住，纸碰不到水。'}
+  ,{id:'minivolcano',emoji:'🌋',name:'迷你火山',mats:['小苏打','醋','色素','小瓶'],steps:'瓶里放小苏打，倒色素水，再加醋。',pheno:'冒出许多气泡像岩浆涌出。',why:'小苏打和醋反应产生二氧化碳气体。'}
+  ,{id:'floatneedle',emoji:'📍',name:'漂浮的针',mats:['水','针','叉子'],steps:'用叉子托住针轻轻放在水面，慢慢抽走叉子。',pheno:'针竟然浮在水面上不沉。',why:'水的表面张力像一层膜，能托住很轻的针。'}
+  ,{id:'balloonstatic',emoji:'🎈',name:'气球吸纸',mats:['气球','碎纸屑'],steps:'气球在头发上摩擦几下，靠近碎纸屑。',pheno:'纸屑被吸到气球上。',why:'摩擦起电，带电的气球吸引轻小的纸屑。'}
+  ,{id:'waterlens',emoji:'💧',name:'水滴放大镜',mats:['水','透明塑料膜','报纸'],steps:'膜上滴一滴水，放在字上从上方看。',pheno:'字变大了。',why:'圆圆的水珠像凸透镜，会把光会聚放大。'}
+  ,{id:'saltcry2',emoji:'🧂',name:'盐的结晶',mats:['盐','热水','棉线'],steps:'盐溶于热水至饱和，线悬挂其中晾干。',pheno:'线上结出一颗颗盐粒。',why:'水蒸发后，溶解的盐重新结晶析出。'}
+  ,{id:'pepper2',emoji:'🌶️',name:'胡椒快跑',mats:['碗水','胡椒粉','洗洁精'],steps:'水面撒一层胡椒粉，中间滴一滴洗洁精。',pheno:'胡椒粉迅速向四周散开。',why:'洗洁精破坏了水的表面张力，胡椒被拉着散开。'}
+  ,{id:'eggdiff',emoji:'🥚',name:'生熟鸡蛋',mats:['生鸡蛋','熟鸡蛋'],steps:'两个蛋同时在桌上转，看哪个转得稳。',pheno:'熟蛋转得稳又久，生蛋晃。',why:'熟蛋内部凝固成一个整体，生蛋内部是液体。'}
+  ,{id:'sprout2',emoji:'🌱',name:'种子发芽',mats:['绿豆','湿纸巾','密封袋'],steps:'湿纸巾包住豆子放进袋，放温暖处几天。',pheno:'豆子长出白嫩的小芽。',why:'有水、空气和适宜温度，种子就会萌发。'}
+  ,{id:'thermo2',emoji:'🌡️',name:'自制温度计',mats:['小瓶','水','吸管','色素'],steps:'瓶里装色水插吸管塞紧，手捂瓶身。',pheno:'吸管里的水柱往上升。',why:'水受热膨胀，体积变大就沿吸管上升。'}
+  ,{id:'magnetpaper',emoji:'🧲',name:'隔纸控铁',mats:['磁铁','铁钉','纸'],steps:'纸下放铁钉，磁铁在纸上方移动。',pheno:'铁钉跟着磁铁走。',why:'磁力能穿过纸吸引铁。'}
+  ,{id:'iodine2',emoji:'🧪',name:'会变色的碘',mats:['碘酒','淀粉','维C片'],steps:'碘酒滴淀粉变蓝，再撒维C粉。',pheno:'蓝色慢慢退去。',why:'维C能把碘还原，蓝色就消失了。'}
+  ,{id:'ricedance',emoji:'🍚',name:'跳舞的米',mats:['碗水','米粒','洗洁精'],steps:'水面撒几粒米，中间滴洗洁精。',pheno:'米粒乱蹦像跳舞。',why:'表面张力变化推动轻小的米粒。'}
+  ,{id:'cupphone2',emoji:'📞',name:'纸杯电话',mats:['两个纸杯','一根线'],steps:'杯底穿线拉直，一人对杯说话。',pheno:'另一端能听到声音。',why:'声音让杯底振动，线把振动传到另一头。'}
+  ,{id:'shadowlen',emoji:'🔦',name:'影子长短',mats:['手电','小棍','墙'],steps:'手电远近照小棍，看墙上影子。',pheno:'手电近影子大，远影子小。',why:'光沿直线传播，光源远近改变影子大小。'}
+  ,{id:'rainbowdiy',emoji:'🌈',name:'自制彩虹',mats:['镜子','水盆','阳光'],steps:'镜子斜放水盆，对着阳光照到墙。',pheno:'墙上出现一小道彩虹。',why:'阳光经水面和镜子折射，分散成七色。'}
+  ,{id:'dancingraisin',emoji:'🍇',name:'跳舞的葡萄干',mats:['雪碧（汽水）','透明杯','葡萄干'],steps:'杯里倒满汽水，放几粒葡萄干。',pheno:'葡萄干上下浮动像跳舞。',why:'汽水里的二氧化碳气泡附在葡萄干上把它托起，到顶气泡破又沉下。'}
+  ,{id:'skincolor',emoji:'🥛',name:'牛奶彩虹',mats:['盘子','牛奶','色素','洗洁精'],steps:'盘里倒牛奶，滴几色色素，用蘸洗洁精的牙签点中心。',pheno:'颜色向四周散开像彩虹。',why:'洗洁精破坏牛奶表面张力，带着色素流动。'}
+  ,{id:'staticcomb',emoji:'💇',name:'梳子吸纸',mats:['塑料梳','小纸片'],steps:'头发上多梳几下梳子，靠近小纸片。',pheno:'纸片被吸起来。',why:'梳子摩擦起电，带电吸引轻小纸片。'}
+  ,{id:'pennyclean',emoji:'🪙',name:'硬币变亮',mats:['旧硬币','醋','盐'],steps:'醋里加少许盐，泡硬币几分钟。',pheno:'硬币变光亮。',why:'醋和盐化学反应洗掉表面的氧化层。'}
+  ,{id:'eggfloat',emoji:'🥚',name:'盐水浮蛋',mats:['生鸡蛋','水','盐','杯子'],steps:'杯里放水加很多盐搅匀，轻轻放鸡蛋。',pheno:'鸡蛋浮在水面。',why:'盐水密度变大，超过鸡蛋密度就浮起。'}
+  ,{id:'candlewater',emoji:'🕯️',name:'蜡烛吸水',mats:['蜡烛','盘','水','杯子'],steps:'盘里放水点蜡烛，扣上杯子。',pheno:'火灭后水被吸进杯里。',why:'燃烧耗氧气压降低，外面水压把水推进去。'}
+  ,{id:'inkblot',emoji:'💧',name:'墨水扩散',mats:['水','墨水','滴管'],steps:'清水里滴一滴墨水。',pheno:'墨慢慢散开变淡。',why:'墨分子在水里不停运动、扩散均匀。'}
+  ,{id:'leakproof',emoji:'🧺',name:'不漏水的纱网',mats:['纱网','水','瓶子'],steps:'瓶口蒙纱网装满水，手压网倒立。',pheno:'水不漏出。',why:'水的表面张力加上大气压托住水不流。'}
+  ,{id:'coinsound',emoji:'🔔',name:'硬币敲杯',mats:['玻璃杯','水','硬币'],steps:'杯里加水不同高度，用硬币敲杯口。',pheno:'水多声音低、水少声音高。',why:'杯中水和空气柱长短改变振动频率，音调不同。'}
+  ,{id:'sugarhill',emoji:'⛰️',name:'糖山溶解',mats:['糖','热水','杯子'],steps:'杯底堆一勺糖，慢慢倒热水。',pheno:'糖慢慢化开像小山消融。',why:'热水分子运动快，加快糖溶解。'}
+  ,{id:'bouncyegg',emoji:'🥚',name:'弹弹蛋',mats:['生鸡蛋','白醋','杯子'],steps:'鸡蛋泡白醋一两天。',pheno:'蛋壳变软，能轻轻弹跳。',why:'醋和蛋壳的碳酸钙反应，壳被溶解只剩软膜。'}
+  ,{id:'paperbridge',emoji:'🌈',name:'纸巾彩虹桥',mats:['水','色素','纸巾','几个杯'],steps:'几个杯装水排一排，隔杯滴色，纸巾桥连起。',pheno:'颜色顺着纸巾爬过空隙汇成彩虹。',why:'毛细现象让水沿纸巾上升、不同色相遇混合。'}
+,
+  {
+  id: 'baking',
+  emoji: '🎈',
+  name: '小苏打吹气球',
+  mats: ['小苏打', '醋', '瓶子', '气球'],
+  steps: '瓶里装些醋，气球里装一小勺小苏打，把气球套在瓶口，抬起气球让粉落入醋中。',
+  pheno: '气球慢慢被气体吹大。',
+  why: '小苏打遇醋产生二氧化碳气体，把气球撑大。'
+  },
+  {
+  id: 'lava',
+  emoji: '🌋',
+  name: '瓶中熔岩灯',
+  mats: ['油', '水', '色素', '泡腾片', '透明瓶'],
+  steps: '瓶里加水和油（油浮上面），滴几滴色素，放入泡腾片。',
+  pheno: '彩色水珠上下翻滚，像熔岩流动。',
+  why: '泡腾片冒出二氧化碳，带着水珠上下浮动。'
+  },
+  {
+  id: 'magnetfish',
+  emoji: '🐟',
+  name: '纸鱼钓鱼',
+  mats: ['纸', '回形针', '磁铁', '绳'],
+  steps: '用纸剪几条鱼，每条夹一个回形针，绳一头绑磁铁当鱼竿。',
+  pheno: '磁铁隔着距离把“鱼”吸起来。',
+  why: '磁铁能吸引铁制的回形针。'
+  },
+  {
+  id: 'invisible',
+  emoji: '✍️',
+  name: '隐形墨水',
+  mats: ['柠檬汁', '棉签', '白纸', '灯泡'],
+  steps: '用棉签蘸柠檬汁在纸上写字，晾干后靠近灯泡加热。',
+  pheno: '字遇热变成棕色显现出来。',
+  why: '柠檬汁含糖类，加热后焦化，字就显形了。'
+  },
+  {
+  id: 'raincloud',
+  emoji: '☁️',
+  name: '杯中云朵',
+  mats: ['剃须泡', '水', '食用色素', '杯子'],
+  steps: '杯里装水，顶上挤一层剃须泡当云，滴几滴色素在“云”上。',
+  pheno: '色素穿过泡沫往下落，像下雨。',
+  why: '泡沫像云蓄水，色素积多后下落如雨。'
+  },
+  {
+  id: 'crystal',
+  emoji: '💎',
+  name: '盐花结晶',
+  mats: ['盐', '热水', '碟子', '线'],
+  steps: '盐溶于热水，倒进碟子，放一根线，静置几天观察。',
+  pheno: '线上慢慢长出白色盐结晶。',
+  why: '水蒸发后，溶解的盐析出形成晶体。'
+  },
+  {
+  id: 'potato',
+  emoji: '🥔',
+  name: '吸管插土豆',
+  mats: ['土豆', '吸管'],
+  steps: '用手指堵住吸管上端，猛地扎向土豆。',
+  pheno: '吸管扎进土豆里。',
+  why: '堵住口后管内空气被压住，吸管变硬容易穿透。'
+  },
+  {
+  id: 'spark',
+  emoji: '⚡',
+  name: '气球小火花',
+  mats: ['气球', '羊毛', '暗处'],
+  steps: '气球在羊毛上摩擦几下，到暗处轻轻靠近墙壁。',
+  pheno: '看到小小火花一闪。',
+  why: '摩擦起电，靠近时放电发出微弱火花。'
+  },
+  {
+  id: 'grow',
+  emoji: '🌱',
+  name: '种子发芽',
+  mats: ['豆子', '棉花', '水', '盘子'],
+  steps: '盘里铺湿棉花，放几颗豆，每天喷点水放在温暖处。',
+  pheno: '几天后豆子冒出白嫩的小芽。',
+  why: '水分和温度合适时，种子就会萌发。'
+  },
+  {
+  id: 'staticbottle',
+  emoji: '🧲',
+  name: '气球吸纸屑',
+  mats: ['气球', '碎纸', '头发'],
+  steps: '气球在头发上摩擦几下，靠近小纸屑。',
+  pheno: '纸屑被吸到气球上。',
+  why: '摩擦起电让气球带静电，能吸起轻小纸屑。'
+  },
+  {id:'floategg',emoji:'🥚',name:'浮起来的鸡蛋',mats:['鸡蛋','清水','盐','杯子'],steps:'杯里装清水放入鸡蛋（会沉），慢慢加盐并搅拌。',pheno:'盐加够后鸡蛋浮到水面。',why:'加盐使水的密度变大，超过鸡蛋密度时鸡蛋就浮起来了。'},
+  {id:'rainbowjar',emoji:'🫙',name:'彩虹分层杯',mats:['糖','水','色素','透明杯','勺子'],steps:'调四杯不同浓度的糖水各加一种色素，按浓度从大到小缓缓叠放。',pheno:'杯中出现红橙黄绿清晰的分层。',why:'糖水浓度不同密度不同，重的在下、轻的在上，互不混合。'},
+  {id:'parachute',emoji:'🪂',name:'纸杯降落伞',mats:['纸杯','纸巾','细线','剪刀'],steps:'纸巾四角系细线，线另一头连纸杯，从高处放下。',pheno:'纸杯缓缓飘落而不是直坠。',why:'展开的纸巾增大空气阻力，使下落变慢。'},
+  {id:'telephone',emoji:'📞',name:'纸杯电话',mats:['两个纸杯','一根长线','针'],steps:'线两端各穿一个纸杯底，拉直线对着杯说话。',pheno:'一端说话，另一端能听到。',why:'声音让杯底振动，振动沿拉直的线传到另一头。'},
+  {id:'density',emoji:'🌊',name:'不混溶的液体塔',mats:['蜂蜜','洗洁精','水','食用油','透明杯'],steps:'按蜂蜜、洗洁精、水、油的顺序缓缓倒入杯中。',pheno:'四种液体分成四层，界限清楚。',why:'它们密度不同又互不相溶，自然按重到轻分层。'},
+  {id:'growbead',emoji:'🪴',name:'吸水珠膨胀',mats:['吸水树脂珠','水','杯子'],steps:'把几颗硬硬的小珠子放进水里，等几小时。',pheno:'小珠子吸水后胀大几十倍，变得软软的。',why:'高吸水性树脂能锁住大量水分，所以体积迅速膨胀。'},
+  {id:'skittles',emoji:'🌈',name:'彩虹糖花',mats:['彩虹糖','温水','浅盘'],steps:'盘子中间围一圈彩虹糖，缓缓倒入温水没过糖。',pheno:'颜色从糖边向中心扩散，开成一朵花。',why:'糖遇水溶解，带着色素随水流向中间散开。'},
+  {id:'oilwater',emoji:'💧',name:'油水不溶',mats:['食用油','水','色素','透明瓶'],steps:'瓶里加水滴色素，再倒入食用油，摇一摇。',pheno:'油总浮在水面上，怎么摇也难混在一起。',why:'油比水轻，而且油和水的分子互不溶解。'},
+  {id:'pepper',emoji:'🌶️',name:'胡椒逃跑',mats:['水','胡椒粉','洗洁精'],steps:'水面上撒一层胡椒粉，用手指蘸一点洗洁精点一下水面。',pheno:'胡椒粉立刻四散逃开，露出干净的水面。',why:'洗洁精降低水的表面张力，把浮着的胡椒推到边上。'},
+  {id:'leafprint',emoji:'🍃',name:'树叶拓印',mats:['树叶','颜料','白纸'],steps:'在树叶背面涂满颜料，按印在白纸上后轻轻揭开。',pheno:'纸上留下清晰的叶脉纹路。',why:'叶背的叶脉凸起，沾上颜料就把形状印了出来。'},
+  {id:'soundcup',emoji:'🔔',name:'杯子发声',mats:['几个玻璃杯','水','筷子'],steps:'杯里加不同高度的水，用筷子轻轻敲杯口。',pheno:'水少的杯子音高，水多的杯子音低。',why:'水越多杯子振动越慢，发出的声音就越低。'},
+  {"id":"pencil","emoji":"✏️","name":"铅笔悬浮","mats":["透明杯","水","食用油","铅笔"],"steps":"杯里装水，滴入一层油，把铅笔横放在油水交界处。","pheno":"铅笔卡在油和水之间不掉下去。","why":"油的密度比水小，铅笔密度介于两者之间，就浮在交界处。"},
+  {"id":"stonep","emoji":"🪨","name":"石头沉浮","mats":["水盆","石头","木头","塑料瓶"],"steps":"把不同东西放进水里，观察哪些沉哪些浮。","pheno":"石头沉底，木头和空瓶浮着。","why":"密度比水大的下沉，比水小的上浮。"},
+  {"id":"plantg","emoji":"🌱","name":"豆芽生长","mats":["绿豆","湿纸巾","盘子","水"],"steps":"绿豆放湿纸巾上，每天喷水，放温暖处。","pheno":"几天后绿豆冒出白嫩的芽。","why":"种子吸水后胚芽萌发，开始生长。"},
+  {"id":"magnetp","emoji":"🧲","name":"磁力传球","mats":["磁铁","回形针","纸","杯子"],"steps":"磁铁隔着纸吸回形针，移动磁铁带动它走。","pheno":"回形针隔着纸也跟着磁铁移动。","why":"磁场能穿过纸等薄物吸引铁制品。"},
+  {"id":"mirrorrb","emoji":"💡","name":"镜子彩虹","mats":["水盆","镜子","手电筒","白纸"],"steps":"水盆斜放镜子，手电筒照镜面，白纸接光。","pheno":"白纸上出现一道小彩虹。","why":"光在水面和镜面反射折射，分成七色。"}
+,
+  {"id":"skind","emoji":"🧪","name":"静电吸纸","mats":["气球","碎纸","毛衣"],"steps":"气球在毛衣上摩擦几下，靠近小碎纸。","pheno":"碎纸被气球吸起来。","why":"摩擦使气球带静电，吸引轻小的纸。"},
+  {"id":"saltc","emoji":"🧂","name":"盐水开花","mats":["盘子","盐","水","色素"],"steps":"盘里倒盐水并滴几滴色素，放窗台晾干。","pheno":"水干后盐晶长出彩色花纹。","why":"盐结晶时把色素固定在晶格中，形成花纹。"},
+  {"id":"coinw","emoji":"🪙","name":"硬币重现","mats":["硬币","盘子","水"],"steps":"看不清干硬币上的字，倒水淹没它再看。","pheno":"水下的字变得清晰。","why":"水和空气折射率不同，水面像透镜把字放大。"},
+  {"id":"waterl","emoji":"💧","name":"水的折射","mats":["杯子","水","吸管"],"steps":"杯子装水插一根吸管，从侧面看。","pheno":"吸管像折断了一样弯了。","why":"光从水进入空气发生折射，看起来弯了。"},
+  {"id":"ballo","emoji":"🎈","name":"气球不爆","mats":["气球","橙皮","针"],"steps":"吹大气球，用橙皮挤汁喷在表面再轻轻戳针。","pheno":"气球不容易爆开。","why":"橙皮油堵住针孔周围橡胶，延缓漏气。"},
+  {"id":"phcolor","emoji":"🌸","name":"花青素变色","mats":["紫甘蓝","热水","白醋","小苏打"],"steps":"紫甘蓝叶撕碎泡热水得紫水，分三杯：一杯加白醋、一杯加小苏打、一杯不动。","pheno":"加醋变红、加苏打变绿蓝、不动的是紫色。","why":"紫甘蓝里的花青素遇酸变红、遇碱变绿，是天然的酸碱指示剂。"},
+  {"id":"density3","emoji":"🟢","name":"三色液体塔","mats":["蜂蜜","水","油","色素","透明杯"],"steps":"杯里先倒蜂蜜，再沿壁慢倒色素水，最后倒油，每层等一下。","pheno":"三层液体不混在一起，从下到上分层。","why":"三种液体密度不同，密度大的沉下面、小的浮上面，所以分层。"},
+  {"id":"soundwave","emoji":"🥁","name":"看见声音","mats":["碗","保鲜膜","橡皮筋","盐","大勺"],"steps":"碗口蒙保鲜膜绷紧，撒一层盐，拿大勺在旁边用力敲（别碰到碗）。","pheno":"盐粒在膜上跳起来。","why":"敲击声是振动，传到膜上让膜振动，盐粒就被弹跳起来。"},
+  {"id":"arrowback","emoji":"✏️","name":"箭头反向","mats":["玻璃杯","水","纸","笔"],"steps":"纸上画一个向右的粗箭头，空杯放纸前看方向；再倒满水看。","pheno":"倒满水后，透过杯子看箭头变成了向左。","why":"装水的圆杯像凸透镜，让光线折射，箭头看起来反过来。"},
+  {"id":"airpress","emoji":"🃏","name":"倒立水不洒","mats":["杯子","水","硬纸片"],"steps":"杯子倒满水，盖硬纸片按住，迅速倒扣，松开按纸的手。","pheno":"水不会洒出来，纸片托住整杯水。","why":"外面空气的向上压力大过水的重力，就把纸和水托住了。"},
+  {"id":"applebrown","emoji":"🍎","name":"苹果变色","mats":["苹果","刀","柠檬汁"],"steps":"苹果切两半，一半不动、一半涂柠檬汁，放半小时看切面。","pheno":"没涂的变褐色，涂了柠檬汁的还是浅色。","why":"苹果切开接触空气会氧化变褐；柠檬汁里的维C能减缓氧化。"},
+  {"id":"bendwater","emoji":"💧","name":"弯曲水流","mats":["塑料梳子","水龙头"],"steps":"开龙头流细水，梳子在头发上摩擦后靠近水流（不碰到）。","pheno":"水流被梳子吸得弯过来。","why":"摩擦过的梳子带静电，能吸引轻小的水流，让它弯过来。"},
+  {"id":"saltcrystal","emoji":"💎","name":"盐结晶星","mats":["盐","热水","细铁丝","深色碗"],"steps":"盐溶进热水到化不开，铁丝绕成星星放进盐水，放几天等水干。","pheno":"铁丝上长出亮亮的盐晶块。","why":"水慢慢蒸发，溶不下的盐变成晶体析出来，附在铁丝上。"},
+  {"id":"inertia","emoji":"🥚","name":"纸筒立蛋","mats":["鸡蛋","纸筒","硬纸板","水杯"],"steps":"纸板盖水杯上，纸筒立板上、鸡蛋放筒顶；快抽走纸板。","pheno":"纸筒和蛋落下，蛋正好落进杯里的水里。","why":"东西有惯性想保持不动，纸板被抽走，蛋和筒失去支撑掉进杯。"}
+];
+
+var CHILD='user', KEY='';
+function getStore(){ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; } }
+function setStore(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
+function isDone(id){ return !!getStore()[id]; }
+
+function render(){
+  var html='';
+  EXPERIMENTS.forEach(function(e,i){
+    var done=isDone(e.id);
+    html+='<div class="exp'+(done?' done':'')+'" id="exp-'+i+'">'+
+      '<div class="efront" onclick="flip('+i+')">'+
+        '<span class="eemoji">'+e.emoji+'</span>'+
+        '<div class="etxt"><div class="ename">'+e.name+'</div>'+
+        '<div class="emats">🧰 '+e.mats.join(' · ')+'</div></div>'+
+        '<span class="earrow">👉</span>'+
+      '</div>'+
+      '<div class="eback" id="back-'+i+'" hidden>'+
+        '<div class="row"><b>步骤</b><div class="v">'+e.steps+'</div></div>'+
+        '<div class="row"><b>现象</b><div class="v">'+e.pheno+'</div></div>'+
+        '<div class="row why"><b>原理</b><div class="v">'+e.why+'</div></div>'+
+        '<div class="ebtns"><button class="b-back" onclick="flip('+i+')">⬅️ 收起</button>'+
+        '<button class="b-flip" onclick="nextExp('+i+')">下一个 ➡️</button></div>'+
+      '</div>'+
+      '<button class="emark" onclick="mark('+i+')">'+
+        '<span class="mark-ic">'+(done?'✅':'⬜')+'</span>'+(done?' 已做过':' 标记做过')+'</button>'+
+    '</div>';
+  });
+  document.getElementById('exps').innerHTML=html;
+  updateStats();
+}
+function flip(i){
+  var b=document.getElementById('back-'+i);
+  if(b.hidden){ b.hidden=false; document.getElementById('exp-'+i).querySelector('.efront .earrow').textContent='👆'; }
+  else { b.hidden=true; document.getElementById('exp-'+i).querySelector('.efront .earrow').textContent='👉'; }
+}
+function nextExp(i){
+  flip(i);
+  var n=(i+1)%EXPERIMENTS.length;
+  setTimeout(function(){ flip(n); document.getElementById('exp-'+n).scrollIntoView({behavior:'smooth',block:'center'}); },120);
+}
+function mark(i){
+  var e=EXPERIMENTS[i];
+  var store=getStore();
+  if(store[e.id]){ delete store[e.id]; } else { store[e.id]=Date.now(); }
+  setStore(store);
+  render();
+  if(Object.keys(getStore()).length===EXPERIMENTS.length){ celebrate(); }
+}
+function updateStats(){
+  var done=Object.keys(getStore()).length, total=EXPERIMENTS.length, pct=total?Math.round(done/total*100):0;
+  document.getElementById('doneNum').textContent=done;
+  document.getElementById('totalNum').textContent=total;
+  document.getElementById('pctNum').textContent=pct+'%';
+  document.getElementById('progBar').style.width=pct+'%';
+  document.getElementById('progTxt').textContent='完成 '+done+' / '+total+' 个';
+}
+function resetAll(){ if(confirm('确定清空所有“做过”标记？')){ setStore({}); render(); } }
+function celebrate(){
+  var emo=['🎉','✨','🌟','🔬','💡','🌈','⭐','🧪'];
+  for(var k=0;k<26;k++){
+    (function(){
+      var c=document.createElement('div'); c.className='confetti';
+      c.textContent=emo[Math.floor(Math.random()*emo.length)];
+      c.style.left=Math.random()*100+'vw';
+      c.style.animationDuration=(2+Math.random()*2)+'s';
+      document.body.appendChild(c);
+      setTimeout(function(){ c.remove(); },4200);
+    })();
+  }
+  document.getElementById('celeb').style.display='flex';
+}
+function closeCeleb(){ document.getElementById('celeb').style.display='none'; }
+
+(function(){
+  var s=Portal.getSession();
+  CHILD=(s&&s.child)?s.child:'user';
+  KEY='sci-exp-'+CHILD;
+  var d=new Date();
+  var wk=['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+  document.getElementById('dateStr').textContent=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+wk;
+  render();
+})();
+</script>
+</body>
+</html>

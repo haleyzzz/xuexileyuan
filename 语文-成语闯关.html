@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🀄 成语闯关</title>
+<style>
+  :root{ --c1:#9b5de5; --c2:#ffd166; --green:#06d6a0; --ink:#3d3a4b; }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#f6f0ff,#fdf2ff);color:var(--ink);padding:18px;max-width:560px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  .back{position:fixed;left:14px;top:14px;z-index:30;border:none;background:rgba(255,255,255,.85);border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink)}
+  header{background:linear-gradient(120deg,var(--c1),var(--c2));color:#fff;border-radius:24px;padding:20px;text-align:center;box-shadow:0 8px 22px rgba(155,93,229,.4)}
+  header h1{font-size:22px}
+  .date{font-size:14px;opacity:.95;margin-top:4px}
+  .stats{display:flex;gap:10px;margin:14px 0}
+  .stat{flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .stat .num{font-size:26px;font-weight:800;color:var(--c1)}
+  .stat .lbl{font-size:12px;color:#999;margin-top:2px}
+  .screen{display:none}
+  .screen.on{display:block}
+  .btn{display:block;width:100%;border:none;border-radius:16px;padding:14px;font-size:16px;font-family:inherit;cursor:pointer;font-weight:800;color:#fff;background:var(--c1);margin-top:8px}
+  .btn.gh{background:var(--c2)}
+  .btn.sec{background:#f6f0ff;color:var(--c1)}
+  .prog-wrap{margin:6px 0 14px}
+  .progress{height:14px;background:#ece3ff;border-radius:10px;overflow:hidden}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--c1),var(--c2));border-radius:10px;transition:width .4s}
+  .prog-txt{font-size:13px;color:#888;text-align:center;margin-top:4px}
+  .q{background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.06);padding:14px;margin-bottom:12px;border:3px solid transparent;transition:border-color .2s}
+  .q.done-ok{border-color:var(--green)}
+  .q.done-no{border-color:#ff6b6b}
+  .q .qt{font-size:15px;font-weight:700;margin-bottom:10px;line-height:1.6}
+  .q .qt .qn{color:var(--c1);margin-right:6px}
+  .q .qt .spk{border:none;background:#f6f0ff;color:var(--c1);border-radius:10px;padding:2px 9px;font-size:13px;cursor:pointer;font-family:inherit;margin-left:6px}
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{border:none;border-radius:12px;padding:11px 14px;font-size:14px;text-align:left;font-family:inherit;cursor:pointer;background:#f6f0ff;color:var(--ink);transition:.15s}
+  .opt:active{transform:scale(.98)}
+  .opt.ok{background:var(--green);color:#fff}
+  .opt.no{background:#ff6b6b;color:#fff}
+  .opt.dim{opacity:.45;pointer-events:none}
+  .why{font-size:13px;color:#888;margin-top:10px;background:#f6f8fb;border-radius:10px;padding:9px;line-height:1.6;display:none}
+  .why.on{display:block}
+  .report{background:#fff;border-radius:24px;box-shadow:0 8px 22px rgba(0,0,0,.08);padding:24px;text-align:center;margin-top:14px}
+  .report .stars{font-size:34px;letter-spacing:4px;margin:6px 0}
+  .report .score{font-size:30px;font-weight:800;color:var(--c1)}
+  .report .sub{font-size:14px;color:#888;margin-top:4px}
+  .report .line{font-size:15px;color:var(--ink);margin-top:10px}
+  .report .pass{color:var(--green);font-weight:800}
+  .report .fail{color:#ff6b6b;font-weight:800}
+  .reset{background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;text-decoration:underline;display:block;margin:10px auto 0;font-family:inherit}
+  .tip{font-size:12px;color:#aaa;text-align:center;margin-top:14px;line-height:1.6}
+  .confetti{position:fixed;top:-40px;font-size:24px;pointer-events:none;z-index:99;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:.2}}
+  .celebrate{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:100}
+  .celebrate .box2{background:#fff;border-radius:24px;padding:28px 34px;text-align:center;animation:pop .4s;max-width:320px}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate h3{font-size:24px;margin-bottom:8px}
+  .celebrate p{color:#888;font-size:14px;line-height:1.6}
+  .celebrate button{margin-top:16px;border:none;background:var(--c2);color:#fff;padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+</style>
+<script>
+/* iOS 朗读稳定性补丁：保留 utterance 全局引用防 GC 静音 + 朗读前 resume()（与 speech.js 同逻辑，本页未引 speech.js 故内联） */
+(function(){ if(window.__ttsPatched) return; window.__ttsPatched=true;
+  if(!window.speechSynthesis) return;
+  var _sp=window.speechSynthesis.speak.bind(window.speechSynthesis);
+  window.speechSynthesis.speak=function(u){ try{window.speechSynthesis.resume();}catch(e){} window.__ttsUtt=u; return _sp(u); };
+})();
+</script>
+</head>
+<body>
+
+<header><h1>🀄 成语闯关</h1><div class="date" id="dateStr">今天</div></header>
+<div class="stats">
+  <div class="stat"><div class="num" id="bestNum">0</div><div class="lbl">🏆 最佳对题</div></div>
+  <div class="stat"><div class="num" id="totalNum">0</div><div class="lbl">📝 题目总数</div></div>
+  <div class="stat"><div class="num" id="passNum">80%</div><div class="lbl">✅ 通关线</div></div>
+</div>
+<div class="screen on" id="scrMenu">
+  <h2 style="font-size:17px;margin:6px 4px 10px">🎯 成语释义·填空·辨析</h2>
+  <div class="tip" style="margin:0 0 12px">读懂意思选成语，点 🔊 听发音。选对 80% 就通关！</div>
+  <button class="btn" onclick="start()">🚀 开始闯关</button>
+  <button class="btn sec" onclick="resetBest()">↺ 清空最佳记录</button>
+</div>
+<div class="screen" id="scrQuiz">
+  <div class="prog-wrap"><div class="progress"><i id="progBar"></i></div><div class="prog-txt" id="progTxt">已答 0 / 0</div></div>
+  <div id="quizArea"></div>
+  <button class="btn gh" id="finishBtn" onclick="finish()" style="display:none">🏁 查看战报</button>
+</div>
+<div class="screen" id="scrReport">
+  <div class="report">
+    <div class="stars" id="rStars">⭐⭐⭐</div>
+    <div class="score" id="rScore">0 / 0</div>
+    <div class="sub" id="rPct">正确率 0%</div>
+    <div class="line" id="rPass"></div>
+  </div>
+  <button class="btn" onclick="start()">🔄 再来一轮</button>
+  <button class="btn sec" onclick="goMenu()">🏠 回到首页</button>
+</div>
+<div class="tip">数据按小朋友分别保存，不会上传。</div>
+<div class="celebrate" id="celeb"><div class="box2"><h3>🎉 成语小达人！</h3><p>成语意思全懂，出口成章啦！</p><button onclick="closeCeleb()">继续闯关 💪</button></div></div>
+<script>
+var CHILD='user', KEY='', store={};
+var IDIOMS=[
+  {"q":"「______」：比喻死守狭隘经验、不知变通，妄想不劳而获。","opts":["守株待兔","亡羊补牢","画蛇添足","掩耳盗铃"],"ans":0,"why":"守株待兔讲农夫守树桩等兔子，比喻不知变通、妄想不劳而获。","word":"守株待兔"},
+  {"q":"「______」：比喻出了问题后及时补救，还不算太晚。","opts":["亡羊补牢","守株待兔","刻舟求剑","拔苗助长"],"ans":0,"why":"羊丢了再修羊圈，比喻事后补救还来得及。","word":"亡羊补牢"},
+  {"q":"「______」：比喻做了多余的事，反而把事情弄糟。","opts":["画蛇添足","守株待兔","井底之蛙","杯弓蛇影"],"ans":0,"why":"给蛇添脚反而错了，比喻多此一举。","word":"画蛇添足"},
+  {"q":"「______」：比喻自己欺骗自己，明明掩盖不住偏要掩盖。","opts":["掩耳盗铃","自相矛盾","滥竽充数","狐假虎威"],"ans":0,"why":"捂耳朵偷铃铛，以为别人也听不见，比喻自欺欺人。","word":"掩耳盗铃"},
+  {"q":"「______」：比喻言行前后抵触、不一致。","opts":["自相矛盾","画蛇添足","亡羊补牢","掩耳盗铃"],"ans":0,"why":"同时卖矛和盾又说互相能破，言行冲突。","word":"自相矛盾"},
+  {"q":"「______」：比喻没有真本领的人混在行家里充数。","opts":["滥竽充数","愚公移山","精卫填海","雪中送炭"],"ans":0,"why":"不会吹竽混在乐队里充数，比喻以次充好。","word":"滥竽充数"},
+  {"q":"「______」：比喻拘泥成法、不知随情况变化。","opts":["刻舟求剑","拔苗助长","守株待兔","掩耳盗铃"],"ans":0,"why":"船走了还在船上刻记号找剑，不知变通。","word":"刻舟求剑"},
+  {"q":"「______」：比喻违反规律、急于求成，反而坏事。","opts":["拔苗助长","愚公移山","水滴穿石","熟能生巧"],"ans":0,"why":"把苗拔高想让它快长，结果苗死了，比喻急于求成。","word":"拔苗助长"},
+  {"q":"「______」：比喻见识狭小、眼光短浅的人。","opts":["井底之蛙","狐假虎威","精卫填海","愚公移山"],"ans":0,"why":"井底之蛙只见井口大的天，比喻见识少。","word":"井底之蛙"},
+  {"q":"「______」：比喻疑神疑鬼、自相惊扰。","opts":["杯弓蛇影","守株待兔","画蛇添足","掩耳盗铃"],"ans":0,"why":"把映在杯里的弓影当蛇，比喻疑神疑鬼。","word":"杯弓蛇影"},
+  {"q":"「______」：比喻依仗别人的势力去欺压人。","opts":["狐假虎威","叶公好龙","对牛弹琴","愚公移山"],"ans":0,"why":"狐狸借老虎威风吓百兽，比喻倚仗别人势力。","word":"狐假虎威"},
+  {"q":"「______」：比喻口头上爱好某事物，实际上并不真爱。","opts":["叶公好龙","滥竽充数","刻舟求剑","井底之蛙"],"ans":0,"why":"叶公爱龙却见真龙吓跑，比喻表面爱好。","word":"叶公好龙"},
+  {"q":"「______」：比喻对不懂道理的人讲道理，白费口舌。","opts":["对牛弹琴","愚公移山","雪中送炭","助人为乐"],"ans":0,"why":"对牛弹琴牛不懂，比喻对不懂的人白说。","word":"对牛弹琴"},
+  {"q":"「______」：比喻只要坚持不懈，就能克服困难成功。","opts":["愚公移山","拔苗助长","画蛇添足","掩耳盗铃"],"ans":0,"why":"愚公挖山不止，比喻坚持不懈终能成功。","word":"愚公移山"},
+  {"q":"「______」：比喻意志坚强、不畏艰难。","opts":["精卫填海","滥竽充数","自相矛盾","守株待兔"],"ans":0,"why":"精卫衔石填海，比喻意志坚定不畏难。","word":"精卫填海"},
+  {"q":"「______」：比喻在别人困难时及时给予帮助。","opts":["雪中送炭","助人为乐","兴高采烈","鸟语花香"],"ans":0,"why":"雪里送炭正解燃眉之急，比喻及时帮助。","word":"雪中送炭"},
+  {"q":"「______」：把帮助别人当作快乐。","opts":["助人为乐","雪中送炭","守株待兔","画蛇添足"],"ans":0,"why":"以帮助他人为乐，就是助人为乐。","word":"助人为乐"},
+  {"q":"春天到了，公园里（ ），到处花香鸟鸣，美极了。","opts":["鸟语花香","守株待兔","画蛇添足","掩耳盗铃"],"ans":0,"why":"春天花鸟相伴用\"鸟语花香\"。","word":"鸟语花香"},
+  {"q":"他（ ）地跑进来，告诉大家获奖的好消息。","opts":["兴高采烈","七上八下","九牛一毛","坐井观天"],"ans":0,"why":"高兴兴奋的样子用\"兴高采烈\"。","word":"兴高采烈"},
+  {"q":"元宵灯会人山人海，真是（ ）的热闹场面。","opts":["人山人海","川流不息","勤能补拙","笨鸟先飞"],"ans":0,"why":"人极多用\"人山人海\"。","word":"人山人海"},
+  {"q":"大街上（ ），来往的车辆像流水一样不停。","opts":["车水马龙","坐井观天","一丝不苟","专心致志"],"ans":0,"why":"车马多、热闹用\"车水马龙\"。","word":"车水马龙"},
+  {"q":"放学路口行人（ ），请大家注意安全。","opts":["川流不息","九牛一毛","十全十美","百发百中"],"ans":0,"why":"行人连续不断用\"川流不息\"。","word":"川流不息"},
+  {"q":"这件衣服（ ），妈妈看了很满意。","opts":["十全十美","七上八下","坐井观天","滥竽充数"],"ans":0,"why":"完美无缺用\"十全十美\"。","word":"十全十美"},
+  {"q":"哥哥射箭（ ），每一箭都中靶心。","opts":["百发百中","千军万马","万众一心","勤能补拙"],"ans":0,"why":"每次都中用\"百发百中\"。","word":"百发百中"},
+  {"q":"大家（ ），终于把操场打扫干净了。","opts":["万众一心","千军万马","九牛一毛","七上八下"],"ans":0,"why":"大家团结一致用\"万众一心\"。","word":"万众一心"},
+  {"q":"这点小事对他来说只是（ ），很快就能解决。","opts":["九牛一毛","十全十美","百发百中","车水马龙"],"ans":0,"why":"极大数量中极小部分用\"九牛一毛\"。","word":"九牛一毛"},
+  {"q":"要考试了，他心里（ ），坐立不安。","opts":["七上八下","兴高采烈","鸟语花香","雪中送炭"],"ans":0,"why":"心神慌乱用\"七上八下\"。","word":"七上八下"},
+  {"q":"他写字（ ），一笔一画都不马虎。","opts":["一丝不苟","粗心大意","画蛇添足","掩耳盗铃"],"ans":0,"why":"认真不马虎用\"一丝不苟\"。","word":"一丝不苟"},
+  {"q":"上课时他（ ）地听老师讲课。","opts":["专心致志","三心二意","对牛弹琴","滥竽充数"],"ans":0,"why":"一心一意集中精神用\"专心致志\"。","word":"专心致志"},
+  {"q":"他（ ）地读着故事书，连吃饭都忘了。","opts":["津津有味","七上八下","九牛一毛","坐井观天"],"ans":0,"why":"有兴趣、有滋味用\"津津有味\"。","word":"津津有味"},
+  {"q":"今天（ ），微风轻轻吹，正适合去郊游。","opts":["风和日丽","狂风暴雨","冰天雪地","倾盆大雨"],"ans":0,"why":"晴朗暖和用\"风和日丽\"。","word":"风和日丽"},
+  {"q":"路两旁（ ），夏天走在下面很凉快。","opts":["绿树成荫","寸草不生","冰天雪地","车水马龙"],"ans":0,"why":"树木茂密成荫用\"绿树成荫\"。","word":"绿树成荫"},
+  {"q":"（ ），果园里的果子散发出甜甜的香气。","opts":["瓜果飘香","冰天雪地","狂风暴雨","寸草不生"],"ans":0,"why":"秋天果实成熟香气用\"瓜果飘香\"。","word":"瓜果飘香"},
+  {"q":"北京有很多（ ），值得一去。","opts":["名胜古迹","高楼大厦","川流不息","鸟语花香"],"ans":0,"why":"风景优美或有古迹的地方用\"名胜古迹\"。","word":"名胜古迹"},
+  {"q":"城市里（ ）鳞次栉比，十分壮观。","opts":["高楼大厦","名胜古迹","九牛一毛","七上八下"],"ans":0,"why":"高大的房子用\"高楼大厦\"。","word":"高楼大厦"},
+  {"q":"他读书很用功，相信（ ）能补拙。","opts":["勤能补拙","笨鸟先飞","十全十美","百发百中"],"ans":0,"why":"勤奋弥补笨拙用\"勤能补拙\"。","word":"勤能补拙"},
+  {"q":"我基础差，只好（ ），每天多练一小时。","opts":["笨鸟先飞","勤能补拙","百发百中","万众一心"],"ans":0,"why":"能力差先动手用\"笨鸟先飞\"。","word":"笨鸟先飞"},
+  {"q":"这道题他会做，还能（ ），讲出另外三种解法。","opts":["举一反三","守株待兔","画蛇添足","掩耳盗铃"],"ans":0,"why":"从一事类推多事用\"举一反三\"。","word":"举一反三"},
+  {"q":"弹琴贵在（ ），练多了自然就巧了。","opts":["熟能生巧","拔苗助长","刻舟求剑","滥竽充数"],"ans":0,"why":"熟练产生巧办法用\"熟能生巧\"。","word":"熟能生巧"},
+  {"q":"只要天天坚持练字，（ ）也能把字写好。","opts":["滴水穿石","拔苗助长","画蛇添足","守株待兔"],"ans":0,"why":"坚持不懈终成功用\"滴水穿石\"。","word":"滴水穿石"},
+  {"q":"上课时他（ ）地看着黑板，生怕漏掉重点。","opts":["聚精会神","三心二意","对牛弹琴","滥竽充数"],"ans":0,"why":"注意力高度集中用\"聚精会神\"。","word":"聚精会神"},
+  {"q":"他（ ）地盯着实验，连眨眼都舍不得。","opts":["全神贯注","七上八下","九牛一毛","坐井观天"],"ans":0,"why":"全部精神集中用\"全神贯注\"。","word":"全神贯注"},
+  {"q":"礼物终于到了，他（ ）地拆开包装。","opts":["迫不及待","慢条斯理","七上八下","九牛一毛"],"ans":0,"why":"急迫得不能等待用\"迫不及待\"。","word":"迫不及待"},
+  {"q":"他（ ）地捧着鸡蛋，生怕摔碎。","opts":["小心翼翼","粗心大意","画蛇添足","掩耳盗铃"],"ans":0,"why":"谨慎小心用\"小心翼翼\"。","word":"小心翼翼"},
+  {"q":"看到答案他（ ），原来这么简单！","opts":["恍然大悟","守株待兔","刻舟求剑","滥竽充数"],"ans":0,"why":"一下子明白过来用\"恍然大悟\"。","word":"恍然大悟"},
+  {"q":"满园春色（ ），让人看了心情舒畅。","opts":["赏心悦目","七上八下","九牛一毛","坐井观天"],"ans":0,"why":"看到美好景物心情好用\"赏心悦目\"。","word":"赏心悦目"},
+  {"q":"同学们（ ）地举手，都想回答问题。","opts":["争先恐后","慢条斯理","三心二意","对牛弹琴"],"ans":0,"why":"争着向前怕落后用\"争先恐后\"。","word":"争先恐后"},
+  {"q":"他回答得（ ），一点也不迟疑。","opts":["毫不犹豫","七上八下","九牛一毛","坐井观天"],"ans":0,"why":"一点也不迟疑用\"毫不犹豫\"。","word":"毫不犹豫"},
+  {"q":"那只青蛙（ ），以为天只有井口那么大。","opts":["坐井观天","愚公移山","精卫填海","雪中送炭"],"ans":0,"why":"眼界小、见识少用\"坐井观天\"。","word":"坐井观天"},
+  {"q":"彩虹五颜六色，和天上的白云（ ）。","opts":["交相辉映","九牛一毛","七上八下","坐井观天"],"ans":0,"why":"互相衬托更美用\"交相辉映\"。","word":"交相辉映"},
+  {"q":"「______」：形容人刻苦自励、发愤图强。","opts":["卧薪尝胆","守株待兔","画蛇添足","掩耳盗铃"],"ans":0,"why":"越王勾践卧柴草尝苦胆，比喻刻苦自励。","word":"卧薪尝胆"},
+  {"q":"「______」：比喻主动认错赔礼，诚恳道歉。","opts":["负荆请罪","自相矛盾","刻舟求剑","拔苗助长"],"ans":0,"why":"廉颇背荆条向蔺相如请罪，比喻认错赔礼。","word":"负荆请罪"},
+  {"q":"「______」：比喻把原物完好地归还本人。","opts":["完璧归赵","滥竽充数","叶公好龙","对牛弹琴"],"ans":0,"why":"蔺相如把和氏璧完好送回赵国，比喻物归原主。","word":"完璧归赵"},
+  {"q":"「______」：比喻真心诚意、反复邀请。","opts":["三顾茅庐","愚公移山","精卫填海","雪中送炭"],"ans":0,"why":"刘备三请诸葛亮，比喻诚心邀请。","word":"三顾茅庐"},
+  {"q":"「______」：比喻空谈理论、不能解决实际问题。","opts":["纸上谈兵","拔苗助长","滴水穿石","熟能生巧"],"ans":0,"why":"赵括只懂兵书不会打仗，比喻空谈理论。","word":"纸上谈兵"},
+  {"q":"「______」：比喻用空想安慰自己。","opts":["望梅止渴","守株待兔","掩耳盗铃","画蛇添足"],"ans":0,"why":"曹操说前方有梅林止渴，比喻用空想安慰。","word":"望梅止渴"},
+  {"q":"「______」：比喻下定决心、不留退路。","opts":["破釜沉舟","刻舟求剑","亡羊补牢","井底之蛙"],"ans":0,"why":"项羽砸锅沉船表决心，比喻义无反顾。","word":"破釜沉舟"},
+  {"q":"「______」：比喻有志报国、勤奋奋发。","opts":["闻鸡起舞","狐假虎威","叶公好龙","滥竽充数"],"ans":0,"why":"祖逖闻鸡鸣就起舞练剑，比喻勤奋报国。","word":"闻鸡起舞"},
+  {"q":"「______」：形容书法笔力强劲、功夫深。","opts":["入木三分","一丝不苟","专心致志","津津有味"],"ans":0,"why":"王羲之字透入木三分，形容笔力遒劲。","word":"入木三分"},
+  {"q":"「______」：形容文辞精妙、价值极高。","opts":["一字千金","百发百中","万众一心","九牛一毛"],"ans":0,"why":"吕不韦悬赏改一字赏千金，形容文辞珍贵。","word":"一字千金"},
+  {"q":"他（ ），待人很有礼貌，大家都喜欢他。","opts":["彬彬有礼","三心二意","粗心大意","对牛弹琴"],"ans":0,"why":"文雅有礼貌用\"彬彬有礼\"。","word":"彬彬有礼"},
+  {"q":"她（ ），大大方方地走上台表演。","opts":["落落大方","坐井观天","七上八下","九牛一毛"],"ans":0,"why":"举止自然大方用\"落落大方\"。","word":"落落大方"},
+  {"q":"他演讲时（ ），说得停不下来。","opts":["滔滔不绝","慢条斯理","断断续续","三言两语"],"ans":0,"why":"话多连续不断用\"滔滔不绝\"。","word":"滔滔不绝"},
+  {"q":"蝴蝶在花丛中（ ），姿态优美。","opts":["翩翩起舞","呆若木鸡","一动不动","横冲直撞"],"ans":0,"why":"轻快地跳舞用\"翩翩起舞\"。","word":"翩翩起舞"},
+  {"q":"画上的小鸟（ ），像真的一样。","opts":["栩栩如生","死气沉沉","平淡无奇","黯淡无光"],"ans":0,"why":"形象生动像活的一样用\"栩栩如生\"。","word":"栩栩如生"},
+  {"q":"荷花（ ），亭亭地站在水面上。","opts":["亭亭玉立","歪歪扭扭","矮矮胖胖","东倒西歪"],"ans":0,"why":"挺拔秀丽用\"亭亭玉立\"。","word":"亭亭玉立"},
+  {"q":"看完电影，他（ ）地离开了影院。","opts":["依依不舍","迫不及待","兴高采烈","风风火火"],"ans":0,"why":"留恋不忍离开用\"依依不舍\"。","word":"依依不舍"},
+  {"q":"考差了，他（ ）地坐在角落。","opts":["闷闷不乐","洋洋得意","手舞足蹈","眉开眼笑"],"ans":0,"why":"心烦不快乐用\"闷闷不乐\"。","word":"闷闷不乐"},
+  {"q":"收到礼物，他（ ）地笑了。","opts":["洋洋得意","闷闷不乐","垂头丧气","愁眉苦脸"],"ans":0,"why":"得意的样子用\"洋洋得意\"。","word":"洋洋得意"},
+  {"q":"节日的大街（ ），游客来来往往。","opts":["络绎不绝","冷冷清清","门可罗雀","人迹罕至"],"ans":0,"why":"人车连续不断用\"络绎不绝\"。","word":"络绎不绝"},
+  {"q":"收到录取通知，他（ ），高兴极了。","opts":["喜出望外","大失所望","垂头丧气","心如止水"],"ans":0,"why":"遇到意外的喜事而高兴用\"喜出望外\"。","word":"喜出望外"},
+  {"q":"他（ ），从不为私事计较，大家都佩服。","opts":["大公无私","自私自利","损人利己","斤斤计较"],"ans":0,"why":"完全为公、没有私心用\"大公无私\"。","word":"大公无私"},
+  {"q":"遇到危险，他（ ），冲上去救人。","opts":["见义勇为","见死不救","袖手旁观","临阵脱逃"],"ans":0,"why":"看到正义的事勇敢去做用\"见义勇为\"。","word":"见义勇为"},
+  {"q":"为了解题，他（ ），连饭都忘了吃。","opts":["废寝忘食","饱食终日","游手好闲","无所事事"],"ans":0,"why":"顾不上睡觉吃饭用\"废寝忘食\"。","word":"废寝忘食"},
+  {"q":"他（ ）地学习，从不偷懒。","opts":["孜孜不倦","三天打鱼","半途而废","敷衍了事"],"ans":0,"why":"勤奋不知疲倦用\"孜孜不倦\"。","word":"孜孜不倦"},
+  {"q":"练字要（ ），才能写好。","opts":["锲而不舍","一曝十寒","虎头蛇尾","浅尝辄止"],"ans":0,"why":"坚持不懈用\"锲而不舍\"。","word":"锲而不舍"},
+  {"q":"爷爷（ ），读过很多书，知识很广。","opts":["学富五车","目不识丁","孤陋寡闻","胸无点墨"],"ans":0,"why":"读书多、学问大用\"学富五车\"。","word":"学富五车"},
+  {"q":"他（ ），目光有神，很有精神。","opts":["炯炯有神","黯然失神","无精打采","昏昏欲睡"],"ans":0,"why":"眼睛明亮有神用\"炯炯有神\"。","word":"炯炯有神"},
+  {"q":"奶奶虽白发苍苍，却（ ），气色很好。","opts":["容光焕发","面黄肌瘦","无精打采","憔悴不堪"],"ans":0,"why":"脸上光彩四射用\"容光焕发\"。","word":"容光焕发"},
+  {"q":"老爷爷（ ），精神还像小孩一样好。","opts":["鹤发童颜","老态龙钟","风烛残年","未老先衰"],"ans":0,"why":"白发表童颜，形容老人气色好用\"鹤发童颜\"。","word":"鹤发童颜"},
+  {"q":"「______」：形容十分冷落，没人来往。","opts":["门可罗雀","门庭若市","众志成城","千钧一发"],"ans":0,"why":"门口可张网捕雀，形容冷清。","word":"门可罗雀"},
+  {"q":"「______」：比喻大家团结一心，力量无比强大。","opts":["众志成城","对牛弹琴","画龙点睛","守口如瓶"],"ans":0,"why":"万众一心像城墙一样坚固。","word":"众志成城"},
+  {"q":"「______」：比喻做事前已有通盘考虑和把握。","opts":["胸有成竹","千钧一发","水滴石穿","一举两得"],"ans":0,"why":"画竹前胸中已有完整竹子，比喻有把握。","word":"胸有成竹"},
+  {"q":"「______」：比喻在关键处加一笔使内容更生动。","opts":["画龙点睛","对牛弹琴","门可罗雀","众志成城"],"ans":0,"why":"点上眼睛龙就飞走，比喻关键一笔。","word":"画龙点睛"},
+  {"q":"「______」：比喻情况万分危急。","opts":["千钧一发","胸有成竹","雪中送炭","守口如瓶"],"ans":0,"why":"千钧重量吊在一根头发上，比喻极危险。","word":"千钧一发"},
+  {"q":"「______」：比喻做一件事得到两方面好处。","opts":["一举两得","千钧一发","水滴石穿","门可罗雀"],"ans":0,"why":"做一件事收获两份好处。","word":"一举两得"},
+  {"q":"「______」：形容说话小心，严守秘密。","opts":["守口如瓶","众志成城","胸有成竹","画龙点睛"],"ans":0,"why":"闭口像塞瓶一样，比喻不泄密。","word":"守口如瓶"},
+  {"q":"「______」：比喻长期坚持，力量虽小也能成功。","opts":["水滴石穿","对牛弹琴","门可罗雀","千钧一发"],"ans":0,"why":"水珠长期滴落能穿石，比喻持之以恒。","word":"水滴石穿"},
+  {"q":"「______」：比喻只要肯下苦功，必能成功。","opts":["磨杵成针","对牛弹琴","门可罗雀","千钧一发"],"ans":0,"why":"老妇磨铁杵成针，比喻持之以恒终能成功。","word":"磨杵成针"},
+  {"q":"「______」：比喻行动和目的相反。","opts":["南辕北辙","一路顺风","殊途同归","并驾齐驱"],"ans":0,"why":"车头朝南却要去北边，比喻行动与目的相反。","word":"南辕北辙"},
+  {"q":"「______」：比喻没有眼力，取舍不当。","opts":["买椟还珠","去伪存真","物美价廉","货真价实"],"ans":0,"why":"买了盒子却退还珍珠，比喻取舍不当。","word":"买椟还珠"},
+  {"q":"「______」：比喻受过惊吓的人遇到一点动静就非常害怕。","opts":["惊弓之鸟","胆大包天","临危不惧","初生牛犊"],"ans":0,"why":"被弓箭吓过的鸟听见弦响就坠落，比喻心有余悸。","word":"惊弓之鸟"},
+  {"q":"「______」：比喻双方相持不下，第三者趁机得利。","opts":["鹬蚌相争","同舟共济","守望相助","齐心协力"],"ans":0,"why":"鹬和蚌互不相让，渔翁把它们一起捉走。","word":"鹬蚌相争"},
+  {"q":"「______」：比喻一时虽然受到损失，也许反而因此得到好处。","opts":["塞翁失马","一无所获","血本无归","得不偿失"],"ans":0,"why":"边塞老翁丢了马，马却带回一群好马。","word":"塞翁失马"},
+  {"q":"「______」：比喻对事物只凭片面的了解就乱加猜测。","opts":["盲人摸象","一目了然","明察秋毫","洞若观火"],"ans":0,"why":"盲人各摸大象一部分，说的都不是全貌。","word":"盲人摸象"},
+  {"q":"「______」：比喻说的人多了，就能使人们把谣言当事实。","opts":["三人成虎","一言九鼎","说一不二","有口皆碑"],"ans":0,"why":"三个人都说城里有虎，大家就信了。","word":"三人成虎"},
+  {"q":"「______」：画个饼不能真吃，比喻空想不能解决实际问题。","opts":["画饼充饥","丰衣足食","饱食终日","自给自足"],"ans":0,"why":"画个饼子不能吃，比喻空想无用。","word":"画饼充饥"},
+  {"q":"「______」：比喻读书学习不加分析地笼统接受。","opts":["囫囵吞枣","细嚼慢咽","融会贯通","举一反三"],"ans":0,"why":"整个枣吞下去不辨滋味，比喻笼统接受不求甚解。","word":"囫囵吞枣"},
+  {"q":"「______」：比喻胡乱模仿别人，效果反而变坏。","opts":["东施效颦","青出于蓝","独辟蹊径","别具一格"],"ans":0,"why":"东施学西施皱眉头，反而更难看。","word":"东施效颦"},
+  {"q":"「______」：比喻在行家面前卖弄本领。","opts":["班门弄斧","深藏不露","不耻下问","虚怀若谷"],"ans":0,"why":"在鲁班门前舞弄斧头，比喻不自量力。","word":"班门弄斧"},
+  {"q":"「______」：比喻故意颠倒黑白，混淆是非。","opts":["指鹿为马","实事求是","明辨是非","一是一二是二"],"ans":0,"why":"赵高指着鹿硬说是马，比喻颠倒黑白。","word":"指鹿为马"},
+  {"q":"「______」：比喻反复无常，变来变去。","opts":["朝三暮四","始终如一","一诺千金","言行一致"],"ans":0,"why":"早上三个晚上四个，比喻常常变卦。","word":"朝三暮四"},
+  {"q":"「______」：比喻做法不谨慎，反而使对方有了戒备。","opts":["打草惊蛇","引蛇出洞","顺藤摸瓜","瓮中捉鳖"],"ans":0,"why":"打了草惊动了蛇，比喻行动泄密惊动对方。","word":"打草惊蛇"},
+  {"q":"「______」：比喻趁人不备随手拿走别人的东西。","opts":["顺手牵羊","路不拾遗","拾金不昧","完璧归赵"],"ans":0,"why":"顺手把人家的羊牵走，指乘机拿走东西。","word":"顺手牵羊"},
+  {"q":"「______」：比喻只顾眼前利益而不知祸害将至。","opts":["螳螂捕蝉","未雨绸缪","防患未然","高瞻远瞩"],"ans":0,"why":"螳螂想捕蝉，不知黄雀在身后。","word":"螳螂捕蝉"},
+  {"q":"「______」：比喻拿假的东西冒充真的。","opts":["鱼目混珠","货真价实","真材实料","去伪存真"],"ans":0,"why":"鱼眼睛冒充珍珠，比喻以假乱真。","word":"鱼目混珠"},
+  {"q":"「______」：比喻被局部现象蒙蔽，看不清全局。","opts":["一叶障目","高瞻远瞩","一目十行","明察秋毫"],"ans":0,"why":"一片叶子挡住眼睛，就看不见泰山。","word":"一叶障目"}
+];/*opts-shuffle:IDIOMS*/(function(){for(var i=0;i<IDIOMS.length;i++){var it=IDIOMS[i];if(!it||!it.opts||!it.opts.length)continue;var ok=it.opts[it.ans];for(var j=it.opts.length-1;j>0;j--){var r=Math.floor(Math.random()*(j+1));var t=it.opts[j];it.opts[j]=it.opts[r];it.opts[r]=t;}it.ans=it.opts.indexOf(ok);}})();
+;
+function speak(t){ try{ if(!('speechSynthesis'in window))return; window.speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance(t); u.lang='zh-CN'; u.rate=.9; window.speechSynthesis.speak(u); }catch(e){} }
+function getStore(){ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; } }
+function setStore(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
+function setScreen(id){ document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('on');}); document.getElementById(id).classList.add('on'); }
+var score=0, answered=0;
+function start(){ score=0; answered=0; setScreen('scrQuiz'); renderQuiz(); }
+function renderQuiz(){
+  var html='';
+  IDIOMS.forEach(function(it,idx){
+    html+='<div class="q" id="q'+idx+'"><div class="qt"><span class="qn">'+(idx+1)+'.</span>'+it.q.replace('______','＿＿')+'<button class="spk" onclick="speak(\''+it.word+'\')">🔊</button></div><div class="opts">';
+    it.opts.forEach(function(op,oi){ html+='<button class="opt" onclick="choose('+idx+','+oi+')" id="o'+idx+'_'+oi+'">'+op+'</button>'; });
+    html+='</div><div class="why" id="w'+idx+'"></div><div id="hw'+idx+'" class="hw-slot"></div></div>';
+  });
+  document.getElementById('quizArea').innerHTML=html;
+  document.getElementById('finishBtn').style.display='none';
+  updateProg();
+  if(window.Handwrite){
+    IDIOMS.forEach(function(it, idx){
+      var hw=Handwrite.create({revealText: it.opts[it.ans], placeholder:'✍️ 在这里用手写答案'});
+      document.getElementById('hw'+idx).appendChild(hw.el);
+      var rb=hw.el.querySelector('.hw-tools .hw-btn:last-child');
+      if(rb) rb.addEventListener('click', function(){ markHW(it, idx, IDIOMS.length); });
+    });
+  }
+}
+function choose(idx,oi){
+  var it=IDIOMS[idx]; var q=document.getElementById('q'+idx);
+  if(q.classList.contains('done-ok')||q.classList.contains('done-no')) return;
+  answered++;
+  var ok = (oi===it.ans);
+  var opts=q.querySelectorAll('.opt');
+  opts.forEach(function(b,i){ b.classList.add('dim'); if(i===it.ans) b.classList.add('ok'); });
+  if(ok){ q.classList.add('done-ok'); score++; } else { q.classList.add('done-no'); opts[oi].classList.add('no'); }
+  var w=document.getElementById('w'+idx); w.textContent='💡 '+it.why; w.classList.add('on');
+  updateProg();
+  if(answered>=IDIOMS.length) document.getElementById('finishBtn').style.display='block';
+}
+function markHW(it, idx, total){
+  var q=document.getElementById('q'+idx);
+  if(q.classList.contains('done-ok')||q.classList.contains('done-no')||q.classList.contains('done-hw')) return;
+  answered++;
+  q.classList.add('done-hw');
+  var w=document.getElementById('w'+idx);
+  if(w){ w.innerHTML='💡 '+it.why; w.classList.add('on'); }
+  updateProg();
+  if(answered>=total) document.getElementById('finishBtn').style.display='block';
+}
+function updateProg(){
+  document.getElementById('progBar').style.width=(answered/IDIOMS.length*100)+'%';
+  document.getElementById('progTxt').textContent='已答 '+answered+' / '+IDIOMS.length;
+}
+function finish(){
+  var pct=Math.round(score/IDIOMS.length*100);
+  document.getElementById('rScore').textContent=score+' / '+IDIOMS.length;
+  document.getElementById('rPct').textContent='正确率 '+pct+'%';
+  var stars = pct>=90?'⭐⭐⭐':pct>=70?'⭐⭐':'⭐';
+  document.getElementById('rStars').textContent=stars;
+  var pass = score/IDIOMS.length>=0.8;
+  document.getElementById('rPass').innerHTML = pass?'<span class="pass">🎊 通关！成语小能手</span>':'<span class="fail">再练练，争取通关 80%</span>';
+  if(score>(store.best||0)){ store.best=score; setStore(store); }
+  if(pass) showCeleb();
+  setScreen('scrReport');
+}
+function resetBest(){ if(confirm('确定清空最佳对题记录？')){ setStore({best:0}); store={best:0}; document.getElementById('bestNum').textContent='0'; } }
+function goMenu(){ setScreen('scrMenu'); }
+function showCeleb(){ var c=document.getElementById('celeb'); c.style.display='flex'; }
+function closeCeleb(){ document.getElementById('celeb').style.display='none'; }
+(function init(){
+  var s=Portal.getSession(); CHILD=(s&&s.child)?s.child:'user'; KEY='idiom-'+CHILD; store=getStore();
+  document.getElementById('dateStr').textContent=new Date().toLocaleDateString('zh-CN');
+  document.getElementById('totalNum').textContent=IDIOMS.length;
+  document.getElementById('bestNum').textContent=store.best||0;
+})();
+</script>
+<script src="handwrite.js"></script>
+</body>
+</html>

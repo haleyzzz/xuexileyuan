@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>分级阅读 · 兄弟阅读乐园</title>
+<script src="accounts.js"></script>
+<script src="study-time.js"></script>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --bg1:#eef4ff; --bg2:#fff0f6; --card:#fff; --ink:#2b2d42; --sub:#7a7f9a;
+    --brand:#4cc9f0; --brand2:#7b6cff; --pink:#ff8fab; --green:#06d6a0; --gold:#ffd166;
+    --zach:#4cc9f0; --zor:#ff8fab;
+  }
+  html,body{margin:0;padding:0;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;color:var(--ink)}
+  body{background:linear-gradient(135deg,var(--bg1),var(--bg2));min-height:100vh}
+  .wrap{max-width:760px;margin:0 auto;padding:14px 14px 40px}
+  .hide{display:none!important}
+  .topbar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .topbar .who{display:flex;align-items:center;gap:8px;font-weight:800;font-size:16px}
+  .topbar .ava{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+  .topbar .pts{margin-left:auto;background:#fff;border-radius:999px;padding:6px 14px;font-weight:800;color:var(--brand2);box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .btn{border:none;border-radius:16px;padding:13px 18px;font-size:16px;font-weight:800;cursor:pointer;background:var(--brand);color:#fff;box-shadow:0 6px 16px rgba(76,201,240,.35);transition:transform .08s}
+  .btn:active{transform:scale(.96)}
+  .btn.ghost{background:#fff;color:var(--ink);box-shadow:0 4px 12px rgba(0,0,0,.08)}
+  .btn.pink{background:var(--pink);box-shadow:0 6px 16px rgba(255,143,171,.4)}
+  .btn.green{background:var(--green);box-shadow:0 6px 16px rgba(6,214,160,.35)}
+  .btn.sm{padding:9px 14px;font-size:14px;border-radius:12px}
+
+  /* 登录门 */
+  #gate{display:flex;flex-direction:column;align-items:center;padding-top:8vh;min-height:78vh}
+  #gate h1{font-size:26px;margin:0 0 4px;text-align:center}
+  #gate .sub{color:var(--sub);margin-bottom:26px;text-align:center}
+  .gate-cards{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;width:100%;max-width:560px}
+  .gcard{width:160px;height:200px;border-radius:26px;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;transition:transform .1s}
+  .gcard:active{transform:scale(.96)}
+  .gcard .face{width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:46px}
+  .gcard .nm{font-weight:900;font-size:19px}
+  .gcard .rl{color:var(--sub);font-size:13px}
+  .gcard.g-zach .face{background:#e6f8ff}
+  .gcard.g-zor .face{background:#ffe9f1}
+  .gcard.g-par .face{background:#eef0ff}
+
+  /* 进度概览 */
+  .hero{border-radius:24px;padding:18px;color:#fff;margin-bottom:14px;background:linear-gradient(135deg,var(--brand),var(--brand2))}
+  .hero.zor{background:linear-gradient(135deg,var(--pink),#ff6b9d)}
+  .hero .h-top{display:flex;align-items:center;gap:12px}
+  .hero .h-ava{width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:30px}
+  .hero .h-name{font-size:20px;font-weight:900}
+  .hero .h-role{font-size:13px;opacity:.9}
+  .hero .h-count{margin-left:auto;text-align:right}
+  .hero .h-count b{font-size:30px}
+  .hero .h-count span{font-size:13px;opacity:.9}
+  .pbar{height:14px;border-radius:999px;background:rgba(255,255,255,.3);overflow:hidden;margin-top:14px}
+  .pbar i{display:block;height:100%;background:#fff;border-radius:999px;transition:width .4s}
+
+  /* 区块 */
+  .sect{background:var(--card);border-radius:22px;padding:16px;margin-bottom:14px;box-shadow:0 6px 18px rgba(0,0,0,.06)}
+  .sect h3{margin:0 0 12px;font-size:16px;display:flex;align-items:center;gap:8px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+
+  /* 奖励 */
+  .badges{display:flex;gap:10px;flex-wrap:wrap}
+  .badge{width:72px;text-align:center}
+  .badge .b-ic{width:56px;height:56px;border-radius:16px;background:#fff4dc;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 4px;box-shadow:0 4px 10px rgba(0,0,0,.08)}
+  .badge.lock .b-ic{background:#f0f0f5;filter:grayscale(1);opacity:.5}
+  .badge .b-lb{font-size:11px;color:var(--sub);line-height:1.2}
+  .unlocks{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}
+  .unlock{background:#f4f1ff;border-radius:14px;padding:8px 12px;font-size:13px;font-weight:700;color:var(--brand2)}
+  .unlock.lock{background:#f0f0f5;color:#b6b6c2}
+  .next-ms{margin-top:12px;font-size:13px;color:var(--sub);background:#f6f8ff;border-radius:12px;padding:10px 12px}
+
+  /* 书架 */
+  .filters{display:flex;gap:7px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px}
+  .chip{flex:0 0 auto;border:none;border-radius:999px;padding:8px 13px;font-size:13px;font-weight:700;background:#eef0f7;color:var(--sub);cursor:pointer;white-space:nowrap}
+  .chip.on{background:var(--brand);color:#fff}
+  .search{width:100%;border:2px solid #eef0f7;border-radius:14px;padding:11px 14px;font-size:15px;margin-bottom:12px;outline:none}
+  .search:focus{border-color:var(--brand)}
+  .books{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+  .book{background:#fff;border-radius:18px;padding:14px;box-shadow:0 6px 16px rgba(0,0,0,.06);cursor:pointer;position:relative;transition:transform .08s;border:2px solid transparent}
+  .book:active{transform:scale(.97)}
+  .book.read{border-color:var(--green)}
+  .book .emo{font-size:40px;text-align:center;margin-bottom:6px}
+  .book .bt{font-weight:800;font-size:14px;line-height:1.3;height:36px;overflow:hidden}
+  .book .bm{display:flex;gap:5px;align-items:center;margin-top:8px;font-size:11px;color:var(--sub);flex-wrap:wrap}
+  .book .tag{background:#eef0f7;border-radius:8px;padding:2px 7px;font-weight:700}
+  .book .tag.lv{background:#e6f8ff;color:#1b9fd6}
+  .book .check{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900}
+  .pager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:14px;color:var(--sub);font-size:14px}
+
+  /* 阅读器 */
+  #reader{position:fixed;inset:0;background:linear-gradient(135deg,var(--bg1),var(--bg2));z-index:60;overflow:auto;padding:14px}
+  #reader .r-top{display:flex;align-items:center;gap:10px;max-width:760px;margin:0 auto 10px}
+  #reader .r-ava{width:40px;height:40px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+  #reader .r-title{font-weight:900;font-size:17px}
+  #reader .r-lv{color:var(--sub);font-size:12px}
+  #reader .page{max-width:760px;margin:0 auto;background:#fff;border-radius:26px;padding:30px 22px;min-height:54vh;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(0,0,0,.1)}
+  #reader .page .p-emo{font-size:96px;margin-bottom:18px}
+  #reader .page .p-text{font-size:26px;font-weight:800;line-height:1.6;text-align:center}
+  #reader .page .p-text .w{padding:2px 3px;border-radius:8px;transition:background .1s}
+  #reader .page .p-text .w.on{background:var(--gold);color:#5a4500}
+  #reader .r-nav{display:flex;gap:10px;justify-content:center;margin:16px auto;max-width:760px}
+  #reader .r-ctrls{display:flex;gap:10px;justify-content:center;margin:0 auto 20px;max-width:760px;flex-wrap:wrap}
+
+  /* 家长面板 */
+  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .cmp .col{background:#fff;border-radius:18px;padding:14px;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .cmp .col h4{margin:0 0 8px;display:flex;align-items:center;gap:6px}
+  .cmp .col .ava{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:19px}
+  .lvbars{margin-top:8px}
+  .lvbar{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12px}
+  .lvbar .lb-n{width:54px;color:var(--sub);flex:0 0 auto}
+  .lvbar .lb-t{flex:1;height:10px;border-radius:999px;background:#eef0f7;overflow:hidden}
+  .lvbar .lb-t i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--brand2))}
+  .lvbar .lb-c{width:48px;text-align:right;color:var(--sub);flex:0 0 auto}
+  .recent{margin-top:8px;font-size:12px;color:var(--sub);line-height:1.7}
+  .pinbox{margin-top:12px;background:#f6f8ff;border-radius:12px;padding:10px 12px}
+  .pinbox label{font-size:13px;font-weight:700;display:block;margin-bottom:6px}
+  .pinbox input{width:120px;border:2px solid #eef0f7;border-radius:10px;padding:8px;font-size:16px;letter-spacing:6px;text-align:center;outline:none}
+  .pinbox input:focus{border-color:var(--brand)}
+
+  /* 数字键盘 */
+  #pinMask{position:fixed;inset:0;background:rgba(20,20,40,.55);z-index:80;display:flex;align-items:center;justify-content:center}
+  #pinMask .pk{background:#fff;border-radius:24px;padding:22px;width:280px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+  #pinMask .pk .pk-ava{font-size:46px}
+  #pinMask .pk .pk-nm{font-weight:900;font-size:18px;margin:6px 0 14px}
+  #pinMask .pk .pk-dots{display:flex;gap:10px;justify-content:center;margin-bottom:16px}
+  #pinMask .pk .pk-dots i{width:14px;height:14px;border-radius:50%;background:#e0e0ea;display:inline-block}
+  #pinMask .pk .pk-dots i.on{background:var(--brand2)}
+  #pinMask .pk-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  #pinMask .pk-keys button{border:none;border-radius:14px;padding:14px;font-size:20px;font-weight:800;background:#f0f1f8;cursor:pointer}
+  #pinMask .pk-keys button:active{background:#e2e4f0}
+  #pinMask .pk-keys .pk-del{color:var(--pink)}
+  .toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);background:rgba(30,30,50,.92);color:#fff;padding:12px 22px;border-radius:999px;font-weight:700;z-index:90;opacity:0;transition:opacity .25s;pointer-events:none}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 登录门 -->
+  <div id="gate">
+    <h1>📚 兄弟阅读乐园</h1>
+    <div class="sub">1000 本分级读物 · 哥哥和弟弟各读各的</div>
+    <div class="gate-cards">
+      <div class="gcard g-zach" onclick="login('zachary')">
+        <div class="face">🦊</div><div class="nm">Zachary</div><div class="rl">哥哥</div>
+      </div>
+      <div class="gcard g-zor" onclick="login('zoran')">
+        <div class="face">🐰</div><div class="nm">Zoran</div><div class="rl">弟弟</div>
+      </div>
+      <div class="gcard g-par" onclick="openParent()">
+        <div class="face">👩</div><div class="nm">家长</div><div class="rl">查看两人</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 主页 -->
+  <div id="home" class="hide">
+    <div class="topbar">
+      <div class="who"><span class="ava" id="hAva">🦊</span><span id="hName">Zachary</span></div>
+      <div class="pts">⭐ <span id="hPts">0</span></div>
+    </div>
+    <div class="hero" id="hHero">
+      <div class="h-top">
+        <div class="h-ava" id="hhAva">🦊</div>
+        <div><div class="h-name" id="hhName">Zachary</div><div class="h-role" id="hhRole">哥哥</div></div>
+        <div class="h-count"><b id="hhDone">0</b> <span>/ 1000 本</span></div>
+      </div>
+      <div class="pbar"><i id="hhBar" style="width:0%"></i></div>
+    </div>
+
+    <div class="sect">
+      <h3>🏅 我的奖励</h3>
+      <div class="badges" id="badges"></div>
+      <div class="unlocks" id="unlocks"></div>
+      <div class="next-ms" id="nextMs"></div>
+    </div>
+
+    <div class="sect">
+      <h3>📖 我的书架</h3>
+      <div class="row">
+        <button class="btn" onclick="goLibrary()">去书架读书 →</button>
+        <button class="btn ghost sm" onclick="logout()">切换用户</button>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h3>📊 分级进度</h3>
+      <div id="homeLevels" class="lvbars"></div>
+    </div>
+  </div>
+
+  <!-- 书架 -->
+  <div id="library" class="hide">
+    <div class="topbar">
+      <div class="who"><span class="ava" id="lAva">🦊</span><span id="lName">Zachary</span></div>
+      <div class="pts">⭐ <span id="lPts">0</span></div>
+    </div>
+    <div class="sect">
+      <input class="search" id="search" placeholder="🔍 搜书名…" oninput="onSearch()">
+      <div class="filters" id="levelFilters"></div>
+      <div class="books" id="books"></div>
+      <div class="pager">
+        <button class="btn ghost sm" onclick="prevPage()">‹ 上一页</button>
+        <span id="pageInfo">第 1 / 1 页</span>
+        <button class="btn ghost sm" onclick="nextPage()">下一页 ›</button>
+      </div>
+    </div>
+    <button class="btn ghost" style="width:100%" onclick="goHome()">← 返回主页</button>
+  </div>
+
+  <!-- 家长面板 -->
+  <div id="parent" class="hide">
+    <div class="topbar">
+      <div class="who"><span class="ava">👩</span><span>家长面板</span></div>
+      <button class="btn ghost sm" onclick="logout()">退出</button>
+    </div>
+    <div class="sect">
+      <h3>👀 两人整体阅读情况</h3>
+      <div class="cmp">
+        <div class="col" id="parZach"></div>
+        <div class="col" id="parZor"></div>
+      </div>
+      <div class="next-ms" id="parSummary" style="margin-top:12px"></div>
+    </div>
+    <div class="sect">
+      <h3>🔐 设置登录密码（4 位数字，可选）</h3>
+      <div class="pinbox">
+        <label>Zachary 密码</label>
+        <input id="pinZach" maxlength="4" inputmode="numeric" placeholder="留空=无密码">
+      </div>
+      <div class="pinbox">
+        <label>Zoran 密码</label>
+        <input id="pinZor" maxlength="4" inputmode="numeric" placeholder="留空=无密码">
+      </div>
+      <button class="btn sm" onclick="savePins()">保存密码</button>
+    </div>
+    <button class="btn ghost" style="width:100%" onclick="showGate()">← 返回登录</button>
+  </div>
+
+</div>
+
+<!-- 阅读器 -->
+<div id="reader" class="hide">
+  <div class="r-top">
+    <div class="r-ava" id="rAva">🦊</div>
+    <div><div class="r-title" id="rTitle">书名</div><div class="r-lv" id="rLv">Level</div></div>
+    <button class="btn ghost sm" style="margin-left:auto" onclick="closeReader()">✕ 关闭</button>
+  </div>
+  <div class="page">
+    <div class="p-emo" id="pEmo">📖</div>
+    <div class="p-text" id="pText"></div>
+  </div>
+  <div class="r-nav">
+    <button class="btn ghost" onclick="prevPageReader()">‹ 上一页</button>
+    <span id="rPageInfo" style="align-self:center;color:var(--sub);font-weight:700"></span>
+    <button class="btn ghost" onclick="nextPageReader()">下一页 ›</button>
+  </div>
+  <div class="r-ctrls">
+    <button class="btn" id="rPlay" onclick="playPage()">🔊 听一听</button>
+    <button class="btn" style="background:#ff7a59" onclick="toggleGloss('rGloss')">🔤逐字</button>
+    <button class="btn green" id="rCheck" onclick="checkCurrent()">✅ 读完打卡</button>
+  </div>
+  <div class="pgloss" id="rGloss" style="margin:0 8px 14px"></div>
+</div>
+
+<!-- 数字键盘 -->
+<div id="pinMask" class="hide">
+  <div class="pk">
+    <div class="pk-ava" id="pkAva">🦊</div>
+    <div class="pk-nm" id="pkNm">Zachary</div>
+    <div class="pk-dots" id="pkDots"><i></i><i></i><i></i><i></i></div>
+    <div class="pk-keys" id="pkKeys"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="util.js"></script>
+<script src="speech.js"></script>
+<script src="readers-data.js"></script>
+<script src="rope-particles.js"></script>
+<script src="gloss.js"></script>
+<script src="resume.js"></script>
+<script>
+/* ===================== 配置与状态 ===================== */
+var USERS = {
+  zachary:{ id:'zachary', name:'Zachary', role:'哥哥', emoji:'🦊', color:'var(--zach)' },
+  zoran:  { id:'zoran',   name:'Zoran',   role:'弟弟', emoji:'🐰', color:'var(--zor)' }
+};
+var UNLOCKS = { 50:'🎨 贴纸册', 100:'📜 成就证书', 200:'🌳 阅读树', 500:'🏆 金奖杯', 1000:'👑 阅读大师' };
+var MACARON = ['#ffafcc','#a2d2ff','#b9fbc0','#cdb4db','#ffe687','#ffd6a5'];
+var RMAP = {}; READERS.forEach(function(b){ RMAP[b.id]=b; });
+var LEVELS = window.READER_LEVELS;
+function defaultLevelForGrade(g){
+  if(g==null || g===undefined) return 'ALL';
+  if(g===0) return 'L1'; // 幼儿园(3-4岁) → 幼儿启蒙
+  var prefix = 'G'+g;
+  for(var i=0;i<LEVELS.length;i++){
+    if(LEVELS[i].grade && LEVELS[i].grade.indexOf(prefix)===0) return LEVELS[i].code;
+  }
+  return 'ALL';
+}
+var state = { uid:null, book:null, page:0, pageSpans:null, pageStart:null, playing:false, filter:'ALL', search:'', pageIdx:0, pinUid:null, pinInput:'' };
+
+/* ===================== 存储（双账户隔离） ===================== */
+function storeKey(uid){ return 'reader2_'+uid; }
+function getStore(uid){
+  try{ return JSON.parse(localStorage.getItem(storeKey(uid))) || {read:{},points:0,badges:[],unlocks:[]}; }
+  catch(e){ return {read:{},points:0,badges:[],unlocks:[]}; }
+}
+function setStore(uid,s){ try{ localStorage.setItem(storeKey(uid), JSON.stringify(s)); }catch(e){} }
+function isRead(uid,bid){ return !!getStore(uid).read[bid]; }
+function readCount(uid){ return Object.keys(getStore(uid).read).length; }
+function setRead(uid,bid,val){
+  var s=getStore(uid);
+  if(val) s.read[bid]=Date.now(); else delete s.read[bid];
+  setStore(uid,s);
+}
+function getCfg(){ try{ return JSON.parse(localStorage.getItem('reader2_cfg'))||{}; }catch(e){ return {}; } }
+function setCfg(c){ try{ localStorage.setItem('reader2_cfg', JSON.stringify(c)); }catch(e){} }
+
+/* ===================== 奖励逻辑 ===================== */
+function awardAfterRead(uid){
+  var s=getStore(uid);
+  var n=Object.keys(s.read).length;
+  if(n>0 && n%10===0){
+    s.badges.push({ n:n, icon:'🏅', label:n+'本徽章' });
+    s.points=(s.points||0)+50;
+    var unlock=null;
+    if(UNLOCKS[n] && s.unlocks.indexOf(n)<0){ s.unlocks.push(n); unlock={n:n,label:UNLOCKS[n]}; }
+    setStore(uid,s);
+    return { milestone:true, n:n, unlock:unlock };
+  }
+  setStore(uid,s);
+  return { milestone:false };
+}
+function nextMilestone(uid){
+  var n=readCount(uid);
+  var next=Math.ceil((n+1)/10)*10;
+  if(next>1000) return null;
+  return { next:next, left:next-n };
+}
+
+/* ===================== 视图切换 ===================== */
+function show(id){ ['gate','home','library','parent'].forEach(function(v){ document.getElementById(v).classList.toggle('hide', v!==id); }); }
+function showGate(){ state.uid=null; closeReader(); show('gate'); }
+
+function toast(msg){
+  var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t=setTimeout(function(){ t.classList.remove('show'); },1900);
+}
+function celebrateWav(){ try{ var a=new Audio('celebrate.wav'); a.play().catch(function(){}); }catch(e){} }
+function confetti(big){ if(window.RopeParticles) window.RopeParticles.burst({count:big?170:90,colors:MACARON,gravity:0.07,spread:7,originY:0.4}); }
+
+/* ===================== 登录 ===================== */
+function login(uid){
+  var cfg=getCfg();
+  var pin=cfg['pin_'+uid];
+  if(pin){ openPin(uid); return; }
+  enterUser(uid);
+}
+function enterUser(uid){
+  state.uid=uid; if(window.StudyTime) StudyTime.track(state.uid, 'reader'); renderHome(); show('home');
+  if(uid==='zoran' && window.Accounts && Accounts.toddler){ Accounts.toddler.start('zoran'); }
+  else { var b=document.getElementById('accToddlerBar'); if(b&&b.parentNode) b.parentNode.removeChild(b); document.body.classList.remove('has-tbar'); }
+}
+function logout(){ showGate(); }
+
+/* 数字键盘 */
+function openPin(uid){
+  state.pinUid=uid; state.pinInput='';
+  var u=USERS[uid];
+  document.getElementById('pkAva').textContent=u.emoji;
+  document.getElementById('pkNm').textContent=u.name;
+  renderPinDots();
+  var keys=document.getElementById('pkKeys'); keys.innerHTML='';
+  var layout=['1','2','3','4','5','6','7','8','9','⌫','0','✓'];
+  layout.forEach(function(k){
+    var b=document.createElement('button');
+    b.textContent=k; if(k==='⌫') b.className='pk-del';
+    b.onclick=function(){ onPinKey(k); };
+    keys.appendChild(b);
+  });
+  document.getElementById('pinMask').classList.remove('hide');
+}
+function renderPinDots(){
+  var dots=document.getElementById('pkDots').children;
+  for(var i=0;i<4;i++) dots[i].classList.toggle('on', i<state.pinInput.length);
+}
+function onPinKey(k){
+  if(k==='⌫'){ state.pinInput=state.pinInput.slice(0,-1); }
+  else if(k==='✓'){ submitPin(); return; }
+  else if(/^[0-9]$/.test(k) && state.pinInput.length<4){ state.pinInput+=k; }
+  renderPinDots();
+}
+function submitPin(){
+  var cfg=getCfg(); var pin=cfg['pin_'+state.pinUid]||'';
+  if(state.pinInput===pin){ document.getElementById('pinMask').classList.add('hide'); enterUser(state.pinUid); }
+  else { toast('密码不对，再试试'); state.pinInput=''; renderPinDots(); }
+}
+
+/* ===================== 主页 ===================== */
+function renderHome(){
+  var uid=state.uid, u=USERS[uid], s=getStore(uid), n=Object.keys(s.read).length, pct=Math.round(n/1000*100);
+  var hero=document.getElementById('hHero');
+  hero.className='hero'+(uid==='zoran'?' zor':'');
+  document.getElementById('hAva').textContent=u.emoji;
+  document.getElementById('hName').textContent=u.name;
+  document.getElementById('hPts').textContent=s.points||0;
+  document.getElementById('lAva').textContent=u.emoji;
+  document.getElementById('lName').textContent=u.name;
+  document.getElementById('lPts').textContent=s.points||0;
+  document.getElementById('rAva').textContent=u.emoji;
+  document.getElementById('hhAva').textContent=u.emoji;
+  document.getElementById('hhName').textContent=u.name;
+  document.getElementById('hhRole').textContent=u.role;
+  document.getElementById('hhDone').textContent=n;
+  document.getElementById('hhBar').style.width=pct+'%';
+
+  // 徽章
+  var badges=document.getElementById('badges'); badges.innerHTML='';
+  var earned=s.badges||[];
+  earned.slice().reverse().slice(0,8).forEach(function(b){
+    var d=document.createElement('div'); d.className='badge';
+    d.innerHTML='<div class="b-ic">'+b.icon+'</div><div class="b-lb">'+b.label+'</div>'; badges.appendChild(d);
+  });
+  if(earned.length===0){ badges.innerHTML='<div style="color:var(--sub);font-size:13px">读完 10 本就能拿到第一枚徽章 🏅</div>'; }
+  // 解锁
+  var un=document.getElementById('unlocks'); un.innerHTML='';
+  Object.keys(UNLOCKS).map(Number).forEach(function(th){
+    var got=(s.unlocks||[]).indexOf(th)>=0;
+    var d=document.createElement('div'); d.className='unlock'+(got?'':' lock');
+    d.textContent=(got?'✅ ':'🔒 ')+th+'本 → '+UNLOCKS[th]; un.appendChild(d);
+  });
+  // 下一里程碑
+  var nm=nextMilestone(uid);
+  document.getElementById('nextMs').innerHTML = nm
+    ? '再读 <b>'+nm.left+'</b> 本，就能获得「'+nm.next+'本徽章」'+(UNLOCKS[nm.next]?' 并解锁 '+UNLOCKS[nm.next]:'')+'！'
+    : '🎉 1000 本全部读完，你是真正的阅读大师！';
+
+  renderHomeLevels(uid);
+}
+function renderHomeLevels(uid){
+  var box=document.getElementById('homeLevels'); box.innerHTML='';
+  var s=getStore(uid);
+  LEVELS.forEach(function(lv){
+    var books=READERS.filter(function(b){return b.level===lv.code;});
+    var done=books.filter(function(b){return s.read[b.id];}).length;
+    var pct=books.length?Math.round(done/books.length*100):0;
+    var row=document.createElement('div'); row.className='lvbar';
+    row.innerHTML='<span class="lb-n">'+lv.name+'</span><span class="lb-t"><i style="width:'+pct+'%"></i></span><span class="lb-c">'+done+'/'+books.length+'</span>';
+    box.appendChild(row);
+  });
+}
+
+/* ===================== 书架 ===================== */
+function goLibrary(){
+  var g = (typeof Accounts!=='undefined') ? Accounts.gradeOf(state.uid) : null;
+  state.filter = (state.uid!=null) ? defaultLevelForGrade(g) : 'ALL';
+  state.search=''; state.pageIdx=0;
+  var sb=document.getElementById('search'); if(sb) sb.value='';
+  renderLevelFilters(); renderBooks(); show('library');
+}
+function goHome(){ renderHome(); show('home'); }
+function renderLevelFilters(){
+  var box=document.getElementById('levelFilters'); box.innerHTML='';
+  var all=document.createElement('button'); all.className='chip'+(state.filter==='ALL'?' on':''); all.textContent='全部';
+  all.onclick=function(){ state.filter='ALL'; state.pageIdx=0; renderLevelFilters(); renderBooks(); };
+  box.appendChild(all);
+  LEVELS.forEach(function(lv){
+    var b=document.createElement('button'); b.className='chip'+(state.filter===lv.code?' on':'');
+    b.textContent=lv.name+' ('+lv.age+')';
+    b.onclick=function(){ state.filter=lv.code; state.pageIdx=0; renderLevelFilters(); renderBooks(); };
+    box.appendChild(b);
+  });
+}
+function filteredBooks(){
+  var list=READERS;
+  if(state.filter!=='ALL') list=list.filter(function(b){return b.level===state.filter;});
+  if(state.search){ var q=state.search.toLowerCase(); list=list.filter(function(b){return b.title.toLowerCase().indexOf(q)>=0;}); }
+  return list;
+}
+function renderBooks(){
+  var list=filteredBooks();
+  var per=24, total=Math.max(1,Math.ceil(list.length/per));
+  if(state.pageIdx>=total) state.pageIdx=total-1;
+  if(state.pageIdx<0) state.pageIdx=0;
+  var slice=list.slice(state.pageIdx*per, state.pageIdx*per+per);
+  var box=document.getElementById('books'); box.innerHTML='';
+  var uid=state.uid;
+  slice.forEach(function(b){
+    var read=isRead(uid,b.id);
+    var d=document.createElement('div'); d.className='book'+(read?' read':'');
+    var fic=b.type==='nonfiction'?'科普':'故事';
+    d.innerHTML='<div class="emo">'+b.emoji+'</div><div class="bt">'+b.title+'</div>'+
+      '<div class="bm"><span class="tag lv">'+b.levelName+'</span><span class="tag">'+b.age+'</span><span class="tag">'+fic+'</span></div>'+
+      (read?'<div class="check">✓</div>':'');
+    d.onclick=function(){ openBook(b); };
+    box.appendChild(d);
+  });
+  document.getElementById('pageInfo').textContent='第 '+(state.pageIdx+1)+' / '+total+' 页 · 共 '+list.length+' 本';
+}
+function onSearch(){ state.search=document.getElementById('search').value.trim(); state.pageIdx=0; renderBooks(); }
+function prevPage(){ if(state.pageIdx>0){ state.pageIdx--; renderBooks(); } }
+function nextPage(){ state.pageIdx++; renderBooks(); }
+
+/* ===================== 阅读器 ===================== */
+function openBook(b){
+  state.book=b;
+  // 断点续学：打开上次在读的同一本书时，直接续到上次那一页
+  state.page = (window.Resume ? (Resume.get('reader2', state.uid, 'book_'+b.id) || 0) : 0);
+  renderPage(); document.getElementById('reader').classList.remove('hide');
+  document.getElementById('rTitle').textContent=b.title;
+  document.getElementById('rLv').textContent=b.levelName+' · '+b.age+' · '+(b.type==='nonfiction'?'科普':'故事');
+  window.scrollTo(0,0);
+}
+function closeReader(){ document.getElementById('reader').classList.add('hide'); speechSynthesis.cancel(); }
+function renderPage(){
+  var b=state.book; if(!b) return;
+  var p=b.pages[state.page];
+  document.getElementById('pEmo').textContent=p.emoji;
+  var host=document.getElementById('pText'); host.innerHTML='';
+  var parts=p.text.split(/(\s+)/);
+  var spans=[]; var wstart=[]; var ci=0;
+  parts.forEach(function(part){
+    if(part===''||/^\s+$/.test(part)){ var sp=document.createElement('span'); sp.textContent=part; host.appendChild(sp); return; }
+    var s=document.createElement('span'); s.className='w'; s.textContent=part; host.appendChild(s);
+    spans.push(s); wstart.push(ci); ci+=part.length;
+  });
+  state.pageSpans=spans; state.pageStart=wstart;
+  document.getElementById('rPageInfo').textContent='第 '+(state.page+1)+' / '+b.pages.length+' 页';
+  var rg=document.getElementById('rGloss');
+  if(rg){ rg.setAttribute('data-en', p.text); rg.removeAttribute('data-filled'); rg.classList.remove('on'); }
+  // 记录当前页码，供下次断点续学
+  if(window.Resume) Resume.set('reader2', state.uid, 'book_'+b.id, state.page);
+}
+// 逐字翻译：显示当前页英文词对词中文（依赖 gloss.js）
+function toggleGloss(id){
+  var el=document.getElementById(id); if(!el || !window.Gloss) return;
+  if(el.getAttribute('data-filled')!=='1'){
+    el.innerHTML=Gloss.buildPGlossHTML(el.getAttribute('data-en')||'');
+    el.setAttribute('data-filled','1');
+  }
+  el.classList.toggle('on');
+}
+function wordIndexAt(wstart,charIdx){
+  var lo=0,hi=wstart.length-1,ans=-1;
+  while(lo<=hi){ var mid=(lo+hi)>>1; if(wstart[mid]<=charIdx){ ans=mid; lo=mid+1; } else hi=mid-1; }
+  return ans;
+}
+function highlightWord(spans,i){ spans.forEach(function(s,k){ s.classList.toggle('on', k===i); }); }
+function playPage(){
+  if(!state.book) return;
+  if(!window.speechSynthesis){ toast('当前浏览器不支持发音'); return; }
+  if(!Speech.ensureEnVoice()) return;
+  speechSynthesis.cancel();
+  var text=state.book.pages[state.page].text;
+  var u=new SpeechSynthesisUtterance(text);
+  u.lang=Speech.lang(); u.rate=0.9; u.pitch=1;
+  var v=Speech.pickVoice(); if(v) u.voice=v;
+  u.onboundary=function(e){ var i=wordIndexAt(state.pageStart,e.charIndex); if(i>=0) highlightWord(state.pageSpans,i); };
+  u.onend=function(){ state.pageSpans.forEach(function(s){ s.classList.remove('on'); }); };
+  u.onerror=function(){ state.pageSpans.forEach(function(s){ s.classList.remove('on'); }); };
+  speechSynthesis.speak(u);
+}
+function prevPageReader(){ if(state.page>0){ state.page--; renderPage(); } }
+function nextPageReader(){ if(state.page<state.book.pages.length-1){ state.page++; renderPage(); } }
+function checkCurrent(){
+  if(!state.book) return;
+  var uid=state.uid, bid=state.book.id;
+  if(isRead(uid,bid)){ toast('这本书已经打卡啦 ✓'); return; }
+  setRead(uid,bid,true);
+  var r=awardAfterRead(uid);
+  document.getElementById('rCheck').textContent='✅ 已打卡';
+  setTimeout(function(){ document.getElementById('rCheck').textContent='✅ 读完打卡'; },1500);
+  if(r.milestone){
+    confetti(true); celebrateWav();
+    var msg='🎉 读完 '+r.n+' 本！获得「'+r.n+'本徽章」';
+    if(r.unlock) msg+=' 并解锁 '+r.unlock.label+' 🔓';
+    toast(msg);
+  } else {
+    toast('打卡成功！真棒 🎉');
+  }
+  renderHomeLevels(uid);
+}
+
+/* ===================== 家长面板 ===================== */
+function openParent(){ renderParent(); show('parent'); }
+function childCol(uid){
+  var u=USERS[uid], s=getStore(uid), n=Object.keys(s.read).length;
+  var html='<h4><span class="ava" style="background:'+(uid==='zoran'?'#ffe9f1':'#e6f8ff')+'">'+u.emoji+'</span>'+u.name+'（'+u.role+'）</h4>';
+  html+='<div style="font-size:13px;color:var(--sub)">已读 <b style="color:var(--ink);font-size:16px">'+n+'</b> / 1000 本 · ⭐ '+(s.points||0)+' 分</div>';
+  html+='<div class="lvbars">';
+  LEVELS.forEach(function(lv){
+    var books=READERS.filter(function(b){return b.level===lv.code;});
+    var done=books.filter(function(b){return s.read[b.id];}).length;
+    var pct=books.length?Math.round(done/books.length*100):0;
+    html+='<div class="lvbar"><span class="lb-n">'+lv.name+'</span><span class="lb-t"><i style="width:'+pct+'%"></i></span><span class="lb-c">'+done+'/'+books.length+'</span></div>';
+  });
+  html+='</div>';
+  // 最近在读
+  var recent=Object.keys(s.read).map(function(k){return {id:k,t:s.read[k]};}).sort(function(a,b){return b.t-a.t;}).slice(0,5);
+  if(recent.length){
+    html+='<div class="recent">最近读：'+recent.map(function(r){var b=RMAP[r.id];return (b?b.emoji+' '+b.title:'?');}).join('、')+'</div>';
+  }
+  return html;
+}
+function renderParent(){
+  document.getElementById('parZach').innerHTML=childCol('zachary');
+  document.getElementById('parZor').innerHTML=childCol('zoran');
+  var nz=readCount('zachary'), nr=readCount('zoran');
+  var lead = nz>nr ? 'Zachary 暂时领先 '+nz+' : '+nr : (nr>nz ? 'Zoran 暂时领先 '+nr+' : '+nz : '两人目前打平 '+nz+' : '+nr);
+  document.getElementById('parSummary').innerHTML='📊 兄弟合计已读 <b>'+(nz+nr)+'</b> 本（Zachary '+nz+' · Zoran '+nr+'）。'+lead+'，一起加油！';
+  // PIN 设置回填
+  var cfg=getCfg();
+  document.getElementById('pinZach').value=cfg.pin_zachary||'';
+  document.getElementById('pinZor').value=cfg.pin_zoran||'';
+}
+function savePins(){
+  var cfg=getCfg();
+  var a=document.getElementById('pinZach').value.trim();
+  var b=document.getElementById('pinZor').value.trim();
+  cfg.pin_zachary=/^\d{4}$/.test(a)?a:'';
+  cfg.pin_zoran=/^\d{4}$/.test(b)?b:'';
+  setCfg(cfg);
+  toast('密码已保存'+( (cfg.pin_zachary||cfg.pin_zoran)?'（已设密码的账号登录需输密码）':'' ));
+}
+
+window.__voicePreview=function(){ playPage(); };
+</script>
+<script src="sync.js"></script>
+</body>
+</html>

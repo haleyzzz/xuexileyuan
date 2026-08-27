@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<script src="util.js"></script>
+<script src="speech.js"></script>
+<script src="grammar-data.js"></script>
+<script src="accounts.js"></script>
+<script src="study-time.js"></script>
+<script src="gloss.js"></script>
+<script src="resume.js"></script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>英语语法学习卡</title>
+<style>
+  :root{
+    --bg:#f3f7ff; --card:#ffffff; --ink:#1f2a44; --sub:#6b7794;
+    --brand:#4f7cff; --brand2:#7c5cff; --ok:#27ae60; --warn:#e67e22; --bad:#e24b4a;
+    --hl:#fff3bf; --line:#e6ebf5; --shadow:0 10px 30px rgba(40,70,160,.12);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; font-family:-apple-system,"PingFang SC","Microsoft YaHei",Segoe UI,Roboto,sans-serif;
+    background:linear-gradient(160deg,#eaf1ff,#f7f0ff); color:var(--ink);
+    min-height:100vh; padding:16px; display:flex; flex-direction:column; align-items:center;
+  }
+  .top{ width:100%; max-width:760px; display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .top h1{ font-size:19px; margin:0; flex:1; }
+  .badge{ font-size:12px; color:#fff; background:linear-gradient(135deg,var(--brand),var(--brand2));
+    padding:5px 12px; border-radius:999px; font-weight:600; }
+  .progressbar{ width:100%; max-width:760px; display:flex; align-items:center; gap:10px; margin-bottom:12px; font-size:13px; color:var(--sub); }
+  .progressbar .bar{ flex:1; height:8px; background:#e6ebf5; border-radius:999px; overflow:hidden; }
+  .progressbar .bar > i{ display:block; height:100%; width:0; background:linear-gradient(135deg,var(--brand),var(--brand2)); transition:width .4s; }
+  .scene{ width:100%; max-width:760px; }
+  .card{ background:var(--card); border-radius:22px; box-shadow:var(--shadow); padding:20px; }
+  .bookbar{ display:flex; align-items:center; gap:10px; background:#fff; border:1px solid var(--line);
+    border-radius:14px; padding:9px 12px; margin-bottom:14px; }
+  .bookbar .blabel{ font-size:13px; color:var(--sub); white-space:nowrap; }
+  .bookbar select{ flex:1; padding:8px 10px; border-radius:10px; border:1px solid var(--line); font-size:14px; color:var(--ink); background:#f7f9ff; }
+
+  .sec{ margin:14px 0; }
+  .secttl{ font-size:14px; font-weight:700; color:var(--brand2); margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+  .explain{ line-height:1.8; font-size:15px; background:#f7f9ff; border:1px solid var(--line); border-radius:14px; padding:12px 14px; }
+  .rules{ margin:0; padding-left:20px; line-height:1.9; font-size:14px; }
+  .rules li{ margin-bottom:2px; cursor:pointer; }
+  .rules li .rp{ float:right; color:var(--brand); font-size:13px; user-select:none; }
+  .rules li:active{ color:var(--brand2); }
+  .ex{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:10px 12px; margin-bottom:8px; cursor:pointer; transition:background .15s; }
+  .ex:hover{ background:#f3f7ff; }
+  .ex .en{ font-size:15px; font-weight:600; }
+  .ex .cn{ font-size:13px; color:var(--sub); margin-top:2px; }
+  .ex .play{ float:right; font-size:12px; color:var(--brand); }
+
+  .q{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:11px; }
+  .q .qt{ font-size:14px; font-weight:600; margin-bottom:8px; }
+  .opts{ display:flex; flex-direction:column; gap:8px; }
+  .opt{ border:1px solid var(--line); border-radius:10px; padding:9px 12px; font-size:14px; cursor:pointer; transition:.15s; background:#f7f9ff; }
+  .opt:active{ transform:scale(.99); }
+  .opt.correct{ background:#f1fbf4; border-color:var(--ok); color:#1d6b39; font-weight:600; }
+  .opt.wrong{ background:#fdeeee; border-color:var(--bad); color:#a32d2d; }
+  .opt.lock{ pointer-events:none; }
+  .q .fb{ font-size:13px; margin-top:8px; display:none; }
+  .q .fb.show{ display:block; }
+  .q .fb.ok{ color:var(--ok); }
+  .q .fb.no{ color:var(--bad); }
+
+  .hint{ font-size:12px; color:var(--sub); text-align:center; margin-top:12px; }
+  .resume-info{ font-size:12px; color:var(--sub); white-space:nowrap; }
+  .resume-info b{ color:var(--brand2); font-weight:700; }
+  .mini-btn{ border:1px solid var(--line); background:#f7f9ff; color:var(--brand); border-radius:10px;
+    padding:5px 10px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap; }
+  .mini-btn:active{ transform:scale(.97); }
+  .toast{ position:fixed; left:50%; bottom:30px; transform:translateX(-50%); background:rgba(30,40,70,.92);
+    color:#fff; padding:10px 18px; border-radius:12px; font-size:14px; opacity:0; pointer-events:none; transition:.25s; z-index:99; }
+  .toast.show{ opacity:1; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <h1>📘 英语语法学习卡</h1>
+    <span class="badge">讲解 · 例句 · 随堂练习</span>
+  </div>
+
+  <div class="progressbar">
+    <span id="pgText">已掌握 0 / 0</span>
+    <div class="bar"><i id="pgBar"></i></div>
+  </div>
+
+  <div class="scene">
+    <div class="card">
+      <div class="bookbar">
+        <span class="blabel">📚 选择语法点</span>
+        <select id="pointSel" onchange="onPointChange()"></select>
+        <span id="resumeInfo" class="resume-info"></span>
+        <button class="mini-btn" onclick="resetPin()" title="回到第 1 个语法点">↺ 第1个</button>
+      </div>
+
+      <div class="sec">
+        <div class="secttl">💡 讲解</div>
+        <div class="explain" id="explain"></div>
+      </div>
+
+      <div class="sec">
+        <div class="secttl">📌 要点（点击朗读）</div>
+        <ul class="rules" id="rules"></ul>
+      </div>
+
+      <div class="sec">
+        <div class="secttl">🔊 例句（点击朗读）</div>
+        <button onclick="toggleGloss('gramExGloss')" style="border:none;border-radius:12px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand2));margin-bottom:8px">🔤 逐字翻译</button>
+        <div id="examples"></div>
+        <div class="pgloss" id="gramExGloss" style="margin:8px 0 0"></div>
+      </div>
+
+      <div class="sec">
+        <div class="secttl">✏️ 随堂练习</div>
+        <div id="quiz"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hint">支持手机与电脑 · 学完一个语法点再切换 · 进度按账户分别保存</div>
+  <div class="toast" id="toast"></div>
+
+<script>
+var APP = 'grammar';
+var ME = null;
+const POINTS = (window.GRAMMAR && window.GRAMMAR.length) ? window.GRAMMAR : [];
+let pIndex = 0;
+let POINT = POINTS[pIndex];
+var grammarProgress = {};
+
+/* 发音：自动识别中/英文，iPad 与各浏览器均可稳定发声 */
+var _lastUtt=null;
+function _isZh(t){ return /[\u4e00-\u9fff]/.test(t); }
+function _pickVoice(langCode){
+  if(!window.speechSynthesis) return null;
+  var vs=speechSynthesis.getVoices()||[];
+  var pool=vs.filter(function(v){ var l=(v.lang||'').toLowerCase().replace('_','-'); return l.indexOf(langCode.toLowerCase())===0; });
+  if(!pool.length){ pool=vs.filter(function(v){ return (v.lang||'').toLowerCase().slice(0,2)===langCode.toLowerCase().slice(0,2); }); }
+  if(!pool.length) return null;
+  pool.sort(function(a,b){
+    var na=(a.name||'').toLowerCase(), nb=(b.name||'').toLowerCase(), sa=0, sb=0;
+    if(/google|natural|neural|samantha|ting|sin-ji|xiaoxiao|huihui|yaoyao|karen|daniel|moira/.test(na)) sa+=10;
+    if(/google|natural|neural|samantha|ting|sin-ji|xiaoxiao|huihui|yaoyao|karen|daniel|moira/.test(nb)) sb+=10;
+    return sb-sa;
+  });
+  return pool[0];
+}
+function speak(text){
+  if(!window.speechSynthesis){ if(window.toast) window.toast('当前浏览器不支持发音'); return; }
+  var zh=_isZh(text);
+  /* 英文统一走 speech.js：优选 Google/Natural/Apple 最标准音色（读例句最准） */
+  if(!zh && window.Speech && Speech.speak){ Speech.speak(text, 0.9); return; }
+  var langCode = zh ? 'zh-CN' : 'en-US';
+  try{ speechSynthesis.cancel(); }catch(e){}
+  var u=new SpeechSynthesisUtterance(text);
+  u.lang=langCode; u.rate = zh ? 0.95 : 0.9; u.pitch=1;
+  var v=_pickVoice(langCode); if(v) u.voice=v;
+  _lastUtt=u;                          // 关键：保留引用，防止 iOS 垃圾回收导致不发声
+  try{ speechSynthesis.resume(); }catch(e){}   // iOS 切后台/静音后会暂停，先 resume
+  speechSynthesis.speak(u);
+}
+
+/* 逐字翻译：读取容器 data-en 懒构建词对词翻译，点击切换显隐 */
+function toggleGloss(id){
+  var el=document.getElementById(id); if(!el || !window.Gloss) return;
+  if(el.getAttribute('data-filled')!=='1'){
+    el.innerHTML=Gloss.buildPGlossHTML(el.getAttribute('data-en')||'');
+    el.setAttribute('data-filled','1');
+  }
+  el.classList.toggle('on');
+}
+
+function toast(msg){
+  var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 1600);
+}
+
+/* ====================== 选点 ====================== */
+function renderPointList(){
+  var sel=document.getElementById('pointSel');
+  sel.innerHTML='';
+  POINTS.forEach(function(p,i){
+    var o=document.createElement('option'); o.value=i; o.textContent=(i+1)+'. '+p.title;
+    sel.appendChild(o);
+  });
+  sel.value=pIndex;
+}
+function onPointChange(){
+  pIndex = parseInt(document.getElementById('pointSel').value,10);
+  POINT = POINTS[pIndex];
+  renderPoint();
+}
+
+/* ====================== 渲染 ====================== */
+function renderPoint(){
+  savePin();
+  document.getElementById('explain').textContent = POINT.explain;
+
+  var rl=document.getElementById('rules'); rl.innerHTML='';
+  POINT.rules.forEach(function(r){
+    var li=document.createElement('li');
+    var rt=document.createElement('span'); rt.className='rt'; rt.textContent=r;
+    var rp=document.createElement('span'); rp.className='rp'; rp.textContent='🔊';
+    li.appendChild(rt); li.appendChild(rp);
+    li.onclick=function(){ speak(r); };
+    rl.appendChild(li);
+  });
+
+  var ex=document.getElementById('examples'); ex.innerHTML='';
+  POINT.examples.forEach(function(e){
+    var d=document.createElement('div'); d.className='ex';
+    d.innerHTML='<span class="play">🔊</span><div class="en">'+e.en+'</div><div class="cn">'+e.cn+'</div>';
+    d.onclick=function(){ speak(e.en); };
+    ex.appendChild(d);
+  });
+  var gex=document.getElementById('gramExGloss');
+  if(gex){ gex.setAttribute('data-en', POINT.examples.map(function(e){ return e.en; }).join('  ')); gex.removeAttribute('data-filled'); gex.classList.remove('on'); }
+
+  var qz=document.getElementById('quiz'); qz.innerHTML='';
+  POINT.quiz.forEach(function(item, qi){
+    var q=document.createElement('div'); q.className='q';
+    var head=document.createElement('div'); head.className='qt'; head.textContent=(qi+1)+'. '+item.q;
+    var opts=document.createElement('div'); opts.className='opts';
+    item.options.forEach(function(opt, oi){
+      var b=document.createElement('div'); b.className='opt'; b.textContent=opt;
+      b.onclick=function(){ answer(q, b, item, opt); };
+      opts.appendChild(b);
+    });
+    var fb=document.createElement('div'); fb.className='fb';
+    var slot=document.createElement('div'); slot.className='hw-slot';
+    if(window.Handwrite){
+      var _hw=Handwrite.create({revealText:item.answer+'　'+item.explain, placeholder:'✍️ 写出你的答案'});
+      slot.appendChild(_hw.el);
+    }
+    q.appendChild(head); q.appendChild(opts); q.appendChild(fb); q.appendChild(slot);
+    qz.appendChild(q);
+  });
+
+  updateProgress();
+  renderResumeInfo();
+}
+
+/* ====================== 判分 ====================== */
+function answer(qEl, btn, item, chosen){
+  if(qEl.dataset.done) return;
+  qEl.dataset.done='1';
+  var opts=qEl.querySelectorAll('.opt');
+  opts.forEach(function(o){ o.classList.add('lock'); });
+  var correct = (chosen === item.answer);
+  if(correct){
+    btn.classList.add('correct');
+  }else{
+    btn.classList.add('wrong');
+    opts.forEach(function(o){ if(o.textContent===item.answer) o.classList.add('correct'); });
+  }
+  var fb=qEl.querySelector('.fb');
+  fb.classList.add('show');
+  if(correct){ fb.classList.add('ok'); fb.textContent='✅ 答对啦！'+item.explain; }
+  else{ fb.classList.add('no'); fb.textContent='❌ 正确答案：'+item.answer+'。'+item.explain; }
+
+  // 记录进度（按语法点 + 题号）
+  var prog = grammarProgress[POINT.id] || { right:0, total:POINT.quiz.length };
+  if(correct) prog.right++;
+  grammarProgress[POINT.id] = prog;
+  Accounts.set(APP, ME, 'progress', grammarProgress);
+
+  // 全部答对则提示掌握
+  if(prog.right === prog.total){
+    toast('🎉 已掌握：'+POINT.title);
+  }
+  updateProgress();
+}
+
+function updateProgress(){
+  var total=POINTS.length, done=0;
+  POINTS.forEach(function(p){
+    var prog=grammarProgress[p.id];
+    if(prog && prog.right===prog.total) done++;
+  });
+  document.getElementById('pgText').textContent='已掌握 '+done+' / '+total;
+  document.getElementById('pgBar').style.width=(total? Math.round(done/total*100):0)+'%';
+}
+
+/* ====================== 断点续学（按账户隔离，存于 Accounts 本地层） ====================== */
+function savePin(){ if(ME==null) return; Accounts.set(APP, ME, 'pIndex', pIndex); }
+function loadPin(){
+  if(ME==null) return 0;
+  var v = Accounts.get(APP, ME, 'pIndex', 0);
+  if(typeof v!=='number' || isNaN(v) || v<0 || v>=POINTS.length) return 0;
+  return v;
+}
+function renderResumeInfo(){
+  var el=document.getElementById('resumeInfo'); if(!el) return;
+  el.innerHTML = '📍 第 <b>'+(pIndex+1)+'</b> / '+POINTS.length+' 个';
+}
+function resetPin(){
+  if(ME==null) return;
+  pIndex=0; POINT=POINTS[0];
+  Accounts.set(APP, ME, 'pIndex', 0);
+  document.getElementById('pointSel').value=0;
+  renderPoint();
+}
+function grammarBootstrap(){
+  grammarProgress = Accounts.get(APP, ME, 'progress', {}) || {};
+  // 断点续学：续到上次在学的语法点（本页独立存储，可靠）
+  var _pi = loadPin();
+  pIndex = _pi; POINT = POINTS[pIndex];
+  renderPointList();
+  renderPoint();
+}
+function enableSwitchReload(bootstrap){
+  if(Accounts.mountSwitch._withReload) return;
+  var _orig = Accounts.mountSwitch;
+  Accounts.mountSwitch = function(app){
+    var r = _orig(app);
+    var btn = document.getElementById('accSwitch');
+    if(btn){ btn.onclick = function(){
+      Accounts.current = null;
+      var s = document.getElementById('accSwitch'); if(s && s.parentNode) s.parentNode.removeChild(s);
+      Accounts.gate(app, { onLogin: function(){ bootstrap(); Accounts.mountSwitch(app); } });
+    }; }
+    return r;
+  };
+  Accounts.mountSwitch._withReload = true;
+}
+Accounts.gate(APP, { onLogin: function(user){
+  ME = user;
+  if(window.StudyTime) StudyTime.track(ME, 'grammar');
+  grammarBootstrap();
+  enableSwitchReload(grammarBootstrap);
+  Accounts.mountSwitch(APP);
+}});
+</script>
+<script src="handwrite.js"></script>
+</body>
+</html>

@@ -1,0 +1,1616 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script src="resume.js"></script>
+<script src="gloss.js"></script>
+<script src="speech.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<script>
+/* 发音统一走 speech.js（优选 Google/Natural/Apple 最标准英文音色，
+ * iOS 稳定性补丁 + 英文嗓音强制指派均已内置于 speech.js，无需本页重复内联） */
+</script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📖 英语阅读理解</title>
+<style>
+  :root{
+    --blue:#4895ef; --blue2:#5cc8ff; --green:#06d6a0; --orange:#ff9f1c;
+    --purple:#b292ff; --ink:#3d3a4b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(135deg,#eef6ff,#e6f7ff);color:var(--ink);
+    padding:18px;max-width:560px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  .back{position:fixed;left:14px;top:14px;z-index:30;border:none;background:rgba(255,255,255,.85);
+    border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink)}
+  header{background:linear-gradient(120deg,var(--blue),var(--blue2));color:#fff;
+    border-radius:24px;padding:20px;text-align:center;box-shadow:0 8px 22px rgba(72,149,239,.4)}
+  header h1{font-size:22px}
+  .date{font-size:14px;opacity:.95;margin-top:4px}
+  .stats{display:flex;gap:10px;margin:14px 0}
+  .stat{flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center;
+    box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .stat .num{font-size:26px;font-weight:800;color:var(--blue)}
+  .stat .lbl{font-size:12px;color:#999;margin-top:2px}
+
+  .screen{display:none}
+  .screen.on{display:block}
+
+  .btn{display:block;width:100%;border:none;border-radius:16px;padding:14px;font-size:16px;
+    font-family:inherit;cursor:pointer;font-weight:800;color:#fff;background:var(--blue);margin-top:8px}
+  .btn.gh{background:var(--orange)}
+  .btn.sec{background:#eaf3ff;color:var(--blue)}
+
+  .prog-wrap{margin:6px 0 14px}
+  .progress{height:14px;background:#dcecff;border-radius:10px;overflow:hidden}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--blue2));
+    border-radius:10px;transition:width .4s}
+  .prog-txt{font-size:13px;color:#888;text-align:center;margin-top:4px}
+
+  .passage{background:#fff;border-radius:20px;box-shadow:0 4px 12px rgba(0,0,0,.06);
+    padding:16px;margin-bottom:14px}
+  .passage .ph{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+  .passage .pemoji{font-size:30px}
+  .passage .ptitle{font-size:17px;font-weight:800;flex:1;min-width:88px}
+  .passage .pbtns{display:flex;gap:6px;flex-wrap:wrap}
+  .passage .pbtns button{border:none;border-radius:12px;padding:7px 9px;font-size:13px;
+    font-family:inherit;cursor:pointer;font-weight:700;color:#fff;background:var(--purple)}
+  .passage .pbtns .b-tr{background:var(--orange)}
+  .passage .pbtns .b-gl{background:#ff7a59}
+  .ptext{font-size:16px;line-height:1.8;color:var(--ink)}
+  .ptrans{font-size:14px;line-height:1.7;color:#777;margin-top:10px;background:#f1f7ff;
+    border-radius:12px;padding:10px;display:none}
+  .ptrans.on{display:block}
+  /* 整篇短文逐字翻译 */
+  .pgloss{font-size:14px;line-height:2.2;color:var(--ink);margin-top:10px;background:#fff7f2;
+    border-radius:12px;padding:10px 11px;display:none}
+  .pgloss.on{display:block}
+  .pgloss .glab{font-weight:800;color:#ff7a59;display:block;margin-bottom:5px;font-size:13px}
+  .pgloss .sline{padding:5px 0;border-bottom:1px dashed #ffd9c7}
+  .pgloss .sline:last-child{border-bottom:none}
+  .pgloss .sn{display:inline-block;min-width:19px;color:var(--orange);font-weight:800;font-size:12px}
+
+  .q{background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.06);
+    padding:14px;margin-bottom:12px;border:3px solid transparent;transition:border-color .2s}
+  .q.done-ok{border-color:var(--green)}
+  .q.done-no{border-color:#ff6b6b}
+  .q .qt{font-size:15px;font-weight:700;margin-bottom:10px}
+  .q .qt .qn{color:var(--blue);margin-right:6px}
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{border:none;border-radius:12px;padding:11px 14px;font-size:14px;text-align:left;
+    font-family:inherit;cursor:pointer;background:#eef4ff;color:var(--ink);transition:.15s}
+  .opt:active{transform:scale(.98)}
+  .opt.ok{background:var(--green);color:#fff}
+  .opt.no{background:#ff6b6b;color:#fff}
+  .opt.dim{opacity:.45;pointer-events:none}
+  .why{font-size:13px;color:#888;margin-top:10px;background:#f6f8fb;border-radius:10px;
+    padding:9px;line-height:1.6;display:none}
+  .why.on{display:block}
+  /* 逐字翻译 */
+  .wtrans{font-size:13px;line-height:2;color:#444;margin-top:8px;background:#fff7f2;
+    border-radius:10px;padding:10px;display:none}
+  .wtrans.on{display:block}
+  .wtrans .lab{font-weight:800;color:#ff7a59;display:block;margin:2px 0 4px}
+  .wtrans .optline{margin:1px 0}
+  .wtrans .optline b{color:#4895ef;margin-right:4px}
+  .gw{margin:0 1px}
+  .gw .gc{color:#ff7a59;font-size:11px;margin-left:1px}
+
+  .report{background:#fff;border-radius:24px;box-shadow:0 8px 22px rgba(0,0,0,.08);
+    padding:24px;text-align:center;margin-top:14px}
+  .report .stars{font-size:34px;letter-spacing:4px;margin:6px 0}
+  .report .score{font-size:30px;font-weight:800;color:var(--blue)}
+  .report .sub{font-size:14px;color:#888;margin-top:4px}
+  .report .line{font-size:15px;color:var(--ink);margin-top:10px}
+  .report .pass{color:var(--green);font-weight:800}
+  .report .fail{color:#ff6b6b;font-weight:800}
+
+  .reset{background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;
+    text-decoration:underline;display:block;margin:10px auto 0;font-family:inherit}
+  .tip{font-size:12px;color:#aaa;text-align:center;margin-top:14px;line-height:1.6}
+  .confetti{position:fixed;top:-40px;font-size:24px;pointer-events:none;z-index:99;
+    animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:.2}}
+  .celebrate{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;
+    align-items:center;justify-content:center;z-index:100}
+  .celebrate .box2{background:#fff;border-radius:24px;padding:28px 34px;text-align:center;animation:pop .4s;max-width:320px}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate h3{font-size:24px;margin-bottom:8px}
+  .celebrate p{color:#888;font-size:14px;line-height:1.6}
+  .celebrate button{margin-top:16px;border:none;background:var(--blue);color:#fff;
+    padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+
+  .grades{display:flex;gap:7px;overflow-x:auto;margin:12px 2px 2px;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+  .grades button{border:2px solid #dcecff;background:#fff;color:#666;border-radius:999px;
+    padding:8px 15px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;white-space:nowrap;transition:.15s}
+  .grades button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+</style>
+</head>
+<body>
+
+
+
+<header>
+  <h1>📖 英语阅读理解</h1>
+  <div class="date" id="dateStr">今天</div>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="num" id="bestNum">0</div><div class="lbl">🏆 最佳对题</div></div>
+  <div class="stat"><div class="num" id="totalNum">12</div><div class="lbl">📝 题目总数</div></div>
+  <div class="stat"><div class="num" id="passNum">80%</div><div class="lbl">✅ 通关线</div></div>
+</div>
+
+<div class="grades" id="grades"></div>
+
+<!-- 开始页 -->
+<div class="screen on" id="scrMenu">
+  <h2 style="font-size:17px;margin:6px 4px 10px">📚 6 篇短文闯关</h2>
+  <div class="tip" style="margin:0 0 12px">先读短文（🔊朗读 / 👁整句翻译 / 🔤逐字翻译），再做下面的选择题。答对 80% 即通关！答错会自动显示中文和逐字翻译。</div>
+  <div id="resumeInfo" style="margin:0 0 12px;font-size:14px;color:#3a7bd5;font-weight:800;min-height:20px"></div>
+  <button class="btn" id="startBtn" onclick="start()">🚀 开始闯关</button>
+  <button class="btn sec" onclick="resetProgress()">↺ 本年级从头开始</button>
+  <button class="btn sec" onclick="resetBest()">↺ 清空最佳记录</button>
+</div>
+
+<!-- 闯关页 -->
+<div class="screen" id="scrQuiz">
+  <div class="prog-wrap">
+    <div class="progress"><i id="progBar"></i></div>
+    <div class="prog-txt" id="progTxt">第 1 / 6 关</div>
+  </div>
+  <div id="quizArea"></div>
+  <button class="btn gh" id="nextBtn" onclick="next()" style="display:none">➡️ 下一关</button>
+  <button class="btn gh" id="finishBtn" onclick="finish()" style="display:none">🏁 查看战报</button>
+</div>
+
+<!-- 战报页 -->
+<div class="screen" id="scrReport">
+  <div class="report">
+    <div class="stars" id="rStars">⭐⭐⭐</div>
+    <div class="score" id="rScore">0 / 12</div>
+    <div class="sub" id="rPct">正确率 0%</div>
+    <div class="line" id="rPass"></div>
+  </div>
+  <button class="btn" onclick="start()">🔄 再来一轮</button>
+  <button class="btn sec" onclick="goMenu()">🏠 回到首页</button>
+</div>
+
+<div class="tip">数据按小朋友分别保存，不会上传。</div>
+
+<div class="celebrate" id="celeb">
+  <div class="box2">
+    <h3>🎉 阅读小达人！</h3>
+    <p>闯过全部关卡，英文短文全读懂啦！</p>
+    <button onclick="closeCeleb()">继续闯关 💪</button>
+  </div>
+</div>
+
+<script>
+var ALLP=[
+  {id:'p1',emoji:'🎒',title:"Tom's Bag", g:1,
+    en:"Tom has a new school bag. It is blue and red. He puts his books, a pencil box and a water bottle in it. Tom likes his bag very much.",
+    cn:"汤姆有一个新书包。它是蓝红相间的。他把书、铅笔盒和水瓶放进去。汤姆非常喜欢他的书包。",
+    qa:[
+      {q:"What color is Tom's bag?",opts:["Blue and red","Yellow","Green","Black"],ans:0,why:"文中说 It is blue and red."},
+      {q:"What is NOT in the bag?",opts:["Books","A pencil box","A water bottle","A cat"],ans:3,why:"书包里有书、铅笔盒、水瓶，没有猫。"}
+    ]},
+  {id:'p2',emoji:'🐱',title:"My Cat Mimi", g:2,
+    en:"Mimi is my white cat. She has two big eyes and a long tail. Mimi likes to sleep on the sofa. Every morning she wakes me up.",
+    cn:"咪咪是我的白猫。她有两只大眼睛和一条长尾巴。咪咪喜欢在沙发上睡觉。每天早晨她把我叫醒。",
+    qa:[
+      {q:"What color is Mimi?",opts:["Black","White","Brown","Orange"],ans:1,why:"She is a white cat."},
+      {q:"Where does Mimi like to sleep?",opts:["On the bed","On the sofa","In the box","Under the table"],ans:1,why:"Mimi likes to sleep on the sofa."}
+    ]},
+  {id:'p3',emoji:'🌳',title:"The Park", g:3,
+    en:"There is a big park near my home. Children play on the green grass. Some fly kites, some ride bikes. We are happy in the park.",
+    cn:"我家附近有一个大公园。孩子们在绿草地上玩耍。有的放风筝，有的骑自行车。我们在公园里很开心。",
+    qa:[
+      {q:"What do children do in the park?",opts:["Fly kites and ride bikes","Swim","Cook food","Read books"],ans:0,why:"Some fly kites, some ride bikes."},
+      {q:"Where is the park?",opts:["Far from home","Near my home","At school","In a shop"],ans:1,why:"There is a big park near my home."}
+    ]},
+  {id:'p4',emoji:'🎂',title:"A Happy Birthday", g:4,
+    en:"Today is Lucy's birthday. Her friends come to the party. They sing a song and eat a big cake. Lucy gets many gifts. She is very happy.",
+    cn:"今天是露西的生日。她的朋友们来参加派对。他们唱生日歌、吃大蛋糕。露西收到很多礼物。她非常开心。",
+    qa:[
+      {q:"What do they eat at the party?",opts:["A big cake","Noodles","An apple","Rice"],ans:0,why:"They eat a big cake."},
+      {q:"How does Lucy feel?",opts:["Sad","Angry","Very happy","Tired"],ans:2,why:"She is very happy."}
+    ]},
+  {id:'p5',emoji:'🏫',title:"Our Classroom", g:5,
+    en:"Our classroom is clean and bright. There are many desks and chairs. A big blackboard is on the wall. We read and write here every day.",
+    cn:"我们的教室干净又明亮。有许多课桌和椅子。墙上有一块大黑板。我们每天在这里读书写字。",
+    qa:[
+      {q:"What is on the wall?",opts:["A picture","A big blackboard","A map","A window"],ans:1,why:"A big blackboard is on the wall."},
+      {q:"What do we do in the classroom?",opts:["Sleep","Read and write","Cook","Swim"],ans:1,why:"We read and write here every day."}
+    ]},
+  {id:'p6',emoji:'☀️',title:"The Weather", g:6,
+    en:"In spring it is warm. We fly kites. In summer it is hot. We eat ice cream. In autumn it is cool. In winter it is cold. We make a snowman.",
+    cn:"春天暖和，我们放风筝。夏天炎热，我们吃冰淇淋。秋天凉爽。冬天寒冷，我们堆雪人。",
+    qa:[
+      {q:"What do we do in summer?",opts:["Make a snowman","Fly kites","Eat ice cream","Sleep"],ans:2,why:"In summer we eat ice cream."},
+      {q:"What is the weather in winter?",opts:["Warm","Hot","Cool","Cold"],ans:3,why:"In winter it is cold."}
+    ]}
+  ,{id:'p7',emoji:'🐶',title:"My Dog", g:1,
+    en:"I have a small dog. Its name is Coco. It is white and brown. Coco likes to run and play with me. We are good friends.",
+    cn:"我有一只小狗，名字叫可可。它是白棕相间的。可可喜欢跑，喜欢和我玩。我们是好朋友。",
+    qa:[
+      {q:"What is the dog's name?",opts:["Coco","Tom","Lily","Max"],ans:0,why:"文中说 Its name is Coco."},
+      {q:"What color is the dog?",opts:["White and brown","Black","Yellow","Red"],ans:0,why:"文中说 It is white and brown."}
+    ]}
+  ,{id:'p8',emoji:'🍎',title:"The Apple Tree", g:1,
+    en:"There is a big apple tree in my garden. In spring it has pink flowers. In autumn we pick red apples. They are sweet.",
+    cn:"我家花园里有一棵大苹果树。春天开粉色的花。秋天我们摘红苹果，很甜。",
+    qa:[
+      {q:"What do we pick in autumn?",opts:["Apples","Flowers","Leaves","Oranges"],ans:0,why:"文中说 we pick red apples."},
+      {q:"What color are the flowers?",opts:["Pink","Red","Blue","Yellow"],ans:0,why:"文中说 pink flowers."}
+    ]}
+  ,{id:'p9',emoji:'🛏️',title:"My Room", g:2,
+    en:"My room is small but tidy. There is a bed, a desk and a blue chair. I do my homework at the desk. I like my room.",
+    cn:"我的房间小但整洁。有一张床、一张书桌和一把蓝椅子。我在书桌前写作业。我喜欢我的房间。",
+    qa:[
+      {q:"Where does he do homework?",opts:["At the desk","On the bed","On the chair","In the garden"],ans:0,why:"文中说 I do my homework at the desk."},
+      {q:"What color is the chair?",opts:["Blue","Red","Green","Yellow"],ans:0,why:"文中说 a blue chair."}
+    ]}
+  ,{id:'p10',emoji:'⚽',title:"Sports Day", g:2,
+    en:"Today is Sports Day at school. We run, jump and play ball. My friend Li wins the race. We cheer and feel happy.",
+    cn:"今天学校开运动会。我们跑、跳、打球。我的朋友李赢了赛跑。我们加油，很开心。",
+    qa:[
+      {q:"Who wins the race?",opts:["Li","The teacher","Me","No one"],ans:0,why:"文中说 My friend Li wins the race."},
+      {q:"How do they feel?",opts:["Happy","Sad","Tired","Angry"],ans:0,why:"文中说 feel happy."}
+    ]}
+  ,{id:'p11',emoji:'🍝',title:"My Family Dinner", g:3,
+    en:"We have dinner together every evening. Mom cooks noodles, Dad makes soup. I set the table. We talk and laugh a lot.",
+    cn:"每天晚上我们一起吃晚饭。妈妈煮面，爸爸做汤。我摆桌子。我们说笑很多。",
+    qa:[
+      {q:"What does Mom cook?",opts:["Noodles","Soup","Rice","Cake"],ans:0,why:"文中说 Mom cooks noodles."},
+      {q:"What does the child do?",opts:["Sets the table","Cooks","Makes soup","Washes"],ans:0,why:"文中说 I set the table."}
+    ]}
+  ,{id:'p12',emoji:'🌳',title:"The Tree House", g:3,
+    en:"Dad and I build a small house in the old tree. We put a ladder and two cushions inside. It is our secret place to read.",
+    cn:"爸爸和我在老树上搭了个小屋子。里面放了梯子和两个垫子。那是我们看书的秘密基地。",
+    qa:[
+      {q:"Where do they build the house?",opts:["In a tree","In the room","In the garden","On the roof"],ans:0,why:"文中说 in the old tree."},
+      {q:"What do they do there?",opts:["Read","Sleep","Cook","Run"],ans:0,why:"文中说 to read."}
+    ]}
+  ,{id:'p13',emoji:'🚂',title:"A Train Trip", g:4,
+    en:"We take a train to the countryside. The windows show green fields and small villages. The trip takes two hours. It is fun!",
+    cn:"我们坐火车去乡下。窗外是绿色的田野和小村庄。旅程要两小时，很好玩！",
+    qa:[
+      {q:"How long is the trip?",opts:["Two hours","One hour","Three hours","Half an hour"],ans:0,why:"文中说 takes two hours."},
+      {q:"What do they see outside?",opts:["Fields and villages","Mountains","Sea","City"],ans:0,why:"文中说 green fields and small villages."}
+    ]}
+  ,{id:'p14',emoji:'🏞️',title:"The River", g:4,
+    en:"A river flows near my town. In summer children swim in it. Ducks swim on the water. The water is cool and clean.",
+    cn:"一条河在我家镇子附近流过。夏天孩子们在里面游泳，鸭子在水上游。河水清凉干净。",
+    qa:[
+      {q:"What do children do in summer?",opts:["Swim","Skate","Ski","Sleep"],ans:0,why:"文中说 children swim in it."},
+      {q:"How is the water?",opts:["Cool and clean","Hot","Dirty","Salty"],ans:0,why:"文中说 cool and clean."}
+    ]}
+  ,{id:'p15',emoji:'🦋',title:"Butterfly Life", g:5,
+    en:"A butterfly starts as a small egg. It becomes a caterpillar, then a pupa. At last it breaks out as a beautiful butterfly.",
+    cn:"蝴蝶开始是一颗小卵，变成毛毛虫，再变成蛹。最后破壳而出，成为美丽的蝴蝶。",
+    qa:[
+      {q:"What comes after the egg?",opts:["Caterpillar","Butterfly","Bird","Fish"],ans:0,why:"文中说 becomes a caterpillar."},
+      {q:"What is the last stage?",opts:["Butterfly","Pupa","Egg","Caterpillar"],ans:0,why:"文中说 at last a butterfly."}
+    ]}
+  ,{id:'p16',emoji:'🌍',title:"Our Earth", g:5,
+    en:"The Earth is our home. It has land, oceans, air and many living things. We should protect it and keep it clean.",
+    cn:"地球是我们的家。它有陆地、海洋、空气和许多生物。我们应该保护它，保持清洁。",
+    qa:[
+      {q:"What should we do for Earth?",opts:["Protect it","Throw trash","Cut trees","Pollute"],ans:0,why:"文中说 should protect it."},
+      {q:"Which is NOT on Earth?",opts:["Moon","Land","Oceans","Air"],ans:0,why:"Moon is not on Earth."}
+    ]}
+  ,{id:'p17',emoji:'🚀',title:"Space", g:6,
+    en:"There are eight planets around the Sun. Our Earth is the third. Astronauts travel in spaceships to learn about stars and space.",
+    cn:"太阳周围有八颗行星，地球是第三颗。宇航员乘飞船去了解星星和太空。",
+    qa:[
+      {q:"Which planet is ours?",opts:["The third","The first","The eighth","The sun"],ans:0,why:"文中说 Earth is the third."},
+      {q:"Who travels in spaceships?",opts:["Astronauts","Dogs","Fish","Birds"],ans:0,why:"文中说 Astronauts travel in spaceships."}
+    ]}
+  ,{id:'p18',emoji:'🏛️',title:"The Museum", g:6,
+    en:"We visited a science museum. We saw old tools, dinosaur bones and robots. I tried a VR headset and learned a lot.",
+    cn:"我们参观了科学博物馆。看到旧工具、恐龙骨和机器人。我试了 VR 眼镜，学到很多。",
+    qa:[
+      {q:"What did they see?",opts:["Tools, bones, robots","Cars","Cakes","Clothes"],ans:0,why:"文中说 old tools, dinosaur bones and robots."},
+      {q:"What did the child try?",opts:["A VR headset","A robot","A bone","A tool"],ans:0,why:"文中说 tried a VR headset."}
+    ]}
+,
+  {
+  id: 'p19',
+  emoji: '🐱',
+  title: 'My Cat',
+  g: 1,
+  en: 'I have a small cat. It is white and cute. It likes to sleep on the sofa. I love my cat.',
+  cn: '我有一只小猫。它是白色的，很可爱。它喜欢在沙发上睡觉。我爱我的猫。',
+  qa: [  {
+    q: 'What color is the cat?',
+    opts: ['White', 'Black', 'Yellow', 'Green'],
+    ans: 0,
+    why: '文中说 It is white.'
+  },   {
+    q: 'Where does it sleep?',
+    opts: ['Sofa', 'Bed', 'Floor', 'Desk'],
+    ans: 0,
+    why: '文中说 sleep on the sofa.'
+  }]
+  },
+  {
+  id: 'p20',
+  emoji: '🌞',
+  title: 'Sunny Day',
+  g: 1,
+  en: 'Today is sunny. I go to the park with Mom. We see flowers and a big tree. We are happy.',
+  cn: '今天晴天。我和妈妈去公园。我们看到花和一棵大树。我们很开心。',
+  qa: [  {
+    q: 'Where do they go?',
+    opts: ['Park', 'School', 'Zoo', 'Shop'],
+    ans: 0,
+    why: '文中说 go to the park.'
+  },   {
+    q: 'How is the weather?',
+    opts: ['Sunny', 'Rainy', 'Windy', 'Snowy'],
+    ans: 0,
+    why: '文中说 Today is sunny.'
+  }]
+  },
+  {
+  id: 'p21',
+  emoji: '⚽',
+  title: 'Sports Day Race',
+  g: 2,
+  en: 'We have Sports Day at school. I run fast. My friend jumps high. We all have fun.',
+  cn: '我们学校有运动日。我跑得快。我的朋友跳得高。我们都玩得开心。',
+  qa: [  {
+    q: 'What do they have?',
+    opts: ['Sports Day', 'Art Day', 'Music Day', 'Reading Day'],
+    ans: 0,
+    why: '文中说 Sports Day.'
+  },   {
+    q: 'Who jumps high?',
+    opts: ['My friend', 'I', 'Teacher', 'Mom'],
+    ans: 0,
+    why: '文中说 My friend jumps high.'
+  }]
+  },
+  {
+  id: 'p22',
+  emoji: '🍎',
+  title: 'Red Apple',
+  g: 2,
+  en: 'The apple is red and sweet. I eat it after lunch. Apples are good for us. Eat more fruit!',
+  cn: '苹果又红又甜。我午饭后吃它。苹果对我们有好处。多吃水果！',
+  qa: [  {
+    q: 'What does the apple taste like?',
+    opts: ['Sweet', 'Salty', 'Hot', 'Sour'],
+    ans: 0,
+    why: '文中说 red and sweet.'
+  },   {
+    q: 'When does he eat it?',
+    opts: ['After lunch', 'Morning', 'Night', 'Before bed'],
+    ans: 0,
+    why: '文中说 after lunch.'
+  }]
+  },
+  {
+  id: 'p23',
+  emoji: '🌳',
+  title: 'The Tree',
+  g: 3,
+  en: 'There is a big tree near my house. Birds sing on it. In autumn its leaves turn yellow. I like to sit under it.',
+  cn: '我家附近有一棵大树。鸟在树上唱歌。秋天它的叶子变黄。我喜欢坐在树下。',
+  qa: [  {
+    q: 'Where is the tree?',
+    opts: ['Near my house', 'In school', 'In park', 'Far away'],
+    ans: 0,
+    why: '文中说 near my house.'
+  },   {
+    q: 'What happens in autumn?',
+    opts: ['Leaves turn yellow', 'Birds leave', 'It grows', 'Flowers bloom'],
+    ans: 0,
+    why: '文中说 leaves turn yellow.'
+  }]
+  },
+  {
+  id: 'p24',
+  emoji: '📚',
+  title: 'My Library',
+  g: 3,
+  en: 'The library is quiet. I borrow picture books there. The librarian helps me find stories. Reading is fun.',
+  cn: '图书馆很安静。我在那里借图画书。图书管理员帮我找故事。阅读很有趣。',
+  qa: [  {
+    q: 'What does he borrow?',
+    opts: ['Picture books', 'Toys', 'Food', 'Clothes'],
+    ans: 0,
+    why: '文中说 borrow picture books.'
+  },   {
+    q: 'Who helps him?',
+    opts: ['The librarian', 'Teacher', 'Mom', 'Friend'],
+    ans: 0,
+    why: '文中说 The librarian helps me.'
+  }]
+  },
+  {
+  id: 'p25',
+  emoji: '🌊',
+  title: 'By the Sea',
+  g: 4,
+  en: 'We spent a week by the sea. We built sandcastles and swam in the blue water. At night we watched stars. It was a great holiday.',
+  cn: '我们在海边度过了一周。我们堆沙堡，在蓝水里游泳。晚上我们看星星。那是个很棒的假期。',
+  qa: [  {
+    q: 'What did they build?',
+    opts: ['Sandcastles', 'Boats', 'Houses', 'Bridges'],
+    ans: 0,
+    why: '文中说 built sandcastles.'
+  },   {
+    q: 'What did they watch at night?',
+    opts: ['Stars', 'TV', 'Movies', 'Clouds'],
+    ans: 0,
+    why: '文中说 watched stars.'
+  }]
+  },
+  {
+  id: 'p26',
+  emoji: '🚀',
+  title: 'Space Dream',
+  g: 4,
+  en: 'I want to be an astronaut. I will fly to space and see the earth from far away. I will read books about planets. My dream is big!',
+  cn: '我想当一名宇航员。我要飞向太空，从远处看地球。我会读关于行星的书。我的梦想很大！',
+  qa: [  {
+    q: 'What does he want to be?',
+    opts: ['An astronaut', 'A teacher', 'A doctor', 'A pilot'],
+    ans: 0,
+    why: '文中说 want to be an astronaut.'
+  },   {
+    q: 'What will he read?',
+    opts: ['Books about planets', 'Story books', 'Comic books', 'Cook books'],
+    ans: 0,
+    why: '文中说 read books about planets.'
+  }]
+  },
+  {
+  id: 'p27',
+  emoji: '🌍',
+  title: 'We Protect the Earth',
+  g: 5,
+  en: 'The Earth is our home. It has land, oceans and air. We should protect forests and save water. A clean Earth is for everyone.',
+  cn: '地球是我们的家。它有陆地、海洋和空气。我们应该保护森林、节约用水。干净的地球属于每个人。',
+  qa: [  {
+    q: 'What should we protect?',
+    opts: ['Forests', 'Cars', 'Buildings', 'Toys'],
+    ans: 0,
+    why: '文中说 protect forests.'
+  },   {
+    q: 'What should we save?',
+    opts: ['Water', 'Money', 'Time', 'Food'],
+    ans: 0,
+    why: '文中说 save water.'
+  }]
+  },
+  {
+  id: 'p28',
+  emoji: '🚜',
+  title: 'The Farm',
+  g: 5,
+  en: 'We visited a farm. We saw cows, sheep and chickens. We drank fresh milk and picked tomatoes. Farm life is busy but fun.',
+  cn: '我们参观了一个农场。我们看到牛、羊和鸡。我们喝了鲜奶，摘了番茄。农场生活忙碌但有趣。',
+  qa: [  {
+    q: 'What animals did they see?',
+    opts: ['Cows, sheep, chickens', 'Dogs, cats', 'Fish', 'Birds'],
+    ans: 0,
+    why: '文中说 cows, sheep and chickens.'
+  },   {
+    q: 'What did they pick?',
+    opts: ['Tomatoes', 'Apples', 'Flowers', 'Leaves'],
+    ans: 0,
+    why: '文中说 picked tomatoes.'
+  }]
+  },
+  {
+  id: 'p29',
+  emoji: '🔬',
+  title: 'Science Lab',
+  g: 6,
+  en: 'In the science lab we did experiments. We mixed liquids and watched colors change. We learned how things work. Science is amazing!',
+  cn: '在科学实验室里我们做实验。我们混合液体，看颜色变化。我们学习事物如何运作。科学真奇妙！',
+  qa: [  {
+    q: 'What did they mix?',
+    opts: ['Liquids', 'Solids', 'Gases', 'Metals'],
+    ans: 0,
+    why: '文中说 mixed liquids.'
+  },   {
+    q: 'What changed?',
+    opts: ['Colors', 'Size', 'Sound', 'Smell'],
+    ans: 0,
+    why: '文中说 colors change.'
+  }]
+  },
+  {
+  id: 'p30',
+  emoji: '🌟',
+  title: 'My Future',
+  g: 6,
+  en: 'When I grow up I want to help people. I may be a scientist or a teacher. I will study hard and never give up. The future is mine!',
+  cn: '长大后我想帮助别人。我可能会当科学家或老师。我会努力学习，永不放弃。未来是我的！',
+  qa: [  {
+    q: 'What may he be?',
+    opts: ['Scientist or teacher', 'Driver', 'Cook', 'Singer'],
+    ans: 0,
+    why: '文中说 a scientist or a teacher.'
+  },   {
+    q: 'What will he do?',
+    opts: ['Study hard', 'Play games', 'Sleep', 'Travel'],
+    ans: 0,
+    why: '文中说 study hard.'
+  }]
+  },
+  {id:'p31',emoji:'🐱',title:'Mimi the Cat',g:1,en:'I have a cat. Her name is Mimi. She is white and cute. She likes to sleep on the sofa. I love my cat.',cn:'我有一只猫。她叫咪咪。她白白的可爱。她喜欢在沙发上睡觉。我爱我的猫。',qa:[{q:'What color is the cat?',opts:['White','Yellow','Black','Blue'],ans:0,why:'文中说 She is white.'},{q:'Where does she sleep?',opts:['On the sofa','On the bed','In the car','On the desk'],ans:0,why:'文中说 She likes to sleep on the sofa.'}]},
+  {id:'p32',emoji:'🍎',title:'Fruits',g:1,en:'Apples are red. Bananas are yellow. Grapes are purple. I like fruit very much.',cn:'苹果是红的。香蕉是黄的。葡萄是紫的。我非常喜欢水果。',qa:[{q:'What color are bananas?',opts:['Yellow','Red','Green','Purple'],ans:0,why:'文中说 Bananas are yellow.'},{q:'Does he like fruit?',opts:['Yes','No','Maybe','Not sure'],ans:0,why:'文中说 I like fruit very much.'}]},
+  {id:'p33',emoji:'⚽',title:'My Sport',g:2,en:'I like playing football. I play with my friends after school. We run and laugh. Football is fun!',cn:'我喜欢踢足球。放学后我和朋友一起踢。我们跑着笑着。足球真好玩！',qa:[{q:'When does he play football?',opts:['After school','Before school','At night','At noon'],ans:0,why:'文中说 I play with my friends after school.'},{q:'How do they feel?',opts:['Happy','Angry','Sleepy','Sad'],ans:0,why:'文中说 We run and laugh. Football is fun!'}]},
+  {id:'p34',emoji:'📚',title:'My School Day',g:2,en:'I get up at seven. I go to school by bike. I have four classes in the morning. I like English best.',cn:'我七点起床。我骑自行车上学。上午我有四节课。我最喜欢英语。',qa:[{q:'How does he go to school?',opts:['By bike','By bus','By car','On foot'],ans:0,why:'文中说 I go to school by bike.'},{q:'Which subject does he like best?',opts:['English','Math','Music','Art'],ans:0,why:'文中说 I like English best.'}]},
+  {id:'p35',emoji:'🌳',title:'A Kite in the Park',g:3,en:'There is a big park near my home. On Sunday I fly a kite there. Sometimes I ride a bike with my dad. The park is beautiful.',cn:'我家附近有一个大公园。星期天我在那里放风筝。有时我和爸爸骑自行车。公园很美。',qa:[{q:'Where is the park?',opts:['Near my home','Near school','Far away','In the city center'],ans:0,why:'文中说 There is a big park near my home.'},{q:'What does he do in the park?',opts:['Fly a kite and ride a bike','Swim','Run only','Sleep'],ans:0,why:'文中说 I fly a kite there. Sometimes I ride a bike with my dad.'}]},
+  {id:'p36',emoji:'🍳',title:'Cooking',g:3,en:'My mom cooks dinner every day. Yesterday she made dumplings. They were delicious. We ate them happily.',cn:'妈妈每天做晚饭。昨天她包了饺子。它们很好吃。我们开心地吃了。',qa:[{q:'What did mom make yesterday?',opts:['Dumplings','Noodles','Rice','Cake'],ans:0,why:'文中说 Yesterday she made dumplings.'},{q:'Were the dumplings good?',opts:['Yes, delicious','No, bad','Salty','Too hot'],ans:0,why:'文中说 They were delicious.'}]},
+  {id:'p37',emoji:'🚀',title:'Earth, Moon and Stars',g:4,en:'The earth goes around the sun. The moon goes around the earth. Stars are very far away. Space is amazing!',cn:'地球绕着太阳转。月亮绕着地球转。星星离得很远。太空真奇妙！',qa:[{q:'What goes around the sun?',opts:['The earth','The moon','A star','A cloud'],ans:0,why:'文中说 The earth goes around the sun.'},{q:'Is space amazing?',opts:['Yes','No','Boring','Small'],ans:0,why:'文中说 Space is amazing!'}]},
+  {id:'p38',emoji:'🐼',title:'Pandas',g:4,en:'Pandas live in China. They eat bamboo. They are black and white. Baby pandas are very small.',cn:'熊猫住在中国。它们吃竹子。它们黑白相间。熊猫宝宝很小。',qa:[{q:'What do pandas eat?',opts:['Bamboo','Meat','Grass','Fish'],ans:0,why:'文中说 They eat bamboo.'},{q:'What color are pandas?',opts:['Black and white','Red','Blue','Brown'],ans:0,why:'文中说 They are black and white.'}]},
+  {id:'p39',emoji:'🌊',title:'The Ocean',g:5,en:'The ocean is huge. Many fish live in it. Some are tiny, some are big. We must keep the sea clean.',cn:'海洋很大。许多鱼住在里面。有的很小，有的很大。我们必须保持海洋清洁。',qa:[{q:'Where do fish live?',opts:['In the ocean','In the sky','On land','In trees'],ans:0,why:'文中说 Many fish live in it.'},{q:'What must we do?',opts:['Keep the sea clean','Eat all fish','Pollute it','Leave rubbish'],ans:0,why:'文中说 We must keep the sea clean.'}]},
+  {id:'p40',emoji:'💡',title:'Inventions',g:5,en:'Thomas Edison made the light bulb. It changed the world. Now we have many lights at night. Inventions help us.',cn:'托马斯·爱迪生发明了电灯泡。它改变了世界。现在我们夜晚有很多灯。发明帮助我们。',qa:[{q:'Who made the light bulb?',opts:['Edison','Newton','Einstein','Tesla'],ans:0,why:'文中说 Thomas Edison made the light bulb.'},{q:'Did it change the world?',opts:['Yes','No','Maybe','No idea'],ans:0,why:'文中说 It changed the world.'}]},
+  {id:'p41',emoji:'🌍',title:'My Dream',g:6,en:'When I grow up, I want to be a doctor. I will help sick people. I will study medicine hard. I believe I can do it.',cn:'长大后我想当医生。我会帮助病人。我会努力学习医学。我相信我能做到。',qa:[{q:'What does he want to be?',opts:['A doctor','A teacher','A driver','A cook'],ans:0,why:'文中说 I want to be a doctor.'},{q:'How will he prepare?',opts:['Study medicine hard','Play games','Sleep all day','Travel'],ans:0,why:'文中说 I will study medicine hard.'}]},
+  {id:'p42',emoji:'📖',title:'Reading',g:6,en:'Reading opens the door to the world. Books teach us many things. The more we read, the more we know. Let us read every day!',cn:'阅读打开通向世界的大门。书教我们很多东西。读得越多，懂得越多。让我们每天读书吧！',qa:[{q:'What does reading open?',opts:['The door to the world','A box','A window only','A small door'],ans:0,why:'文中说 Reading opens the door to the world.'},{q:'What happens when we read more?',opts:['We know more','We sleep more','We eat more','We cry more'],ans:0,why:'文中说 The more we read, the more we know.'}]},
+  {"id":"p_ball","emoji":"⚽","title":"My Ball","g":1,"en":"I have a red ball. It is big and round. I play with it every day. I like my ball.","cn":"我有一个红球。它又大又圆。我每天和它玩。我喜欢我的球。","qa":[{"q":"What color is the ball?","opts":["Red","Blue","Green","Yellow"],"ans":0,"why":"文中说 I have a red ball."},{"q":"Is the ball big?","opts":["Yes","No","Small","Round"],"ans":0,"why":"文中说 It is big and round."}]},
+  {"id":"p_cat1","emoji":"🐱","title":"A Small Cat","g":1,"en":"This is a small cat. It is white. It likes to sleep. It is very cute.","cn":"这是一只小猫。它是白色的。它喜欢睡觉。它很可爱。","qa":[{"q":"What color is the cat?","opts":["White","Black","Brown","Red"],"ans":0,"why":"文中说 It is white."},{"q":"What does the cat like?","opts":["To sleep","To run","To eat","To sing"],"ans":0,"why":"文中说 It likes to sleep."}]},
+  {"id":"p_dog2","emoji":"🐶","title":"Bob the Dog","g":2,"en":"My dog is brown. His name is Bob. He can run fast. He likes to play with me.","cn":"我的狗是棕色的。他的名字叫 Bob。他能跑得快。他喜欢和我玩。","qa":[{"q":"What is the dog name?","opts":["Bob","Tom","Tim","Ben"],"ans":0,"why":"文中说 His name is Bob."},{"q":"What can the dog do?","opts":["Run fast","Swim","Fly","Sing"],"ans":0,"why":"文中说 He can run fast."}]},
+  {"id":"p_apple","emoji":"🍎","title":"My Apple Tree","g":2,"en":"We have red apples. They are sweet. My mom buys them at the market. I eat one every day.","cn":"我们有红苹果。它们很甜。妈妈在市场买它们。我每天吃一个。","qa":[{"q":"Are the apples sweet?","opts":["Yes","No","Sour","Big"],"ans":0,"why":"文中说 They are sweet."},{"q":"Where does mom buy them?","opts":["At the market","At school","In the park","At home"],"ans":0,"why":"文中说 My mom buys them at the market."}]},
+  {"id":"p_school3","emoji":"🏫","title":"Our School","g":3,"en":"Our school is big. There are many classrooms. We read books in the library. We play on the playground.","cn":"我们的学校很大。有许多教室。我们在图书馆读书。我们在操场上玩。","qa":[{"q":"Where do they read books?","opts":["In the library","In the classroom","At home","On the playground"],"ans":0,"why":"文中说 We read books in the library."},{"q":"Is the school big?","opts":["Yes","No","Small","Old"],"ans":0,"why":"文中说 Our school is big."}]},
+  {"id":"p_tree","emoji":"🌳","title":"The Old Tree","g":3,"en":"There is an old tree in my yard. Birds sing on it. I sit under it and read. It gives cool shade.","cn":"我院子里有一棵老树。鸟儿在树上唱歌。我坐在树下读书。它带来清凉的树荫。","qa":[{"q":"What is in the yard?","opts":["An old tree","A small house","A car","A dog"],"ans":0,"why":"文中说 There is an old tree in my yard."},{"q":"What do birds do?","opts":["Sing on the tree","Sleep","Eat apples","Fly away"],"ans":0,"why":"文中说 Birds sing on it."}]},
+  {"id":"p_rain","emoji":"🌧️","title":"A Rainy Day","g":4,"en":"It rained last night. The ground is wet. I put on my raincoat and went out. I saw small worms on the road.","cn":"昨晚下雨了。地面是湿的。我穿上雨衣出门。我看见路上有小蚯蚓。","qa":[{"q":"What did the writer wear?","opts":["A raincoat","A hat","Boots","An umbrella"],"ans":0,"why":"文中说 I put on my raincoat."},{"q":"When did it rain?","opts":["Last night","This morning","Yesterday noon","Now"],"ans":0,"why":"文中说 It rained last night."}]},
+  {"id":"p_help","emoji":"🤝","title":"Helping Mom","g":4,"en":"I helped my mom clean the room. I swept the floor and she wiped the table. We finished quickly. Mom was happy.","cn":"我帮妈妈打扫房间。我扫地，她擦桌子。我们很快做完。妈妈很高兴。","qa":[{"q":"What did the writer do?","opts":["Swept the floor","Wiped the table","Cooked","Washed clothes"],"ans":0,"why":"文中说 I swept the floor."},{"q":"How did mom feel?","opts":["Happy","Tired","Angry","Sad"],"ans":0,"why":"文中说 Mom was happy."}]},
+  {"id":"p_library","emoji":"📚","title":"In the Library","g":5,"en":"The library is quiet. Students read books or do homework there. I borrowed a science book. It tells about stars and planets.","cn":"图书馆很安静。学生在那里读书或做作业。我借了一本科学书。它讲星星和行星。","qa":[{"q":"Is the library quiet?","opts":["Yes","No","Noisy","Big"],"ans":0,"why":"文中说 The library is quiet."},{"q":"What did the writer borrow?","opts":["A science book","A story book","A pen","A map"],"ans":0,"why":"文中说 I borrowed a science book."}]},
+  {"id":"p_season","emoji":"🍂","title":"My Favorite Season","g":5,"en":"Autumn is my favorite season. The leaves turn yellow and red. The air is cool. We pick apples on the farm.","cn":"秋天是我最喜欢的季节。叶子变成黄和红。空气凉爽。我们在农场摘苹果。","qa":[{"q":"What is the writer favorite season?","opts":["Autumn","Spring","Summer","Winter"],"ans":0,"why":"文中说 Autumn is my favorite season."},{"q":"What do they pick?","opts":["Apples","Oranges","Flowers","Leaves"],"ans":0,"why":"文中说 We pick apples on the farm."}]},
+  {"id":"p_invent","emoji":"💡","title":"Great Inventions","g":6,"en":"The light bulb changed our life. Before it, people used candles at night. Thomas Edison made the first long-lasting bulb. It brought bright light to homes.","cn":"灯泡改变了我们的生活。在此之前，人们晚上用蜡烛。托马斯·爱迪生制造了第一个耐用的灯泡。它给家里带来明亮的光。","qa":[{"q":"Who made the first long-lasting bulb?","opts":["Thomas Edison","Newton","Einstein","Bell"],"ans":0,"why":"文中说 Thomas Edison made the first long-lasting bulb."},{"q":"What did people use before bulbs?","opts":["Candles","Oil lamps","Fire","Moonlight"],"ans":0,"why":"文中说 people used candles at night."}]},
+  {"id":"p_ocean","emoji":"🌊","title":"The Blue Ocean","g":6,"en":"The ocean is full of life. Fish of many colors swim among the corals. Whales are the biggest animals on earth. We must protect the sea.","cn":"海洋充满生命。各种颜色的鱼在珊瑚间游。鲸鱼是地球上最大的动物。我们必须保护海洋。","qa":[{"q":"Where do fish swim?","opts":["Among the corals","On the beach","In the river","In the sky"],"ans":0,"why":"文中说 Fish swim among the corals."},{"q":"What must we do?","opts":["Protect the sea","Catch whales","Pollute water","Eat fish"],"ans":0,"why":"文中说 We must protect the sea."}]}
+
+  ,{"id":"p_duck","emoji":"🦆","title":"My Duck","g":1,"en":"I have a yellow duck. It lives in the river. It likes to swim. It is very cute.","cn":"我有一只黄色的鸭子。它住在河里。它喜欢游泳。它很可爱。","qa":[{"q":"What color is the duck?","opts":["Yellow","Blue","Red","Green"],"ans":0,"why":"文中说 a yellow duck."},{"q":"Where does it live?","opts":["In the river","On the desk","In the box","In the tree"],"ans":0,"why":"文中说 It lives in the river."}]}
+  ,{"id":"p_rabbit","emoji":"🐰","title":"A Rabbit","g":1,"en":"This is a white rabbit. It has long ears. It likes carrots. It is small and soft.","cn":"这是一只白色的兔子。它有长耳朵。它喜欢胡萝卜。它又小又软。","qa":[{"q":"What does the rabbit like?","opts":["Carrots","Apples","Meat","Fish"],"ans":0,"why":"文中说 It likes carrots."},{"q":"What color is it?","opts":["White","Yellow","Black","Green"],"ans":0,"why":"文中说 a white rabbit."}]}
+  ,{"id":"p_littlebird","emoji":"🐦","title":"A Little Bird","g":1,"en":"A little bird is in the tree. It can sing. It is blue and small. I like the bird.","cn":"一只小鸟在树上。它会唱歌。它又蓝又小。我喜欢这只鸟。","qa":[{"q":"What can the bird do?","opts":["Sing","Swim","Run","Jump"],"ans":0,"why":"文中说 It can sing."},{"q":"What color is the bird?","opts":["Blue","Red","Yellow","Green"],"ans":0,"why":"文中说 It is blue and small."}]}
+  ,{"id":"p_cow","emoji":"🐮","title":"On the Farm","g":1,"en":"We go to the farm. We see a big cow. The cow eats grass. The farm is fun.","cn":"我们去农场。我们看见一头大奶牛。奶牛吃草。农场很好玩。","qa":[{"q":"What do we see on the farm?","opts":["A cow","A cat","A dog","A fish"],"ans":0,"why":"文中说 We see a big cow."},{"q":"What does the cow eat?","opts":["Grass","Meat","Fish","Rice"],"ans":0,"why":"文中说 The cow eats grass."}]}
+  ,{"id":"p_birthday","emoji":"🎂","title":"My Birthday","g":2,"en":"Today is my birthday. I get many gifts. My friends come to my party. We eat cake and sing.","cn":"今天是我的生日。我收到很多礼物。朋友们来参加我的聚会。我们吃蛋糕唱歌。","qa":[{"q":"What day is it?","opts":["His birthday","Sunday","Monday","A holiday"],"ans":0,"why":"文中说 Today is my birthday."},{"q":"What do they do?","opts":["Eat cake and sing","Swim","Run","Read"],"ans":0,"why":"文中说 We eat cake and sing."}]}
+  ,{"id":"p_teacher","emoji":"👩","title":"My Teacher","g":2,"en":"My teacher is kind. She teaches us English. She writes on the blackboard. We like her class.","cn":"我的老师很和蔼。她教我们英语。她在黑板上写字。我们喜欢她的课。","qa":[{"q":"What does the teacher teach?","opts":["English","Math","Music","Art"],"ans":0,"why":"文中说 She teaches us English."},{"q":"Is she kind?","opts":["Yes","No","Angry","Sad"],"ans":0,"why":"文中说 My teacher is kind."}]}
+  ,{"id":"p_milk","emoji":"🥛","title":"Milk","g":2,"en":"Milk is white. It is good for us. I drink milk every morning. Milk makes me strong.","cn":"牛奶是白色的。它对我们有好处。我每天早上喝牛奶。牛奶让我强壮。","qa":[{"q":"What color is milk?","opts":["White","Yellow","Red","Green"],"ans":0,"why":"文中说 Milk is white."},{"q":"Is milk good for us?","opts":["Yes","No","Bad","Old"],"ans":0,"why":"文中说 It is good for us."}]}
+  ,{"id":"p_train","emoji":"🚂","title":"A Train to the City","g":2,"en":"We take a train to the city. The train is fast. We see many houses. The trip is fun.","cn":"我们坐火车去城市。火车很快。我们看到许多房子。旅途很好玩。","qa":[{"q":"How do they go to the city?","opts":["By train","By bus","By car","On foot"],"ans":0,"why":"文中说 We take a train to the city."},{"q":"Is the train fast?","opts":["Yes","No","Slow","Old"],"ans":0,"why":"文中说 The train is fast."}]}
+  ,{"id":"p_mountain","emoji":"⛰️","title":"The Mountain","g":3,"en":"There is a high mountain near my town. We climb it on weekends. The air is fresh. We are happy.","cn":"我镇子附近有一座高山。我们周末去爬。空气很清新。我们很开心。","qa":[{"q":"What is near the town?","opts":["A high mountain","A river","A park","A lake"],"ans":0,"why":"文中说 There is a high mountain near my town."},{"q":"When do they climb?","opts":["On weekends","On Monday","At night","In winter"],"ans":0,"why":"文中说 We climb it on weekends."}]}
+  ,{"id":"p_breakfast","emoji":"🍳","title":"My Breakfast","g":3,"en":"I have breakfast at seven. I eat bread and eggs. I drink orange juice. Breakfast gives me energy.","cn":"我七点吃早饭。我吃面包和鸡蛋。我喝橙汁。早餐给我能量。","qa":[{"q":"What does he eat?","opts":["Bread and eggs","Rice and meat","Cake and milk","Noodles"],"ans":0,"why":"文中说 I eat bread and eggs."},{"q":"When does he eat breakfast?","opts":["At seven","At noon","At night","At nine"],"ans":0,"why":"文中说 I have breakfast at seven."}]}
+  ,{"id":"p_rainbow","emoji":"🌈","title":"After the Rain","g":3,"en":"It rained in the morning. Now the sun is out. We see a rainbow in the sky. It has many colors.","cn":"早上下过雨。现在太阳出来了。我们看到天空中的彩虹。它有许多颜色。","qa":[{"q":"What do they see?","opts":["A rainbow","A star","A moon","A cloud"],"ans":0,"why":"文中说 We see a rainbow in the sky."},{"q":"When did it rain?","opts":["In the morning","At night","At noon","In the evening"],"ans":0,"why":"文中说 It rained in the morning."}]}
+  ,{"id":"p_pencil","emoji":"✏️","title":"My Pencil","g":3,"en":"This pencil is long. It is yellow and red. I write with it at school. I put it in my box.","cn":"这支铅笔很长。它是黄红相间的。我在学校用它写字。我把它放进笔盒里。","qa":[{"q":"What color is the pencil?","opts":["Yellow and red","Blue and white","Green and black","Only red"],"ans":0,"why":"文中说 It is yellow and red."},{"q":"Where does he put it?","opts":["In his box","On the desk","In the tree","Under the bed"],"ans":0,"why":"文中说 I put it in my box."}]}
+  ,{"id":"p_doctor","emoji":"🏥","title":"A Kind Doctor","g":4,"en":"The doctor is very kind. She helps sick people. She wears a white coat. Many people like her.","cn":"这位医生很和蔼。她帮助生病的人。她穿白大褂。许多人喜欢她。","qa":[{"q":"What does the doctor wear?","opts":["A white coat","Red shoes","A hat","A blue bag"],"ans":0,"why":"文中说 She wears a white coat."},{"q":"Who does she help?","opts":["Sick people","Animals","Birds","Fish"],"ans":0,"why":"文中说 She helps sick people."}]}
+  ,{"id":"p_camp","emoji":"⛺","title":"Summer Camp","g":4,"en":"We went to a summer camp. We slept in a tent. We cooked food outside. We made new friends.","cn":"我们去了夏令营。我们睡在帐篷里。我们在户外做饭。我们交了新朋友。","qa":[{"q":"Where did they sleep?","opts":["In a tent","In a hotel","At home","In a car"],"ans":0,"why":"文中说 We slept in a tent."},{"q":"What did they do?","opts":["Cooked food outside","Made a snowman","Swam in the sea","Went to school"],"ans":0,"why":"文中说 We cooked food outside."}]}
+  ,{"id":"p_robot","emoji":"🤖","title":"My Robot","g":4,"en":"I have a small robot. It can walk and talk. It helps me clean my room. The robot is my friend.","cn":"我有一个小机器人。它会走路和说话。它帮我打扫房间。机器人是我的朋友。","qa":[{"q":"What can the robot do?","opts":["Walk and talk","Sing and dance","Swim and fly","Read and write"],"ans":0,"why":"文中说 It can walk and talk."},{"q":"Is the robot his friend?","opts":["Yes","No","A toy","A book"],"ans":0,"why":"文中说 The robot is my friend."}]}
+  ,{"id":"p_garden","emoji":"🌻","title":"Grandma's Garden","g":4,"en":"My grandma has a garden. She grows flowers and tomatoes. Bees fly around the flowers. The garden is beautiful.","cn":"我奶奶有一个花园。她种花和番茄。蜜蜂在花周围飞。花园很美。","qa":[{"q":"What does grandma grow?","opts":["Flowers and tomatoes","Apples and pears","Rice and wheat","Trees and grass"],"ans":0,"why":"文中说 She grows flowers and tomatoes."},{"q":"Who flies around the flowers?","opts":["Bees","Birds","Cats","Dogs"],"ans":0,"why":"文中说 Bees fly around the flowers."}]}
+  ,{"id":"p_volcano","emoji":"🌋","title":"The Volcano","g":5,"en":"A volcano is a mountain that can erupt. Hot rock comes out. It is dangerous but amazing. Scientists study volcanoes.","cn":"火山是一座会喷发的山。滚烫的岩石喷出来。它危险却神奇。科学家研究火山。","qa":[{"q":"What can a volcano do?","opts":["Erupt","Swim","Sing","Grow"],"ans":0,"why":"文中说 a mountain that can erupt."},{"q":"Who studies volcanoes?","opts":["Scientists","Teachers","Farmers","Doctors"],"ans":0,"why":"文中说 Scientists study volcanoes."}]}
+  ,{"id":"p_internet","emoji":"💻","title":"Using the Internet","g":5,"en":"We use the internet to learn. We watch classes online. We send emails to friends. The internet connects the world.","cn":"我们用互联网学习。我们在线看课。我们给朋友发邮件。互联网连接世界。","qa":[{"q":"What do they use the internet to do?","opts":["Learn","Swim","Cook","Run"],"ans":0,"why":"文中说 We use the internet to learn."},{"q":"Whom do they send emails to?","opts":["Friends","Teachers","Parents","Doctors"],"ans":0,"why":"文中说 We send emails to friends."}]}
+  ,{"id":"p_recycle","emoji":"♻️","title":"Recycling","g":5,"en":"We should recycle paper and bottles. We put them in green bins. This saves trees and keeps earth clean. Everyone can help.","cn":"我们应该回收纸和瓶子。我们把它们放进绿色垃圾桶。这拯救树木、保持地球清洁。每个人都能帮忙。","qa":[{"q":"What should we recycle?","opts":["Paper and bottles","Food and water","Cars and trains","Books and pens"],"ans":0,"why":"文中说 We should recycle paper and bottles."},{"q":"What do green bins do?","opts":["Save trees and keep earth clean","Hold water","Store food","Keep toys"],"ans":0,"why":"文中说 This saves trees and keeps earth clean."}]}
+  ,{"id":"p_moon","emoji":"🌕","title":"The Moon","g":5,"en":"The moon is our neighbor in space. It has no air or water. People walked on it long ago. It shines at night.","cn":"月亮是我们在太空中的邻居。它没有空气和水。很久以前有人在上面走过。它在夜晚发光。","qa":[{"q":"Does the moon have air?","opts":["No","Yes","Maybe","Sometimes"],"ans":0,"why":"文中说 It has no air or water."},{"q":"When does it shine?","opts":["At night","In the day","At noon","In the morning"],"ans":0,"why":"文中说 It shines at night."}]}
+  ,{"id":"p_climate","emoji":"🌍","title":"Climate Change","g":6,"en":"The earth is getting warmer. Ice at the poles is melting. We must use less energy. Small acts can make a big difference.","cn":"地球正在变暖。两极的冰在融化。我们必须少用能源。小小的行动能带来大不同。","qa":[{"q":"What is happening to the earth?","opts":["Getting warmer","Melting only","Getting colder","Stopping"],"ans":0,"why":"文中说 The earth is getting warmer."},{"q":"What must we do?","opts":["Use less energy","Use more cars","Eat more","Travel more"],"ans":0,"why":"文中说 We must use less energy."}]}
+  ,{"id":"p_inventor","emoji":"💡","title":"A Great Inventor","g":6,"en":"Alexander Bell made the telephone. It let people talk far away. His work changed the world. We still use phones today.","cn":"亚历山大·贝尔发明了电话。它让人能远距离交谈。他的工作改变了世界。今天我们仍在使用电话。","qa":[{"q":"Who made the telephone?","opts":["Alexander Bell","Edison","Newton","Einstein"],"ans":0,"why":"文中说 Alexander Bell made the telephone."},{"q":"What did the telephone let people do?","opts":["Talk far away","Swim","Fly","Read"],"ans":0,"why":"文中说 It let people talk far away."}]}
+  ,{"id":"p_forest","emoji":"🌲","title":"The Forest","g":6,"en":"Forests are home to many animals. Trees clean the air we breathe. Cutting too many trees is harmful. We should protect forests.","cn":"森林是许多动物的家。树木净化我们呼吸的空气。砍伐过多树木是有害的。我们应该保护森林。","qa":[{"q":"What do forests clean?","opts":["The air","Birds","Water","Cars"],"ans":0,"why":"文中说 Trees clean the air we breathe."},{"q":"Should we protect forests?","opts":["Yes","No","Cut them","Ignore them"],"ans":0,"why":"文中说 We should protect forests."}]}
+  ,{"id":"p_dreamjob","emoji":"🚀","title":"Dream Jobs","g":6,"en":"Different people have different dreams. Some want to be pilots. Others want to be artists. Work hard and your dream may come true.","cn":"不同的人有不同的梦想。有些人想当飞行员。有些人想当艺术家。努力奋斗，梦想也许会成真。","qa":[{"q":"What may some people want to be?","opts":["Pilots","Doctors only","Teachers only","Farmers only"],"ans":0,"why":"文中说 Some want to be pilots."},{"q":"How can a dream come true?","opts":["Work hard","Eat more","Sleep more","Play games"],"ans":0,"why":"文中说 Work hard and your dream may come true."}]},
+  {"id":"rp1","emoji":"🐱","title":"My White Cat","g":1,"en":"I have a white cat. Her name is Mimi. She likes to sleep. She is very cute.","cn":"我有一只白色的猫。她的名字叫咪咪。她喜欢睡觉。她非常可爱。","qa":[{"q":"What color is the cat?","opts":["White","Black","Red"],"ans":"White","why":"文中说 a white cat。"},{"q":"What does Mimi like to do?","opts":["Sleep","Run","Swim"],"ans":"Sleep","why":"文中说 She likes to sleep。"}]},
+  {"id":"rp2","emoji":"🍎","title":"Red Apples","g":1,"en":"There is a big tree. It has red apples. We pick the apples. They are sweet.","cn":"有一棵大树。它结着红苹果。我们摘苹果。它们很甜。","qa":[{"q":"What fruit is on the tree?","opts":["Apples","Pears","Bananas"],"ans":"Apples","why":"文中说 red apples。"},{"q":"Are the apples sweet?","opts":["Yes","No"],"ans":"Yes","why":"文中说 They are sweet。"}]},
+  {"id":"rp3","emoji":"🚌","title":"A Bus Ride","g":1,"en":"I take a bus to school. The bus is yellow. I sit by the window. I see the park.","cn":"我坐公交车上学。公交车是黄色的。我坐在窗边。我看见了公园。","qa":[{"q":"What color is the bus?","opts":["Yellow","Red","Blue"],"ans":"Yellow","why":"文中说 The bus is yellow。"},{"q":"Where does the child sit?","opts":["By the window","On the floor","At the door"],"ans":"By the window","why":"文中说 I sit by the window。"}]},
+  {"id":"rp4","emoji":"☀️","title":"A Sunny Day","g":1,"en":"The sun is high. The sky is blue. A dog plays on the grass. We are happy.","cn":"太阳高高挂着。天空是蓝色的。一只狗在草地上玩耍。我们很开心。","qa":[{"q":"What is the weather like?","opts":["Sunny","Rainy","Snowy"],"ans":"Sunny","why":"太阳高照、天空蓝，是晴天。"},{"q":"Where does the dog play?","opts":["On the grass","In the water","On the bed"],"ans":"On the grass","why":"文中说 on the grass。"}]},
+  {"id":"rp5","emoji":"🐶","title":"My Dog Bob","g":2,"en":"Bob is my dog. He is brown. He runs fast. He likes bones.","cn":"鲍勃是我的狗。他是棕色的。他跑得快。他喜欢骨头。","qa":[{"q":"What is the dog's name?","opts":["Bob","Tom","Sam"],"ans":"Bob","why":"文中说 Bob is my dog。"},{"q":"What does Bob like?","opts":["Bones","Fish","Cake"],"ans":"Bones","why":"文中说 He likes bones。"}]},
+  {"id":"rp6","emoji":"🎒","title":"At School","g":2,"en":"I go to school. My teacher is kind. We read books. We draw pictures.","cn":"我去上学。我的老师很和善。我们读书。我们画画。","qa":[{"q":"Who is kind?","opts":["The teacher","The dog","The cat"],"ans":"The teacher","why":"文中说 My teacher is kind。"},{"q":"What do they draw?","opts":["Pictures","Cars","Maps"],"ans":"Pictures","why":"文中说 We draw pictures。"}]},
+  {"id":"rp7","emoji":"🌧️","title":"Rain","g":2,"en":"It is raining. I open my umbrella. The rain falls down. The flowers drink water.","cn":"下雨了。我撑开雨伞。雨落下来。花儿喝水。","qa":[{"q":"What do I open?","opts":["An umbrella","A book","A door"],"ans":"An umbrella","why":"文中说 I open my umbrella。"},{"q":"Who drinks the water?","opts":["Flowers","Birds","Cats"],"ans":"Flowers","why":"文中说 The flowers drink water。"}]},
+  {"id":"rp8","emoji":"🍰","title":"A Birthday Cake","g":2,"en":"Today is my birthday. Mom makes a cake. It is pink. I eat a big piece.","cn":"今天是我的生日。妈妈做了一个蛋糕。它是粉色的。我吃了一大块。","qa":[{"q":"What does Mom make?","opts":["A cake","A book","A car"],"ans":"A cake","why":"文中说 Mom makes a cake。"},{"q":"What color is the cake?","opts":["Pink","Blue","Green"],"ans":"Pink","why":"文中说 It is pink。"}]},
+  {"id":"rp9","emoji":"🐰","title":"The Rabbit","g":3,"en":"A rabbit lives in the garden. It has long ears. It eats carrots. It hops and hops.","cn":"一只兔子住在花园里。它有长耳朵。它吃胡萝卜。它一蹦一蹦的。","qa":[{"q":"What does the rabbit eat?","opts":["Carrots","Meat","Bread"],"ans":"Carrots","why":"文中说 It eats carrots。"},{"q":"Where does it live?","opts":["In the garden","In the sea","In the tree"],"ans":"In the garden","why":"文中说 lives in the garden。"}]},
+  {"id":"rp10","emoji":"📚","title":"Library Time","g":3,"en":"We go to the library. It is quiet there. I borrow a book. I read it at home.","cn":"我们去图书馆。那里很安静。我借了一本书。我在家读它。","qa":[{"q":"Is the library quiet?","opts":["Yes","No"],"ans":"Yes","why":"文中说 It is quiet there。"},{"q":"Where do I read the book?","opts":["At home","At school","In the car"],"ans":"At home","why":"文中说 I read it at home。"}]},
+  {"id":"rp11","emoji":"⚽","title":"A Football Game","g":3,"en":"We play football. Tom kicks the ball. Lucy runs fast. Our team wins.","cn":"我们踢足球。汤姆踢球。露西跑得快。我们队赢了。","qa":[{"q":"What sport do they play?","opts":["Football","Basketball","Tennis"],"ans":"Football","why":"文中说 We play football。"},{"q":"Which team wins?","opts":["Our team","Their team","No team"],"ans":"Our team","why":"文中说 Our team wins。"}]},
+  {"id":"rp12","emoji":"🌟","title":"Night Sky","g":3,"en":"At night the sky is dark. The moon is round. Stars shine bright. I count them.","cn":"夜晚天空是黑的。月亮是圆的。星星明亮地闪。我数着它们。","qa":[{"q":"What is round in the sky?","opts":["The moon","The sun","The cloud"],"ans":"The moon","why":"文中说 The moon is round。"},{"q":"Do stars shine?","opts":["Yes","No"],"ans":"Yes","why":"文中说 Stars shine bright。"}]},
+  {"id":"rp13","emoji":"🏞️","title":"A Trip to the Country","g":4,"en":"We visit the country. There are green hills. A river flows slowly. We hear birds sing.","cn":"我们去了乡村。有绿色的小山。河水缓缓地流。我们听见鸟儿唱歌。","qa":[{"q":"What do they visit?","opts":["The country","The city","The school"],"ans":"The country","why":"文中说 We visit the country。"},{"q":"What flows slowly?","opts":["A river","A car","A dog"],"ans":"A river","why":"文中说 A river flows slowly。"}]},
+  {"id":"rp14","emoji":"🍕","title":"Making Pizza","g":4,"en":"Dad makes pizza. He puts cheese on it. The oven is hot. We eat it for dinner.","cn":"爸爸做披萨。他把奶酪放在上面。烤箱很热。我们晚餐吃它。","qa":[{"q":"What does Dad put on the pizza?","opts":["Cheese","Ice","Sand"],"ans":"Cheese","why":"文中说 He puts cheese on it。"},{"q":"When do they eat it?","opts":["For dinner","For breakfast","For lunch"],"ans":"For dinner","why":"文中说 for dinner。"}]},
+  {"id":"rp15","emoji":"🐝","title":"The Busy Bee","g":4,"en":"A bee flies to flowers. It collects honey. It is busy all day. The honey is sweet.","cn":"一只蜜蜂飞向花儿。它采蜜。它整天忙碌。蜂蜜是甜的。","qa":[{"q":"What does the bee collect?","opts":["Honey","Water","Leaves"],"ans":"Honey","why":"文中说 It collects honey。"},{"q":"Is the bee busy?","opts":["Yes","No"],"ans":"Yes","why":"文中说 It is busy all day。"}]},
+  {"id":"rp16","emoji":"🌊","title":"At the Seaside","g":4,"en":"We go to the sea. The sand is warm. Waves come and go. I build a sand castle.","cn":"我们去了海边。沙子是暖的。海浪来来回回。我堆了一个沙堡。","qa":[{"q":"What do I build?","opts":["A sand castle","A house","A car"],"ans":"A sand castle","why":"文中说 I build a sand castle。"},{"q":"Is the sand warm?","opts":["Yes","No"],"ans":"Yes","why":"文中说 The sand is warm。"}]},
+  {"id":"rp17","emoji":"🌱","title":"How Plants Grow","g":5,"en":"A seed falls into the soil. It gets water and sun. A small plant comes out. It grows taller and taller.","cn":"一粒种子落进泥土。它得到水和阳光。一棵小苗冒出来。它越长越高。","qa":[{"q":"What helps the seed grow?","opts":["Water and sun","Snow and ice","Wind and rain"],"ans":"Water and sun","why":"文中说 gets water and sun。"},{"q":"What comes out of the soil?","opts":["A small plant","A fish","A bird"],"ans":"A small plant","why":"文中说 A small plant comes out。"}]},
+  {"id":"rp18","emoji":"🚀","title":"A Dream of Space","g":5,"en":"Jack wants to be an astronaut. He reads books about space. He looks at the stars. He dreams of flying to the moon.","cn":"杰克想当宇航员。他读关于太空的书。他看星星。他梦想飞到月亮上。","qa":[{"q":"What does Jack want to be?","opts":["An astronaut","A doctor","A teacher"],"ans":"An astronaut","why":"文中说 wants to be an astronaut。"},{"q":"What does he dream of?","opts":["Flying to the moon","Swimming in the sea","Climbing a hill"],"ans":"Flying to the moon","why":"文中说 dreams of flying to the moon。"}]},
+  {"id":"rp19","emoji":"🐼","title":"Giant Pandas","g":5,"en":"Pandas live in China. They eat bamboo all day. They are black and white. Baby pandas are cute.","cn":"熊猫住在中国。它们整天吃竹子。它们是黑白的。熊猫宝宝很可爱。","qa":[{"q":"Where do pandas live?","opts":["In China","In India","In Japan"],"ans":"In China","why":"文中说 Pandas live in China。"},{"q":"What do pandas eat?","opts":["Bamboo","Meat","Grass"],"ans":"Bamboo","why":"文中说 They eat bamboo。"}]},
+  {"id":"rp20","emoji":"💡","title":"Saving Energy","g":5,"en":"We should save energy. Turn off the light. Walk to school. Do not waste water.","cn":"我们应该节约能源。关掉灯。走路去上学。不要浪费水。","qa":[{"q":"What should we turn off?","opts":["The light","The TV only","The door"],"ans":"The light","why":"文中说 Turn off the light。"},{"q":"How do we go to school?","opts":["Walk","Drive a car","Take a plane"],"ans":"Walk","why":"文中说 Walk to school。"}]},
+  {"id":"rp21","emoji":"🌍","title":"Our Blue Earth","g":6,"en":"Earth is our home. It has land and oceans. People and animals live here. We must keep it clean.","cn":"地球是我们的家。它有陆地和海洋。人和动物住在这里。我们必须保持它干净。","qa":[{"q":"What does Earth have?","opts":["Land and oceans","Only land","Only ice"],"ans":"Land and oceans","why":"文中说 has land and oceans。"},{"q":"What must we do?","opts":["Keep it clean","Leave it dirty","Burn it"],"ans":"Keep it clean","why":"文中说 We must keep it clean。"}]},
+  {"id":"rp22","emoji":"🔬","title":"The Science Fair","g":6,"en":"Our school holds a science fair. Lucy makes a robot. Tom grows crystals. Visitors are surprised.","cn":"我们学校举办科学展。露西做了一个机器人。汤姆养了水晶。参观者很惊讶。","qa":[{"q":"What does Lucy make?","opts":["A robot","A cake","A book"],"ans":"A robot","why":"文中说 Lucy makes a robot。"},{"q":"Are visitors surprised?","opts":["Yes","No"],"ans":"Yes","why":"文中说 Visitors are surprised。"}]},
+  {"id":"rp23","emoji":"📖","title":"The Power of Reading","g":6,"en":"Reading opens new worlds. A good book teaches us. It brings joy and ideas. Read a little every day.","cn":"阅读开启新世界。一本好书教我们。它带来快乐和想法。每天读一点。","qa":[{"q":"What does reading open?","opts":["New worlds","A door only","A box"],"ans":"New worlds","why":"文中说 Reading opens new worlds。"},{"q":"What does a good book bring?","opts":["Joy and ideas","Only noise","Only sleep"],"ans":"Joy and ideas","why":"文中说 It brings joy and ideas。"}]},
+  {"id":"rp24","emoji":"🤝","title":"Helping Hands","g":6,"en":"A neighbour needs help. We carry her bags. She smiles and says thanks. Small acts make a big difference.","cn":"一位邻居需要帮助。我们帮她拎包。她微笑着说谢谢。小小的举动带来很大的不同。","qa":[{"q":"Whose bags do we carry?","opts":["A neighbour's","A teacher's","A dog's"],"ans":"A neighbour's","why":"文中说 A neighbour needs help。"},{"q":"Do small acts matter?","opts":["Yes","No"],"ans":"Yes","why":"文中说 make a big difference。"}]},
+  {"id":"rp25","emoji":"🚌","title":"The School Bus","g":1,"en":"I take the school bus. The driver is kind. My friend sits next to me. We sing songs on the bus.","cn":"我坐校车。司机很和气。我的朋友坐在我旁边。我们在车上唱歌。","qa":[{"q":"How do I go to school?","opts":["By school bus","By bike","On foot"],"ans":0,"why":"文中说 I take the school bus。"},{"q":"Who sits next to me?","opts":["My friend","My teacher","My sister"],"ans":0,"why":"文中说 My friend sits next to me。"}]},
+  {"id":"rp26","emoji":"🥕","title":"In the Garden","g":1,"en":"Grandpa has a garden. There are carrots and tomatoes. I water the plants. The vegetables grow big.","cn":"爷爷有一个菜园。里面有胡萝卜和西红柿。我给植物浇水。蔬菜长得很大。","qa":[{"q":"Whose garden is it?","opts":["Grandpa's","Mine","The teacher's"],"ans":0,"why":"文中说 Grandpa has a garden。"},{"q":"What do I do in the garden?","opts":["Water the plants","Cook food","Watch TV"],"ans":0,"why":"文中说 I water the plants。"}]},
+  {"id":"rp27","emoji":"🌧️","title":"Rainy Days","g":2,"en":"It rains today. I stay at home. I draw pictures and read books. Mum makes hot soup for me.","cn":"今天下雨。我待在家里。我画画和读书。妈妈给我做了热汤。","qa":[{"q":"What is the weather like?","opts":["Rainy","Sunny","Snowy"],"ans":0,"why":"文中说 It rains today。"},{"q":"Who makes hot soup?","opts":["Mum","Dad","Grandma"],"ans":0,"why":"文中说 Mum makes hot soup for me。"}]},
+  {"id":"rp28","emoji":"🪁","title":"Flying a Kite","g":2,"en":"The wind blows hard. Dad and I fly a kite. The kite flies very high. It looks like a big bird.","cn":"风刮得很大。我和爸爸放风筝。风筝飞得很高。它看起来像一只大鸟。","qa":[{"q":"What do we fly?","opts":["A kite","A plane","A balloon"],"ans":0,"why":"文中说 Dad and I fly a kite。"},{"q":"What does the kite look like?","opts":["A big bird","A fish","A cat"],"ans":0,"why":"文中说 It looks like a big bird。"}]},
+  {"id":"rp29","emoji":"🔬","title":"A Science Class","g":3,"en":"Today we have a science class. We learn about water. Ice becomes water. Water becomes vapour. Science is fun.","cn":"今天我们上科学课。我们学习水。冰变成水。水变成水蒸气。科学很有趣。","qa":[{"q":"What do we learn about?","opts":["Water","Fire","Wind"],"ans":0,"why":"文中说 We learn about water。"},{"q":"What does ice become?","opts":["Water","Vapour","Stone"],"ans":0,"why":"文中说 Ice becomes water。"}]},
+  {"id":"rp30","emoji":"🏥","title":"A Visit to the Dentist","g":3,"en":"My tooth hurts. Mum takes me to the dentist. The dentist checks my teeth. He says I should brush twice a day.","cn":"我的牙疼。妈妈带我去看牙医。牙医检查我的牙齿。他说我应该一天刷两次牙。","qa":[{"q":"Why do I go to the dentist?","opts":["My tooth hurts","My leg hurts","I want a toy"],"ans":0,"why":"文中说 My tooth hurts。"},{"q":"How often should I brush?","opts":["Twice a day","Once a week","Never"],"ans":0,"why":"文中说 brush twice a day。"}]},
+  {"id":"rp31","emoji":"🌳","title":"Planting Trees","g":4,"en":"It is Tree Planting Day. We dig holes and plant small trees. We water them. Trees make our city green.","cn":"今天是植树节。我们挖坑种小树。我们给它们浇水。树让我们的城市变绿。","qa":[{"q":"What day is it?","opts":["Tree Planting Day","Children's Day","New Year"],"ans":0,"why":"文中说 It is Tree Planting Day。"},{"q":"What do trees do to our city?","opts":["Make it green","Make it dirty","Make it dark"],"ans":0,"why":"文中说 Trees make our city green。"}]},
+  {"id":"rp32","emoji":"🐠","title":"The Goldfish","g":4,"en":"I have a goldfish. It lives in a round bowl. It swims all day. I feed it every morning.","cn":"我有一条金鱼。它住在圆鱼缸里。它整天游泳。我每天早上喂它。","qa":[{"q":"Where does the goldfish live?","opts":["In a round bowl","In a river","In the sea"],"ans":0,"why":"文中说 It lives in a round bowl。"},{"q":"When do I feed it?","opts":["Every morning","Every night","Once a week"],"ans":0,"why":"文中说 I feed it every morning。"}]},
+  {"id":"rp33","emoji":"🧭","title":"Finding the Way","g":5,"en":"Lucy loses her way. A policeman helps her. Go straight and turn left. The bookstore is on the right.","cn":"露西迷路了。一位警察帮她。直走然后左转。书店就在右边。","qa":[{"q":"Who helps Lucy?","opts":["A policeman","A teacher","A doctor"],"ans":0,"why":"文中说 A policeman helps her。"},{"q":"Where is the bookstore?","opts":["On the right","On the left","Behind her"],"ans":0,"why":"文中说 The bookstore is on the right。"}]},
+  {"id":"rp34","emoji":"⏰","title":"Don't Be Late","g":5,"en":"Tom is always late for school. He buys a clock. Now he gets up at six thirty. He is never late again.","cn":"汤姆上学总是迟到。他买了一个闹钟。现在他六点半起床。他再也不迟到了。","qa":[{"q":"What does Tom buy?","opts":["A clock","A watch","A phone"],"ans":0,"why":"文中说 He buys a clock。"},{"q":"Is Tom late again?","opts":["No","Yes","Sometimes"],"ans":0,"why":"文中说 He is never late again。"}]},
+  {"id":"rp35","emoji":"🗑️","title":"Rubbish Sorting","g":6,"en":"We sort rubbish at school. Paper goes into the blue bin. Food waste goes into the green bin. It helps the earth.","cn":"我们在学校给垃圾分类。纸放进蓝色垃圾桶。厨余垃圾放进绿色垃圾桶。这有助于保护地球。","qa":[{"q":"Where does paper go?","opts":["The blue bin","The green bin","The red bin"],"ans":0,"why":"文中说 Paper goes into the blue bin。"},{"q":"What does sorting rubbish help?","opts":["The earth","The moon","Nothing"],"ans":0,"why":"文中说 It helps the earth。"}]},
+  {"id":"rp36","emoji":"🏅","title":"Never Give Up","g":6,"en":"Lily learns to ride a bike. She falls down many times. She does not give up. At last she can ride fast.","cn":"莉莉学骑自行车。她摔倒了很多次。她不放弃。最后她能骑得很快。","qa":[{"q":"What does Lily learn?","opts":["To ride a bike","To swim","To dance"],"ans":0,"why":"文中说 Lily learns to ride a bike。"},{"q":"Does she give up?","opts":["No","Yes","At first"],"ans":0,"why":"文中说 She does not give up。"}]}
+];
+
+// 逐字翻译词典（英文词 -> 中文），覆盖全部问句与选项词汇
+var DICT = {"a":"一个",
+  "about":"关于",
+  "after":"在…之后",
+  "air":"空气",
+  "all":"全部",
+  "amazing":"令人惊奇的",
+  "among":"在…之中",
+  "an":"一个",
+  "and":"和",
+  "angry":"生气的",
+  "animals":"动物",
+  "apple":"苹果",
+  "apples":"苹果",
+  "are":"是",
+  "around":"围绕",
+  "art":"美术",
+  "as":"作为",
+  "astronaut":"宇航员",
+  "astronauts":"宇航员",
+  "at":"在",
+  "ate":"吃了(过去)",
+  "autumn":"秋天",
+  "away":"离开",
+  "baby":"宝宝",
+  "bad":"坏的",
+  "bag":"书包",
+  "ball":"球",
+  "bamboo":"竹子",
+  "bananas":"香蕉",
+  "be":"是",
+  "beautiful":"美丽的",
+  "becomes":"变成",
+  "bed":"床",
+  "before":"在…之前",
+  "believe":"相信",
+  "best":"最好的",
+  "big":"大的",
+  "biggest":"最大的",
+  "bike":"自行车",
+  "bikes":"自行车",
+  "bird":"鸟",
+  "birds":"鸟",
+  "birthday":"生日",
+  "black":"黑色",
+  "blackboard":"黑板",
+  "bloom":"开花",
+  "blue":"蓝色",
+  "boats":"船",
+  "bob":"鲍勃(名)",
+  "bone":"骨头",
+  "bones":"骨头",
+  "book":"书",
+  "books":"书",
+  "boring":"无聊的",
+  "borrow":"借",
+  "borrowed":"借了",
+  "bottle":"瓶子",
+  "box":"盒子",
+  "breaks":"破开",
+  "bridges":"桥",
+  "bright":"明亮的",
+  "brought":"带来了",
+  "brown":"棕色",
+  "build":"建造",
+  "buildings":"建筑物",
+  "built":"建造了",
+  "bulb":"灯泡",
+  "bus":"公交车",
+  "busy":"忙的",
+  "but":"但是",
+  "butterfly":"蝴蝶",
+  "buys":"买",
+  "by":"乘/被",
+  "cake":"蛋糕",
+  "cakes":"蛋糕",
+  "can":"能",
+  "candles":"蜡烛",
+  "car":"汽车",
+  "cars":"汽车",
+  "cat":"猫",
+  "caterpillar":"毛毛虫",
+  "cats":"猫",
+  "center":"中心",
+  "chair":"椅子",
+  "chairs":"椅子",
+  "change":"变化",
+  "changed":"变化了",
+  "cheer":"加油",
+  "chickens":"鸡",
+  "child":"孩子",
+  "children":"孩子们",
+  "china":"中国",
+  "city":"城市",
+  "classes":"课",
+  "classroom":"教室",
+  "classrooms":"教室",
+  "clean":"干净的",
+  "clothes":"衣服",
+  "cloud":"云",
+  "clouds":"云",
+  "coco":"可可(名)",
+  "cold":"冷的",
+  "color":"颜色",
+  "colors":"颜色",
+  "come":"来",
+  "comes":"来",
+  "comic":"漫画",
+  "cook":"烹饪",
+  "cooks":"烹饪",
+  "cool":"凉爽的",
+  "corals":"珊瑚",
+  "countryside":"乡下",
+  "cows":"奶牛",
+  "cream":"奶油",
+  "cry":"哭",
+  "cushions":"垫子",
+  "cut":"砍",
+  "cute":"可爱的",
+  "dad":"爸爸",
+  "day":"日子",
+  "delicious":"美味的",
+  "desk":"书桌",
+  "desks":"课桌",
+  "did":"做(过去)",
+  "dinner":"晚饭",
+  "dinosaur":"恐龙",
+  "dirty":"脏的",
+  "do":"做",
+  "doctor":"医生",
+  "does":"做",
+  "dog":"狗",
+  "dogs":"狗",
+  "door":"门",
+  "drank":"喝了",
+  "dream":"梦想",
+  "driver":"司机",
+  "ducks":"鸭子",
+  "dumplings":"饺子",
+  "earth":"地球",
+  "eat":"吃",
+  "edison":"爱迪生(名)",
+  "egg":"卵",
+  "eight":"八",
+  "eighth":"第八",
+  "einstein":"爱因斯坦(名)",
+  "english":"英语",
+  "evening":"傍晚",
+  "every":"每个",
+  "everyone":"每个人",
+  "experiments":"实验",
+  "eyes":"眼睛",
+  "far":"远的",
+  "farm":"农场",
+  "fast":"快的",
+  "favorite":"最喜欢的",
+  "feel":"感觉",
+  "fields":"田野",
+  "find":"找到",
+  "finished":"做完了",
+  "first":"第一",
+  "fish":"鱼",
+  "floor":"地板",
+  "flowers":"花",
+  "flows":"流",
+  "fly":"飞",
+  "food":"食物",
+  "foot":"脚",
+  "football":"足球",
+  "for":"为了",
+  "forests":"森林",
+  "four":"四",
+  "fresh":"清新的",
+  "friend":"朋友",
+  "friends":"朋友",
+  "from":"从",
+  "fruit":"水果",
+  "full":"充满的",
+  "fun":"有趣",
+  "future":"未来",
+  "games":"游戏",
+  "garden":"花园",
+  "gases":"气体",
+  "get":"起(床)/得到",
+  "gets":"得到",
+  "gifts":"礼物",
+  "give":"给",
+  "gives":"给",
+  "go":"去",
+  "goes":"去",
+  "good":"好的",
+  "grapes":"葡萄",
+  "grass":"草",
+  "great":"很棒的",
+  "green":"绿色",
+  "ground":"地面",
+  "grow":"长大",
+  "grows":"种植",
+  "half":"一半",
+  "happens":"发生",
+  "happily":"开心地",
+  "happy":"开心",
+  "hard":"努力地",
+  "has":"有",
+  "have":"有",
+  "he":"他",
+  "headset":"头戴设备",
+  "help":"帮助",
+  "helped":"帮助了",
+  "helps":"帮助",
+  "her":"她的",
+  "here":"这里",
+  "high":"高的",
+  "him":"他",
+  "his":"他的",
+  "holiday":"假期",
+  "home":"家",
+  "homes":"家",
+  "homework":"作业",
+  "hot":"热的",
+  "hour":"小时",
+  "hours":"小时",
+  "house":"房子",
+  "houses":"房子",
+  "how":"怎样",
+  "huge":"巨大的",
+  "i":"我",
+  "ice":"冰",
+  "idea":"想法",
+  "in":"在…里",
+  "inside":"里面",
+  "inventions":"发明",
+  "is":"是",
+  "it":"它",
+  "its":"它的",
+  "jump":"跳",
+  "jumps":"跳",
+  "keep":"保持",
+  "kite":"风筝",
+  "kites":"风筝",
+  "know":"知道",
+  "lab":"实验室",
+  "ladder":"梯子",
+  "land":"陆地",
+  "last":"最后的",
+  "laugh":"笑",
+  "learn":"学习",
+  "learned":"学到了",
+  "leave":"离开",
+  "leaves":"叶子",
+  "let":"让",
+  "li":"李(名)",
+  "librarian":"图书管理员",
+  "library":"图书馆",
+  "life":"生活",
+  "light":"光",
+  "lights":"灯",
+  "like":"喜欢",
+  "likes":"喜欢",
+  "lily":"莉莉(名)",
+  "liquids":"液体",
+  "live":"居住",
+  "living":"活的",
+  "long":"长的",
+  "long-lasting":"耐用的",
+  "lot":"很多",
+  "love":"爱",
+  "lucy":"露西(名)",
+  "lunch":"午餐",
+  "made":"制作(过去)",
+  "make":"制作",
+  "makes":"制作",
+  "many":"许多",
+  "map":"地图",
+  "market":"市场",
+  "math":"数学",
+  "max":"马克斯(名)",
+  "may":"可能",
+  "maybe":"也许",
+  "me":"我",
+  "meat":"肉",
+  "medicine":"医学",
+  "metals":"金属",
+  "milk":"牛奶",
+  "mimi":"咪咪(名)",
+  "mine":"我的",
+  "mix":"混合",
+  "mixed":"混合了",
+  "mom":"妈妈",
+  "money":"钱",
+  "moon":"月亮",
+  "more":"更多",
+  "morning":"早晨",
+  "mountains":"山",
+  "movies":"电影",
+  "much":"很多",
+  "museum":"博物馆",
+  "music":"音乐",
+  "must":"必须",
+  "my":"我的",
+  "name":"名字",
+  "near":"在…附近",
+  "never":"从不",
+  "new":"新的",
+  "newton":"牛顿(名)",
+  "night":"夜晚",
+  "no":"不",
+  "noodles":"面条",
+  "noon":"中午",
+  "not":"不",
+  "now":"现在",
+  "ocean":"海洋",
+  "oceans":"海洋",
+  "of":"…的",
+  "old":"旧的/老的",
+  "on":"在…上",
+  "one":"一个",
+  "only":"仅仅",
+  "open":"打开",
+  "opens":"打开",
+  "or":"或者",
+  "orange":"橙色的",
+  "oranges":"橙子",
+  "our":"我们的",
+  "ours":"我们的",
+  "out":"出去",
+  "outside":"外面",
+  "pandas":"熊猫",
+  "park":"公园",
+  "party":"聚会",
+  "pencil":"铅笔",
+  "people":"人们",
+  "pick":"采摘",
+  "picked":"摘了",
+  "picture":"图画",
+  "pilot":"飞行员",
+  "pink":"粉色",
+  "place":"地方",
+  "planet":"行星",
+  "planets":"行星",
+  "play":"玩",
+  "playground":"操场",
+  "playing":"玩",
+  "pollute":"污染",
+  "prepare":"准备",
+  "protect":"保护",
+  "pupa":"蛹",
+  "purple":"紫色",
+  "put":"放",
+  "puts":"放",
+  "quickly":"很快地",
+  "quiet":"安静的",
+  "race":"赛跑",
+  "raincoat":"雨衣",
+  "rained":"下雨了",
+  "rainy":"下雨的",
+  "read":"读",
+  "reading":"阅读",
+  "red":"红色",
+  "rice":"米饭",
+  "ride":"骑",
+  "river":"河",
+  "road":"路",
+  "robot":"机器人",
+  "robots":"机器人",
+  "roof":"屋顶",
+  "room":"房间",
+  "round":"圆的",
+  "rubbish":"垃圾",
+  "run":"跑",
+  "sad":"伤心的",
+  "salty":"咸的",
+  "sandcastles":"沙堡",
+  "save":"拯救",
+  "saw":"看见了",
+  "school":"学校",
+  "science":"科学",
+  "scientist":"科学家",
+  "sea":"海",
+  "season":"季节",
+  "secret":"秘密的",
+  "see":"看见",
+  "set":"摆(桌子)",
+  "sets":"摆放",
+  "seven":"七",
+  "shade":"树荫",
+  "she":"她",
+  "sheep":"羊",
+  "shop":"商店",
+  "should":"应该",
+  "show":"显示",
+  "sick":"生病的",
+  "sing":"唱歌",
+  "singer":"歌手",
+  "sit":"坐",
+  "size":"大小",
+  "skate":"滑冰",
+  "ski":"滑雪",
+  "sky":"天空",
+  "sleep":"睡觉",
+  "sleepy":"困的",
+  "small":"小的",
+  "smell":"气味",
+  "snowman":"雪人",
+  "snowy":"下雪的",
+  "sofa":"沙发",
+  "solids":"固体",
+  "some":"一些",
+  "sometimes":"有时",
+  "song":"歌",
+  "sound":"声音",
+  "soup":"汤",
+  "sour":"酸的",
+  "space":"太空",
+  "spaceships":"飞船",
+  "spent":"度过了",
+  "sports":"运动",
+  "spring":"春天",
+  "stage":"阶段",
+  "star":"星星",
+  "stars":"星星",
+  "starts":"开始",
+  "stories":"故事",
+  "story":"故事",
+  "students":"学生",
+  "study":"学习",
+  "subject":"科目",
+  "summer":"夏天",
+  "sun":"太阳",
+  "sunday":"星期天",
+  "sunny":"晴天",
+  "sure":"确定",
+  "swam":"游泳了",
+  "sweet":"甜的",
+  "swept":"扫了",
+  "swim":"游泳",
+  "table":"桌子",
+  "tail":"尾巴",
+  "take":"乘/花费",
+  "takes":"花费",
+  "talk":"说话",
+  "taste":"尝起来",
+  "teach":"教",
+  "teacher":"老师",
+  "tells":"讲述",
+  "tesla":"特斯拉(名)",
+  "the":"(冠词)",
+  "them":"它们",
+  "then":"然后",
+  "there":"那里",
+  "they":"他们",
+  "things":"东西",
+  "third":"第三",
+  "this":"这个",
+  "thomas":"托马斯(名)",
+  "three":"三",
+  "throw":"扔",
+  "tidy":"整洁的",
+  "time":"时间",
+  "tiny":"微小的",
+  "tired":"累的",
+  "to":"到",
+  "today":"今天",
+  "together":"一起",
+  "tom":"汤姆(名)",
+  "tomatoes":"番茄",
+  "too":"也",
+  "tool":"工具",
+  "tools":"工具",
+  "town":"城镇",
+  "toys":"玩具",
+  "train":"火车",
+  "trash":"垃圾",
+  "travel":"旅行",
+  "travels":"旅行",
+  "tree":"树",
+  "trees":"树",
+  "tried":"试了",
+  "trip":"旅程",
+  "try":"尝试",
+  "turn":"变成",
+  "tv":"电视",
+  "two":"二",
+  "under":"在…下",
+  "up":"向上",
+  "us":"我们",
+  "used":"用了",
+  "very":"非常",
+  "villages":"村庄",
+  "visited":"参观了",
+  "vr":"虚拟现实",
+  "wakes":"唤醒",
+  "wall":"墙",
+  "want":"想要",
+  "warm":"温暖的",
+  "was":"是(过去)",
+  "washes":"洗",
+  "watch":"观看",
+  "watched":"看了",
+  "water":"水",
+  "we":"我们",
+  "weather":"天气",
+  "week":"周",
+  "went":"去了",
+  "were":"是(过去)",
+  "wet":"湿的",
+  "whales":"鲸鱼",
+  "what":"什么",
+  "when":"何时",
+  "where":"哪里",
+  "which":"哪一个",
+  "white":"白色",
+  "who":"谁",
+  "will":"将",
+  "window":"窗户",
+  "windows":"窗户",
+  "windy":"有风的",
+  "wins":"赢",
+  "winter":"冬天",
+  "wiped":"擦了",
+  "with":"和…一起",
+  "work":"运作",
+  "world":"世界",
+  "worms":"蚯蚓",
+  "write":"写",
+  "yard":"院子",
+  "yellow":"黄色",
+  "yes":"是",
+  "yesterday":"昨天",
+  "duck":"鸭子",
+  "rabbit":"兔子",
+  "ears":"耳朵",
+  "carrots":"胡萝卜",
+  "soft":"柔软的",
+  "cow":"奶牛",
+  "strong":"强壮的",
+  "mountain":"山",
+  "climb":"爬",
+  "breakfast":"早餐",
+  "bread":"面包",
+  "eggs":"鸡蛋",
+  "juice":"果汁",
+  "energy":"能量",
+  "rainbow":"彩虹",
+  "coat":"外套",
+  "camp":"营地",
+  "tent":"帐篷",
+  "grandma":"奶奶",
+  "bees":"蜜蜂",
+  "volcano":"火山",
+  "erupt":"喷发",
+  "rock":"岩石",
+  "dangerous":"危险的",
+  "scientists":"科学家",
+  "internet":"互联网",
+  "online":"在线",
+  "emails":"邮件",
+  "connects":"连接",
+  "recycle":"回收",
+  "bottles":"瓶子",
+  "bins":"垃圾桶",
+  "saves":"拯救",
+  "neighbor":"邻居",
+  "poles":"极地",
+  "melting":"融化",
+  "climate":"气候",
+  "warmer":"更暖的",
+  "telephone":"电话",
+  "pilots":"飞行员",
+  "artists":"艺术家",
+  "forest":"森林",
+  "breathe":"呼吸",
+  "harmful":"有害的",
+  "jobs":"工作",
+  "true":"真实的",
+  "pets":"宠物",
+  "umbrella":"伞",
+  "zoo":"动物园",
+  "draw":"画",
+  "fall":"落下",
+  "flower":"花",
+  "drink":"喝",
+  "piece":"一块",
+  "carrot":"胡萝卜",
+  "hop":"跳",
+  "kick":"踢",
+  "shine":"发光",
+  "country":"乡村",
+  "hill":"小山",
+  "flow":"流动",
+  "honey":"蜂蜜",
+  "bee":"蜜蜂",
+  "sand":"沙子",
+  "wave":"波浪",
+  "castle":"城堡",
+  "seed":"种子",
+  "soil":"泥土",
+  "plant":"植物",
+  "panda":"熊猫",
+  "waste":"浪费",
+  "fair":"展览",
+  "crystal":"水晶",
+  "visitor":"参观者",
+  "neighbour":"邻居",
+  "act":"举动",
+  "difference":"不同",
+  "joy":"快乐",
+  "pears":"梨",
+  "plays":"玩",
+  "runs":"跑",
+  "sam":"萨姆",
+  "kind":"和善的",
+  "maps":"地图",
+  "raining":"下雨",
+  "rain":"雨",
+  "falls":"落下",
+  "down":"向下",
+  "drinks":"喝",
+  "lives":"住",
+  "eats":"吃",
+  "hops":"跳",
+  "kicks":"踢",
+  "team":"队",
+  "sport":"运动",
+  "basketball":"篮球",
+  "tennis":"网球",
+  "their":"他们的",
+  "dark":"黑暗的",
+  "count":"数",
+  "visit":"参观",
+  "hills":"小山",
+  "slowly":"缓慢地",
+  "hear":"听见",
+  "pizza":"披萨",
+  "cheese":"奶酪",
+  "oven":"烤箱",
+  "flies":"飞",
+  "collects":"采集",
+  "collect":"采集",
+  "waves":"波浪",
+  "into":"进入",
+  "taller":"更高的",
+  "snow":"雪",
+  "wind":"风",
+  "jack":"杰克",
+  "wants":"想要",
+  "reads":"读",
+  "looks":"看",
+  "dreams":"梦想",
+  "flying":"飞",
+  "swimming":"游泳",
+  "climbing":"爬",
+  "india":"印度",
+  "japan":"日本",
+  "off":"关闭",
+  "walk":"走",
+  "drive":"驾驶",
+  "plane":"飞机",
+  "burn":"燃烧",
+  "holds":"举办",
+  "visitors":"参观者",
+  "surprised":"惊讶的",
+  "worlds":"世界",
+  "teaches":"教",
+  "brings":"带来",
+  "ideas":"想法",
+  "little":"小的",
+  "bring":"带来",
+  "noise":"噪音",
+  "needs":"需要",
+  "carry":"拎",
+  "bags":"包",
+  "smiles":"微笑",
+  "says":"说",
+  "thanks":"谢谢",
+  "acts":"举动",
+  "whose":"谁的",
+  "matter":"重要"
+};
+// 把英文句子渲染成「词 + 中文」逐字翻译
+function gloss(text){
+  var tokens = String(text).split(/(\s+)/);
+  var out='';
+  for(var i=0;i<tokens.length;i++){
+    var t=tokens[i];
+    if(t===''||/^\s+$/.test(t)){ out+=t; continue; }
+    var m=t.match(/^([^A-Za-z]*)([A-Za-z][A-Za-z'\-]*)([^A-Za-z]*)$/);
+    if(!m){ out+=t; continue; }
+    var pre=m[1], word=m[2], post=m[3];
+    var key=word.toLowerCase();
+    if(key.length>2 && key.slice(-2)==="'s") key=key.slice(0,-2);
+    var zh=DICT[key];
+    if(!zh && window.Gloss && window.Gloss.DICT) zh=window.Gloss.DICT[key]; /* 兜底：共享大词典 */
+    out+=pre;
+    if(zh) out+='<span class="gw">'+word+'<span class="gc">'+zh+'</span></span>';
+    else out+='<span class="gw">'+word+'</span>';
+    out+=post;
+  }
+  return out;
+}
+
+var PASSAGES = ALLP; // 当前筛选后的列表
+
+var CHILD='user', KEY='', store={}, curGrade='all';
+var TOTAL=0, current=0, score=0, answered=0;
+var PASS_LINE=0.8;
+
+function getStore(){ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; } }
+function setStore(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
+
+/* ============ 断点续学：跨会话保存/读取学习进度 ============
+ * 独立落盘到 localStorage（不依赖外部模块），按 (孩子 + 年级) 分别记录当前关序号。
+ * 下次进入自动从上次未学完的关继续，而不是重置回第一关。 */
+function progKey(){ return 'engread_progress_' + CHILD + '_' + curGrade; }
+function saveProgress(){
+  try{ localStorage.setItem(progKey(), String(current)); }catch(e){}
+}
+function loadProgress(){
+  var v=0;
+  try{ v=parseInt(localStorage.getItem(progKey()),10); }catch(e){ v=0; }
+  if(isNaN(v)||v<0) v=0;
+  if(v>=PASSAGES.length) v=0; // 已完成或越界 → 从头开始
+  return v;
+}
+function clearProgress(){ try{ localStorage.removeItem(progKey()); }catch(e){} }
+function gradeKey(){ return 'engread_grade_' + CHILD; }
+// 菜单上显示续学提示，并切换开始按钮文案
+function renderMenuProgress(){
+  var info=document.getElementById('resumeInfo');
+  var btn=document.getElementById('startBtn');
+  if(!info||!btn) return;
+  var v=loadProgress();
+  if(v>0 && v<PASSAGES.length){
+    info.textContent='📌 上次学到：第 '+(v+1)+' 关 / 共 '+PASSAGES.length+' 关';
+    btn.textContent='🚀 继续闯关（第 '+(v+1)+' 关）';
+  } else {
+    info.textContent='';
+    btn.textContent='🚀 开始闯关';
+  }
+}
+// 重置本年级续学进度（不影响最佳对题记录）
+function resetProgress(){
+  clearProgress(); current=0; renderMenuProgress();
+}
+
+function speak(text){
+  /* 统一走 speech.js：优选最标准英文音色（Google/Natural/Apple），杜绝机械音 */
+  if(window.Speech && Speech.speak){ Speech.speak(text, 0.9); return; }
+  try{
+    var u=new SpeechSynthesisUtterance(text);
+    u.lang='en-US'; u.rate=0.9; u.pitch=1;
+    window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+function speakPassage(i){ speak(PASSAGES[i].en); }
+
+function start(){
+  score=0; answered=0;
+  // 断点续学：从上次未学完的关继续，而不是重置回第一关
+  current = loadProgress();
+  saveProgress();        // 先落盘当前关，确保即使后续渲染异常也不会丢失进度
+  setScreen('scrQuiz');
+  renderPassage();
+}
+function goMenu(){ renderMenuProgress(); setScreen('scrMenu'); }
+
+function setScreen(id){
+  ['scrMenu','scrQuiz','scrReport'].forEach(function(s){
+    document.getElementById(s).classList.toggle('on', s===id);
+  });
+}
+
+function renderPassage(){
+  var p=PASSAGES[current];
+  var html=''+
+    '<div class="passage">'+
+      '<div class="ph"><span class="pemoji">'+p.emoji+'</span>'+
+        '<span class="ptitle">'+p.title+'</span>'+
+        '<div class="pbtns"><button onclick="speakPassage('+current+')">🔊 朗读</button>'+
+        '<button class="b-tr" onclick="toggleTrans('+current+')">👁 翻译</button>'+
+        '<button class="b-gl" onclick="togglePGloss('+current+')">🔤 逐字</button></div>'+
+      '</div>'+
+      '<div class="ptext" id="ptext-'+current+'">'+p.en+'</div>'+
+      '<div class="ptrans" id="ptrans-'+current+'">'+p.cn+'</div>'+
+      '<div class="pgloss" id="pgloss-'+current+'"></div>'+
+    '</div>';
+  p.qa.forEach(function(q,qi){
+    var gi=current*2+qi;
+    html+='<div class="q" id="q-'+gi+'">'+
+      '<div class="qt"><span class="qn">Q'+(gi+1)+'.</span>'+q.q+'</div>'+
+      '<div class="opts">';
+    q.opts.forEach(function(o,oi){
+      html+='<button class="opt" id="opt-'+gi+'-'+oi+'" onclick="answer('+gi+','+qi+','+oi+')">'+o+'</button>';
+    });
+    html+='</div>'+
+      '<div class="why" id="why-'+gi+'"></div>'+
+      '<div class="wtrans" id="wtrans-'+gi+'"></div>'+
+      '<div id="hw-'+gi+'" class="hw-slot"></div>'+
+    '</div>';
+  });
+  html+='<div style="margin-top:10px"><button onclick="nextReveal()" style="border:none;border-radius:14px;padding:10px 18px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;color:#fff;background:#3a7bd5">➡️ 下一关（对照答案）</button></div>';
+  document.getElementById('quizArea').innerHTML=html;
+  updateProg();
+  // 手写区：每道小题一块手写板，写完点「对照答案」看正确选项+解析
+  p.qa.forEach(function(q,qi){
+    var gi=current*2+qi;
+    var _slot=document.getElementById('hw-'+gi);
+    if(_slot && window.Handwrite){
+      var at=(typeof q.ans==='number')?q.opts[q.ans]:q.ans;
+      var _hw=Handwrite.create({revealText:at+'　'+q.why, placeholder:'✍️ 写出你的答案'});
+      _slot.appendChild(_hw.el);
+    }
+  });
+  document.getElementById('nextBtn').style.display='none';
+  document.getElementById('finishBtn').style.display='none';
+}
+function toggleTrans(i){
+  document.getElementById('ptrans-'+i).classList.toggle('on');
+}
+// 整篇短文逐字翻译：按句拆行，每行词对词，孩子好对照
+function buildPGloss(i){
+  var el=document.getElementById('pgloss-'+i);
+  if(!el) return null;
+  if(el.getAttribute('data-filled')==='1') return el;
+  var sents=String(PASSAGES[i].en).match(/[^.!?]+[.!?]*/g)||[PASSAGES[i].en];
+  var h='<span class="glab">🔤 整篇逐字翻译（词对词）</span>';
+  var n=0;
+  for(var k=0;k<sents.length;k++){
+    var s=sents[k].replace(/^\s+|\s+$/g,'');
+    if(!s) continue;
+    n++;
+    h+='<div class="sline"><span class="sn">'+n+'.</span>'+gloss(s)+'</div>';
+  }
+  el.innerHTML=h;
+  el.setAttribute('data-filled','1');
+  return el;
+}
+function togglePGloss(i){
+  var el=buildPGloss(i);
+  if(el) el.classList.toggle('on');
+}
+function answer(gi,qi,oi){
+  var q=PASSAGES[Math.floor(gi/2)].qa[qi];
+  var qEl=document.getElementById('q-'+gi);
+  if(qEl.classList.contains('done-ok')||qEl.classList.contains('done-no')) return;
+  answered++;
+  var ai=(typeof q.ans==='number')?q.ans:q.opts.indexOf(q.ans);
+  var ok = (oi===ai);
+  if(ok) score++;
+  // color opts
+  q.opts.forEach(function(o,bi){
+    var b=document.getElementById('opt-'+gi+'-'+bi);
+    b.classList.add('dim');
+    if(bi===ai) b.classList.add('ok');
+    if(bi===oi && !ok) b.classList.add('no');
+  });
+  qEl.classList.add(ok?'done-ok':'done-no');
+  var w=document.getElementById('why-'+gi);
+  w.textContent='解析：'+q.why;
+  w.classList.add('on');
+  if(!ok){
+    // 答错：展开整篇中文翻译 + 整篇逐字 + 逐字翻译问句与选项，帮基础弱的孩子看懂
+    document.getElementById('ptrans-'+current).classList.add('on');
+    var pg=buildPGloss(current);
+    if(pg) pg.classList.add('on');
+    var wt=document.getElementById('wtrans-'+gi);
+    var hh='<span class="lab">🔤 逐字翻译（词对词）</span>';
+    hh+='<div>问句：'+gloss(q.q)+'</div>';
+    q.opts.forEach(function(o,oi2){ hh+='<div class="optline"><b>'+String.fromCharCode(65+oi2)+'</b>'+gloss(o)+'</div>'; });
+    wt.innerHTML=hh; wt.classList.add('on');
+  }
+  updateProg();
+  // all questions of this passage answered?
+  if(answered >= (current+1)*2){
+    if(current < PASSAGES.length-1){
+      document.getElementById('nextBtn').style.display='block';
+    } else {
+      document.getElementById('finishBtn').style.display='block';
+    }
+  }
+}
+function next(){
+  if(current < PASSAGES.length-1){ current++; saveProgress(); renderPassage(); }
+}
+/* 手写模式：只写不点选项时，也能对照答案并翻到下一关 */
+function nextReveal(){
+  var p=PASSAGES[current];
+  p.qa.forEach(function(q,qi){
+    var gi=current*2+qi;
+    var w=document.getElementById('why-'+gi);
+    if(w){ var at=(typeof q.ans==='number')?q.opts[q.ans]:q.ans; w.textContent='解析：'+at+'　'+q.why; w.classList.add('on'); }
+  });
+  answered=Math.max(answered,(current+1)*2);
+  updateProg();
+  if(current < PASSAGES.length-1){ next(); }
+  else { document.getElementById('finishBtn').style.display='block'; saveProgress(); }
+}
+function updateProg(){
+  var qpct = Math.round(answered/TOTAL*100);
+  document.getElementById('progBar').style.width=qpct+'%';
+  document.getElementById('progTxt').textContent='第 '+(current+1)+' / '+PASSAGES.length+' 关 · 已答 '+answered+' / '+TOTAL;
+}
+function finish(){
+  setScreen('scrReport');
+  var pct = TOTAL? Math.round(score/TOTAL*100):0;
+  var stars = pct>=90?3 : pct>=PASS_LINE*100?2 : pct>=60?1 : 0;
+  var starStr = stars>0 ? '⭐'.repeat(stars) : '—';
+  document.getElementById('rStars').textContent=starStr;
+  document.getElementById('rScore').textContent=score+' / '+TOTAL;
+  document.getElementById('rPct').textContent='正确率 '+pct+'%';
+  var pass = pct>=PASS_LINE*100;
+  document.getElementById('rPass').innerHTML = pass
+    ? '<span class="pass">🎊 通关成功！达到 '+PASS_LINE*100+'% 过关线</span>'
+    : '<span class="fail">💪 还差一点，再读一遍短文就通关啦</span>';
+  // save best
+  store=getStore();
+  if(score > (store.best||0)){ store.best=score; setStore(store); }
+  document.getElementById('bestNum').textContent=store.best||0;
+  if(pass) celebrate();
+  // 全部通关：写入"已完成"哨兵(=关总数)，下次打开自动从头再练一轮
+  try{ localStorage.setItem(progKey(), String(PASSAGES.length)); }catch(e){}
+}
+function resetBest(){
+  if(confirm('确定清空最佳对题记录？')){ setStore({best:0}); document.getElementById('bestNum').textContent='0'; }
+}
+function celebrate(){
+  var emo=['🎉','✨','📖','🌟','⭐','💡','🎊','🔤'];
+  for(var k=0;k<26;k++){
+    (function(){
+      var c=document.createElement('div'); c.className='confetti';
+      c.textContent=emo[Math.floor(Math.random()*emo.length)];
+      c.style.left=Math.random()*100+'vw';
+      c.style.animationDuration=(2+Math.random()*2)+'s';
+      document.body.appendChild(c);
+      setTimeout(function(){ c.remove(); },4200);
+    })();
+  }
+  document.getElementById('celeb').style.display='flex';
+}
+function closeCeleb(){ document.getElementById('celeb').style.display='none'; }
+
+function renderGrades(){
+  var labels=[['all','全部'],['1','一年级'],['2','二年级'],['3','三年级'],['4','四年级'],['5','五年级'],['6','六年级']];
+  var html='';
+  labels.forEach(function(l){
+    html+='<button class="'+(curGrade===l[0]?'on':'')+'" onclick="setGradeFilter(\''+l[0]+'\')">'+l[1]+'</button>';
+  });
+  document.getElementById('grades').innerHTML=html;
+}
+function setGradeFilter(g){
+  curGrade=g;
+  try{ localStorage.setItem(gradeKey(), g); }catch(e){}
+  PASSAGES = (g==='all') ? ALLP : ALLP.filter(function(p){ return p.g===parseInt(g,10); });
+  TOTAL = PASSAGES.reduce(function(s,p){ return s+p.qa.length; },0);
+  document.getElementById('totalNum').textContent=TOTAL;
+  renderGrades();
+  start();
+}
+
+(function(){
+  var s=Portal.getSession();
+  CHILD=(s&&s.child)?s.child:'user';
+  KEY='english-read-'+CHILD;
+  // 恢复上次选择的年级筛选：否则续学键(progKey 含 curGrade)与上次不一致，会回到第 1 关
+  try{ var _g=localStorage.getItem(gradeKey()); if(_g) curGrade=_g; }catch(e){}
+  PASSAGES = (curGrade==='all') ? ALLP : ALLP.filter(function(p){ return p.g===parseInt(curGrade,10); });
+  TOTAL = PASSAGES.reduce(function(s,p){ return s+p.qa.length; },0);
+  document.getElementById('totalNum').textContent=TOTAL;
+  store=getStore();
+  document.getElementById('bestNum').textContent=store.best||0;
+  var d=new Date();
+  var wk=['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+  document.getElementById('dateStr').textContent=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+wk;
+  renderGrades();
+  renderMenuProgress();
+})();
+</script>
+<script src="handwrite.js"></script>
+</body>
+</html>

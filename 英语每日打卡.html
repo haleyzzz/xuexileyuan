@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<script src="util.js"></script>
+<script src="speech.js"></script>
+<script src="accounts.js"></script>
+<script src="study-time.js"></script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>学习乐园</title>
+<style>
+  :root{
+    --bg:linear-gradient(135deg,#eef4ff,#f7f0ff);
+    --card:#fff;
+    --ink:#2c2c44;
+    --sub:#8a8aa3;
+    --accent:#6c5ce7;
+    --accent2:#00b894;
+    --gold:#f6b73c;
+    --pink:#ff7eb3;
+    --line:#ececf5;
+    --shadow:0 10px 30px rgba(80,70,160,.10);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    background:var(--bg);color:var(--ink);padding:0 14px 40px;
+  }
+  header{
+    position:sticky;top:0;z-index:30;background:rgba(255,255,255,.82);
+    backdrop-filter:blur(10px);padding:14px 4px 12px;margin:0 -14px 14px;
+  }
+  .top{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .top h1{font-size:20px;margin:0;font-weight:900;}
+  .top .date{font-size:12px;color:var(--sub);font-weight:700;}
+  .accent-btn{
+    border:0;border-radius:14px;padding:8px 12px;font-size:14px;font-weight:800;
+    background:linear-gradient(135deg,#a29bfe,#6c5ce7);color:#fff;cursor:pointer;box-shadow:var(--shadow);
+  }
+  .pbar-wrap{margin-top:10px;}
+  .pbar-top{display:flex;justify-content:space-between;font-size:12px;font-weight:800;color:var(--sub);margin-bottom:5px;}
+  .pbar{height:12px;background:#eaeaf4;border-radius:99px;overflow:hidden;}
+  .pbar > i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#00b894,#6c5ce7);transition:width .4s;}
+  .pbar.done > i{background:linear-gradient(90deg,#f6b73c,#ff7eb3);}
+
+  .module{
+    background:var(--card);border-radius:22px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow);
+  }
+  .m-head{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;}
+  .m-ico{font-size:26px;}
+  .m-title{font-size:17px;font-weight:900;flex:1;}
+  .m-sub{font-size:12px;color:var(--sub);font-weight:700;}
+  .m-done{
+    width:30px;height:30px;border-radius:50%;border:2px solid var(--line);
+    display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;
+    background:transparent;cursor:pointer;transition:.2s;flex-shrink:0;
+  }
+  .m-done.on{background:var(--accent2);border-color:var(--accent2);}
+  .m-body{display:none;margin-top:14px;}
+  .module.open .m-body{display:block;}
+
+  /* 字母点读 */
+  .abc-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;}
+  .mode-btn{border:0;border-radius:12px;padding:8px 12px;font-size:13px;font-weight:800;cursor:pointer;background:#f0edff;color:var(--accent);}
+  .mode-btn.on{background:var(--accent);color:#fff;}
+  .abc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:8px;}
+  .abc-cell{
+    border:0;border-radius:16px;padding:10px 4px;background:#f7f6ff;text-align:center;cursor:pointer;
+    transition:.15s;box-shadow:0 4px 10px rgba(108,92,231,.08);
+  }
+  .abc-cell:active{transform:scale(.94);}
+  .abc-cell .big{font-size:24px;font-weight:900;color:var(--accent);line-height:1;}
+  .abc-cell .low{font-size:13px;color:var(--sub);font-weight:800;}
+  .abc-cell .emoji{font-size:18px;}
+
+  /* 自然拼读墙 */
+  .phonics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;}
+  .ph-cell{border:0;border-radius:14px;padding:10px 6px;background:linear-gradient(135deg,#e8fbff,#eafff4);text-align:center;cursor:pointer;box-shadow:0 4px 10px rgba(0,184,148,.1);}
+  .ph-cell:active{transform:scale(.95);}
+  .ph-cell .ltr{font-size:20px;font-weight:900;color:#009e7f;}
+  .ph-cell .ip{font-size:14px;color:#00695c;font-weight:800;}
+  .ph-cell .ex{font-size:12px;color:var(--sub);font-weight:700;}
+
+  /* 儿歌 / 动画 */
+  .media-list{display:grid;gap:10px;}
+  .media-card{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;}
+  .media-top{display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer;}
+  .media-top .mt-ico{font-size:22px;}
+  .media-top .mt-name{font-weight:900;font-size:15px;flex:1;}
+  .media-top .mt-play{border:0;background:var(--accent);color:#fff;border-radius:12px;padding:8px 12px;font-weight:800;font-size:13px;cursor:pointer;}
+  .media-frame{display:none;}
+  .media-frame.on{display:block;}
+  .media-frame iframe{width:100%;aspect-ratio:16/9;border:0;display:block;}
+
+  /* 主题学习 */
+  .theme-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+  .tchip{border:0;border-radius:14px;padding:9px 14px;font-weight:800;font-size:14px;background:#f0edff;color:var(--accent);cursor:pointer;}
+  .tchip.on{background:var(--accent);color:#fff;}
+  .word-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;}
+  .wcell{border:0;border-radius:14px;padding:10px;background:#f7f6ff;text-align:left;cursor:pointer;box-shadow:0 4px 10px rgba(108,92,231,.08);}
+  .wcell:active{transform:scale(.96);}
+  .wcell .w{font-size:17px;font-weight:900;color:var(--accent);}
+  .wcell .ipa{font-size:12px;color:var(--sub);}
+  .wcell .zh{font-size:12px;color:#555;margin-top:2px;}
+  .wcell .ex{font-size:11px;color:#999;margin-top:3px;font-style:italic;}
+  .three-box{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px;}
+  .three-col{background:#f7f6ff;border-radius:14px;padding:10px;}
+  .three-col h4{margin:0 0 8px;font-size:14px;color:var(--accent);}
+
+  /* 日常听说 */
+  .talk-list{display:grid;gap:10px;}
+  .talk-card{border:1px solid var(--line);border-radius:16px;padding:12px;background:#fff;}
+  .talk-en{font-size:18px;font-weight:900;color:var(--ink);}
+  .talk-zh{font-size:13px;color:var(--sub);font-weight:700;margin:3px 0 8px;}
+  .talk-row{display:flex;gap:8px;}
+  .talk-row button{flex:1;border:0;border-radius:12px;padding:10px;font-weight:800;font-size:13px;cursor:pointer;color:#fff;}
+  .b-listen{background:var(--accent);}
+  .b-speak{background:var(--accent2);}
+  .b-speak:disabled{opacity:.5;}
+  .talk-fb{margin-top:8px;font-size:13px;font-weight:800;color:var(--accent);min-height:18px;}
+
+  .toast{
+    position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);
+    background:rgba(44,44,68,.92);color:#fff;padding:12px 20px;border-radius:14px;font-size:14px;font-weight:800;
+    opacity:0;pointer-events:none;transition:.3s;z-index:99;max-width:90%;text-align:center;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .hint{font-size:12px;color:var(--sub);font-weight:700;margin:6px 0 0;}
+  .back-btn{border:0;border-radius:14px;padding:8px 12px;font-size:14px;font-weight:800;background:#fff;color:var(--accent);box-shadow:var(--shadow);cursor:pointer;flex-shrink:0;}
+  .streak-row{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;}
+  .streak-badge{font-size:13px;font-weight:900;color:#fff;background:linear-gradient(135deg,#ff9f43,#ff7eb3);padding:6px 12px;border-radius:99px;box-shadow:0 6px 14px rgba(255,126,179,.3);}
+  .streak-badge.gold{background:linear-gradient(135deg,#f6b73c,#ffd166);color:#7a4b00;box-shadow:0 6px 14px rgba(246,183,60,.4);}
+  .streak-badge.purple{background:linear-gradient(135deg,#9b6dff,#6c5ce7);color:#fff;box-shadow:0 6px 14px rgba(108,92,231,.4);}
+  .streak-tip{font-size:12px;color:var(--sub);font-weight:700;}
+  /* 打卡日历热力图 */
+  .heat-wrap{background:var(--card);border-radius:22px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow);}
+  .heat-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+  .heat-title{font-size:17px;font-weight:900;}
+  .heat-nav{display:flex;align-items:center;gap:8px;}
+  .heat-nav button{border:0;border-radius:11px;padding:7px 12px;font-weight:800;font-size:13px;background:#f0edff;color:var(--accent);cursor:pointer;}
+  .heat-nav button:active{transform:scale(.95);}
+  .heat-month{font-weight:800;min-width:104px;text-align:center;font-size:15px;}
+  .heat-stats{font-size:13px;font-weight:800;color:var(--sub);margin-bottom:10px;line-height:1.6;}
+  .heat-stats b{color:var(--accent2);}
+  .heat-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:5px;}
+  .heat-weekdays span{text-align:center;font-size:11px;color:var(--sub);font-weight:700;}
+  .heat-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .heat-cell{aspect-ratio:1;border-radius:7px;background:#eaeaf4;display:flex;align-items:center;justify-content:center;font-size:11px;color:#9a9ab0;cursor:pointer;transition:.15s;position:relative;}
+  .heat-cell:active{transform:scale(.9);}
+  .heat-cell.empty{background:transparent;cursor:default;}
+  .heat-cell.empty:active{transform:none;}
+  .heat-cell.future{background:#f3f3f8;color:#c9c9d4;cursor:default;}
+  .heat-cell.future:active{transform:none;}
+  .heat-cell.l1{background:#c8efd9;color:#2a8f5e;}
+  .heat-cell.l2{background:#7fd9a8;color:#1c6e46;}
+  .heat-cell.l3{background:#34c47f;color:#fff;}
+  .heat-cell.l4{background:#0f9d58;color:#fff;}
+  .heat-legend{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;color:var(--sub);font-weight:700;flex-wrap:wrap;}
+  .heat-legend .sw{width:14px;height:14px;border-radius:4px;display:inline-block;}
+  /* 整年长条视图 */
+  .heat-nav .view-toggle{background:linear-gradient(135deg,#a29bfe,#6c5ce7);color:#fff;}
+  .heat-year-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;margin-top:4px;}
+  .heat-months{display:grid;grid-template-columns:repeat(53,1fr);gap:3px;margin-bottom:4px;font-size:10px;color:var(--sub);font-weight:700;min-width:560px;}
+  .heat-year{display:grid;grid-template-columns:repeat(53,1fr);gap:3px;min-width:560px;}
+  .heat-yc{aspect-ratio:1;border-radius:3px;background:#eaeaf4;cursor:pointer;transition:.15s;}
+  .heat-yc.empty{background:transparent;cursor:default;}
+  .heat-yc.l1{background:#c8efd9;}
+  .heat-yc.l2{background:#7fd9a8;}
+  .heat-yc.l3{background:#34c47f;}
+  .heat-yc.l4{background:#0f9d58;}
+  .challenge-box{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:6px;}
+  .ch-card{border:0;border-radius:16px;padding:12px 4px;background:#fff3e6;text-align:center;cursor:pointer;box-shadow:0 4px 10px rgba(246,183,60,.15);transition:.15s;}
+  .ch-card:active{transform:scale(.95);}
+  .ch-card.done{background:#e7fbf0;box-shadow:0 4px 10px rgba(0,184,148,.18);}
+  .ch-up{font-size:26px;font-weight:900;color:var(--accent);line-height:1;}
+  .ch-low{font-size:13px;color:var(--sub);font-weight:800;margin-top:2px;}
+  .ch-flag{font-size:11px;font-weight:800;margin-top:4px;color:#ff9f43;}
+  .ch-card.done .ch-flag{color:var(--accent2);}
+  .mt-ext{font-size:12px;font-weight:800;color:var(--accent);text-decoration:none;margin-left:auto;padding:0 8px;}
+  footer{text-align:center;color:var(--sub);font-size:12px;margin-top:18px;}
+
+  /* 幼儿模式：本周打卡小星星 */
+  .tc-stars-wrap{margin-top:20px;text-align:center}
+  .tc-stars-note{font-size:14px;font-weight:800;color:#ff8fab;margin-bottom:10px}
+  .tc-stars{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .tc-star{font-size:30px;line-height:1;filter:grayscale(1);opacity:.4;transition:.2s}
+  .tc-star.on{filter:none;opacity:1;transform:scale(1.12)}
+  .tc-star-d{font-size:11px;color:#8a93ad;font-weight:700;margin-top:3px}
+
+  /* 幼儿模式：每日听读打卡（Zoran / 学前） */
+  #toddlerCheckin{position:fixed;inset:0;z-index:9980;background:linear-gradient(160deg,#eaf6ff,#fff6ec);
+    overflow:auto;display:flex;flex-direction:column;align-items:center;padding:24px 16px 80px;font-family:inherit;color:#1f2a44}
+  #toddlerCheckin[hidden]{display:none}
+  #toddlerCheckin .tc-head{font-size:22px;font-weight:800;margin-top:6px}
+  #toddlerCheckin .tc-date{font-size:14px;color:#7b87a3;margin-top:4px;font-weight:700}
+  #toddlerCheckin .tc-card{background:#fff;border-radius:24px;box-shadow:0 12px 30px rgba(31,42,68,.12);
+    padding:26px 20px;margin-top:18px;max-width:460px;width:100%;text-align:center}
+  #toddlerCheckin .tc-big{font-size:96px;line-height:1;cursor:pointer;user-select:none}
+  #toddlerCheckin .tc-prompt{font-size:16px;font-weight:700;color:#1f2a44;margin:10px 0}
+  #toddlerCheckin .tc-play{margin-top:6px;border:0;background:linear-gradient(135deg,#4cc9f0,#7ea7ff);color:#fff;
+    font-weight:800;border-radius:16px;padding:12px 22px;font-size:16px;cursor:pointer;font-family:inherit;box-shadow:0 6px 14px rgba(60,80,140,.18)}
+  #toddlerCheckin .tc-play:active{transform:scale(.96)}
+  #toddlerCheckin .tc-done{display:block;width:100%;margin-top:14px;border:0;background:#ffd166;color:#5a4b00;
+    font-weight:800;border-radius:16px;padding:14px;font-size:17px;cursor:pointer;font-family:inherit}
+  #toddlerCheckin .tc-done:active{transform:scale(.97)}
+  #toddlerCheckin .tc-done:disabled{opacity:.5}
+  #toddlerCheckin .tc-msg{font-size:16px;font-weight:800;color:#06d6a0;min-height:22px;margin-top:10px}
+  #toddlerCheckin .tc-tip{margin-top:18px;font-size:13px;color:#7b87a3;font-weight:700;text-align:center;max-width:380px;line-height:1.6}
+</style>
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#ff8fab">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="暑假打卡">
+<link rel="manifest" href="manifest.webmanifest">
+<script src="tracker.js"></script>
+</head>
+<body>
+<header>
+  <div class="top">
+    
+    <div style="flex:1">
+      <h1>📋 学习乐园</h1>
+      <div class="date" id="todayDate"></div>
+    </div>
+    <button class="accent-btn" id="accentBtn" onclick="toggleAccent()">🇺🇸 美式</button>
+  </div>
+  <div class="pbar-wrap">
+    <div class="pbar-top"><span>今日完成</span><span id="pText">0 / 6</span></div>
+    <div class="pbar" id="pbar"><i id="pfill"></i></div>
+  </div>
+  <div class="streak-row">
+    <div class="streak-badge" id="streakBadge">🔥 连续打卡 0 天</div>
+    <div class="streak-tip" id="streakTip">完成今天全部 6 项即可累积连续天数</div>
+  </div>
+</header>
+
+<section class="heat-wrap">
+  <div class="heat-top">
+    <div class="heat-title">📅 打卡日历</div>
+    <div class="heat-nav">
+      <button onclick="shiftHeat(-1)" id="navPrev">◀ 上月</button>
+      <span class="heat-month" id="heatMonth"></span>
+      <button onclick="shiftHeat(1)" id="navNext">下月 ▶</button>
+      <button class="view-toggle" id="viewToggle" onclick="toggleHeatView()">📊 整年</button>
+    </div>
+  </div>
+  <div class="heat-stats" id="heatStats"></div>
+  <div class="heat-weekdays" id="heatWeekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+  <div class="heat-grid" id="heatGrid"></div>
+  <div class="heat-year-wrap" id="heatYearWrap" style="display:none">
+    <div class="heat-months" id="heatMonths"></div>
+    <div class="heat-year" id="heatYear"></div>
+  </div>
+  <div class="heat-legend">
+    <span>少</span>
+    <span class="sw" style="background:#eaeaf4"></span>
+    <span class="sw" style="background:#c8efd9"></span>
+    <span class="sw" style="background:#7fd9a8"></span>
+    <span class="sw" style="background:#34c47f"></span>
+    <span class="sw" style="background:#0f9d58"></span>
+    <span>多（当日完成度越高越深）</span>
+  </div>
+</section>
+
+<!-- 1 儿歌 -->
+<section class="module" data-mod="song">
+  <div class="m-head" onclick="toggleModule(this)">
+    <span class="m-ico">🎵</span>
+    <div style="flex:1">
+      <div class="m-title">唱一首英语儿歌</div>
+      <div class="m-sub">跟着音乐动起来 · 点卡片播放</div>
+    </div>
+    <div class="m-done" onclick="event.stopPropagation();toggleDone('song',this)"></div>
+  </div>
+  <div class="m-body">
+    <div class="media-list" id="songList"></div>
+    <p class="hint">💡 儿歌来自 B站（国内可看），需联网。点卡片内 ▶ 直接播，或点「↗ B站」在 App 里看。</p>
+  </div>
+</section>
+
+<!-- 2 字母点读 -->
+<section class="module" data-mod="letter">
+  <div class="m-head" onclick="toggleModule(this)">
+    <span class="m-ico">🔤</span>
+    <div style="flex:1">
+      <div class="m-title">认读 5 个字母</div>
+      <div class="m-sub">今日随机 5 个字母 · 点「我会读」打卡</div>
+    </div>
+    <div class="m-done" onclick="event.stopPropagation();toggleDone('letter',this)"></div>
+  </div>
+  <div class="m-body">
+    <div class="abc-bar">
+      <button class="mode-btn on" id="abcModeName" onclick="setAbcMode('name')">读字母名 A</button>
+      <button class="mode-btn" id="abcModeSound" onclick="setAbcMode('sound')">读字母音 a</button>
+    </div>
+    <div class="challenge-box" id="letterChallenge"></div>
+    <p class="hint">今日挑战：上面 5 个字母都会读、会认，点「✓ 我会读」即可完成本项打卡 ✅</p>
+    <div class="abc-grid" id="abcGrid"></div>
+    <p class="hint">下面是所有 26 个字母，随便点着玩、练发音～</p>
+  </div>
+</section>
+
+<!-- 3 自然拼读 -->
+<section class="module" data-mod="phonics">
+  <div class="m-head" onclick="toggleModule(this)">
+    <span class="m-ico">🔊</span>
+    <div style="flex:1">
+      <div class="m-title">练 1 个自然拼读发音</div>
+      <div class="m-sub">字母 → 音素 → 示例词</div>
+    </div>
+    <div class="m-done" onclick="event.stopPropagation();toggleDone('phonics',this)"></div>
+  </div>
+  <div class="m-body">
+    <div class="phonics-grid" id="phonicsGrid"></div>
+    <p class="hint">点任意一个音素，听它的发音和示例词。练会 1 个就能打卡 ✅</p>
+  </div>
+</section>
+
+<!-- 4 英语动画 -->
+<section class="module" data-mod="cartoon">
+  <div class="m-head" onclick="toggleModule(this)">
+    <span class="m-ico">📺</span>
+    <div style="flex:1">
+      <div class="m-title">看 10 分钟英语动画</div>
+      <div class="m-sub">Maisy / 字母积木 / Bluey 布鲁伊</div>
+    </div>
+    <div class="m-done" onclick="event.stopPropagation();toggleDone('cartoon',this)"></div>
+  </div>
+  <div class="m-body">
+    <div class="media-list" id="cartoonList"></div>
+    <p class="hint">💡 动画来自 B站（国内可看），需联网。看满约 10 分钟即可打卡 ✅</p>
+  </div>
+</section>
+
+<!-- 5 主题学习 -->
+<section class="module" data-mod="theme">
+  <div class="m-head" onclick="toggleModule(this)">
+    <span class="m-ico">📖</span>
+    <div style="flex:1">
+      <div class="m-title">学 / 复习 3 个主题单词</div>
+      <div class="m-sub">点单词听发音 · 今日推荐 3 主题</div>
+    </div>
+    <div class="m-done" onclick="event.stopPropagation();toggleDone('theme',this)"></div>
+  </div>
+  <div class="m-body">
+    <div class="abc-bar">
+      <button class="mode-btn" onclick="pickThreeThemes()">🎲 随机抽 3 个主题</button>
+    </div>
+    <div class="three-box" id="threeBox"></div>
+    <div class="theme-chips" id="themeChips"></div>
+    <div class="word-grid" id="wordGrid"></div>
+  </div>
+</section>
+
+<!-- 6 日常听说 -->
+<section class="module" data-mod="talk">
+  <div class="m-head" onclick="toggleModule(this)">
+    <span class="m-ico">💬</span>
+    <div style="flex:1">
+      <div class="m-title">说 1 句日常英语</div>
+      <div class="m-sub">听标准发音 → 对着麦克风跟读</div>
+    </div>
+    <div class="m-done" onclick="event.stopPropagation();toggleDone('talk',this)"></div>
+  </div>
+  <div class="m-body">
+    <div class="talk-list" id="talkList"></div>
+    <p class="hint">📱 语音识别在电脑 Chrome / Edge 支持最好；iPad Safari 暂不支持识别，可点🔊听后自己大声跟读。</p>
+  </div>
+</section>
+
+<!-- 幼儿模式：每日听读打卡（Zoran / 学前），默认隐藏，登录后按年龄显示 -->
+<div id="toddlerCheckin" hidden>
+  <div class="tc-head">🐰 每日听读打卡</div>
+  <div class="tc-date" id="tcDate"></div>
+  <div class="tc-card">
+    <div class="tc-big" id="tcEmoji" onclick="tcPlay()">🔊</div>
+    <div class="tc-prompt" id="tcPrompt">点小喇叭，听一听今天的内容～</div>
+    <button class="tc-play" onclick="tcPlay()">🔊 再听一次</button>
+    <button class="tc-done" id="tcDone" onclick="tcMarkDone()">我听完啦 🌟</button>
+    <div class="tc-msg" id="tcMsg"></div>
+    <div class="tc-stars-wrap">
+      <div class="tc-stars-note" id="tcStarsNote"></div>
+      <div class="tc-stars" id="tcStars"></div>
+    </div>
+  </div>
+  <div class="tc-tip">🤝 家长陪读：一起听、一起指、一起轻轻读出来，每天一小会儿就好～</div>
+</div>
+
+<footer>一个页面完成每日 6 项英语打卡 · 进度按日期自动保存</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+var APP = 'engci';
+var ME = null;
+/* ============ 通用发音 ============ */
+let accent = 'us';
+function toggleAccent(){
+  accent = accent==='us' ? 'uk' : 'us';
+  const b = document.getElementById('accentBtn');
+  b.textContent = accent==='us' ? '🇺🇸 美式' : '🇬🇧 英式';
+  toast(accent==='us' ? '已切换为美式发音' : '已切换为英式发音');
+}
+/* 发音（优选英文语音）已抽到 speech.js：pickVoice / ensureEnVoice / buildVoiceSelector 等。 */
+function speak(text, rate){ Speech.speak(text, rate); }
+window.__voicePreview = function(){ speak('hello', 0.9); };
+
+/* ============ 词库（主题复习复用，与单词卡一致） ============ */
+const WORDS = [
+  // 动物
+  {w:'cat',ipa:'/kæt/',zh:'猫',ex:'I have a cat.',cat:'动物'},
+  {w:'dog',ipa:'/dɒg/',zh:'狗',ex:'The dog is small.',cat:'动物'},
+  {w:'pig',ipa:'/pɪg/',zh:'猪',ex:'I like the pig.',cat:'动物'},
+  {w:'duck',ipa:'/dʌk/',zh:'鸭子',ex:'A duck, please.',cat:'动物'},
+  {w:'fish',ipa:'/fɪʃ/',zh:'鱼',ex:'The fish is red.',cat:'动物'},
+  {w:'bird',ipa:'/bɜːd/',zh:'鸟',ex:'I can see a bird.',cat:'动物'},
+  {w:'tiger',ipa:'/ˈtaɪɡə/',zh:'老虎',ex:'The tiger is big.',cat:'动物'},
+  {w:'rabbit',ipa:'/ˈræbɪt/',zh:'兔子',ex:'My rabbit is white.',cat:'动物'},
+  {w:'lion',ipa:'/ˈlaɪən/',zh:'狮子',ex:'The lion is happy.',cat:'动物'},
+  // 食物
+  {w:'apple',ipa:'/ˈæpl/',zh:'苹果',ex:'I like apples.',cat:'食物'},
+  {w:'banana',ipa:'/bəˈnɑːnə/',zh:'香蕉',ex:'A banana, please.',cat:'食物'},
+  {w:'bread',ipa:'/bred/',zh:'面包',ex:'I eat bread.',cat:'食物'},
+  {w:'milk',ipa:'/mɪlk/',zh:'牛奶',ex:'I drink milk.',cat:'食物'},
+  {w:'egg',ipa:'/eɡ/',zh:'鸡蛋',ex:'I eat an egg.',cat:'食物'},
+  {w:'rice',ipa:'/raɪs/',zh:'米饭',ex:'I like rice.',cat:'食物'},
+  {w:'cake',ipa:'/keɪk/',zh:'蛋糕',ex:'A cake, please.',cat:'食物'},
+  {w:'water',ipa:'/ˈwɔːtə/',zh:'水',ex:'I drink water.',cat:'食物'},
+  {w:'orange',ipa:'/ˈɒrɪndʒ/',zh:'橙子',ex:'The orange is orange.',cat:'食物'},
+  // 颜色
+  {w:'red',ipa:'/red/',zh:'红色',ex:'My book is red.',cat:'颜色'},
+  {w:'blue',ipa:'/bluː/',zh:'蓝色',ex:'The sky is blue.',cat:'颜色'},
+  {w:'green',ipa:'/ɡriːn/',zh:'绿色',ex:'I like green.',cat:'颜色'},
+  {w:'yellow',ipa:'/ˈjeləʊ/',zh:'黄色',ex:'A yellow duck.',cat:'颜色'},
+  {w:'black',ipa:'/blæk/',zh:'黑色',ex:'My cat is black.',cat:'颜色'},
+  {w:'white',ipa:'/waɪt/',zh:'白色',ex:'The dog is white.',cat:'颜色'},
+  {w:'pink',ipa:'/pɪŋk/',zh:'粉色',ex:'I like pink.',cat:'颜色'},
+  {w:'orange2',ipa:'/ˈɒrɪndʒ/',zh:'橙色',ex:'An orange bag.',cat:'颜色',alias:'orange'},
+  // 数字
+  {w:'one',ipa:'/wʌn/',zh:'一',ex:'I have one cat.',cat:'数字'},
+  {w:'two',ipa:'/tuː/',zh:'二',ex:'Two dogs.',cat:'数字'},
+  {w:'three',ipa:'/θriː/',zh:'三',ex:'Three apples.',cat:'数字'},
+  {w:'four',ipa:'/fɔː/',zh:'四',ex:'Four books.',cat:'数字'},
+  {w:'five',ipa:'/faɪv/',zh:'五',ex:'Five birds.',cat:'数字'},
+  {w:'six',ipa:'/sɪks/',zh:'六',ex:'Six eggs.',cat:'数字'},
+  {w:'seven',ipa:'/ˈsevn/',zh:'七',ex:'Seven lions.',cat:'数字'},
+  {w:'ten',ipa:'/ten/',zh:'十',ex:'Ten fish.',cat:'数字'},
+  // 家庭
+  {w:'mom',ipa:'/mɒm/',zh:'妈妈',ex:'This is my mom.',cat:'家庭'},
+  {w:'dad',ipa:'/dæd/',zh:'爸爸',ex:'This is my dad.',cat:'家庭'},
+  {w:'grandma',ipa:'/ˈɡrænmɑː/',zh:'奶奶',ex:'I love grandma.',cat:'家庭'},
+  {w:'grandpa',ipa:'/ˈɡrænpɑː/',zh:'爷爷',ex:'This is grandpa.',cat:'家庭'},
+  {w:'sister',ipa:'/ˈsɪstə/',zh:'姐姐/妹妹',ex:'My sister is happy.',cat:'家庭'},
+  {w:'brother',ipa:'/ˈbrʌðə/',zh:'哥哥/弟弟',ex:'My brother is big.',cat:'家庭'},
+  {w:'baby',ipa:'/ˈbeɪbi/',zh:'宝宝',ex:'The baby is small.',cat:'家庭'},
+  // 学校
+  {w:'book',ipa:'/bʊk/',zh:'书',ex:'My book is red.',cat:'学校'},
+  {w:'pen',ipa:'/pen/',zh:'钢笔',ex:'I have a pen.',cat:'学校'},
+  {w:'pencil',ipa:'/ˈpensl/',zh:'铅笔',ex:'A green pencil.',cat:'学校'},
+  {w:'bag',ipa:'/bæɡ/',zh:'书包',ex:'My bag is blue.',cat:'学校'},
+  {w:'ruler',ipa:'/ˈruːlə/',zh:'尺子',ex:'The ruler is long.',cat:'学校'},
+  {w:'desk',ipa:'/desk/',zh:'书桌',ex:'The desk is big.',cat:'学校'},
+  {w:'teacher',ipa:'/ˈtiːtʃə/',zh:'老师',ex:'I like my teacher.',cat:'学校'},
+  // 日常
+  {w:'run',ipa:'/rʌn/',zh:'跑',ex:'I can run.',cat:'日常'},
+  {w:'jump',ipa:'/dʒʌmp/',zh:'跳',ex:'I can jump.',cat:'日常'},
+  {w:'eat',ipa:'/iːt/',zh:'吃',ex:'I eat bread.',cat:'日常'},
+  {w:'drink',ipa:'/drɪŋk/',zh:'喝',ex:'I drink milk.',cat:'日常'},
+  {w:'sleep',ipa:'/sliːp/',zh:'睡觉',ex:'I can sleep.',cat:'日常'},
+  {w:'read',ipa:'/riːd/',zh:'读',ex:'I can read.',cat:'日常'},
+  {w:'write',ipa:'/raɪt/',zh:'写',ex:'I can write.',cat:'日常'},
+  {w:'play',ipa:'/pleɪ/',zh:'玩',ex:'I can play.',cat:'日常'},
+  {w:'happy',ipa:'/ˈhæpi/',zh:'开心',ex:'I am happy.',cat:'日常'},
+  {w:'cry',ipa:'/kraɪ/',zh:'哭',ex:'The baby can cry.',cat:'日常'},
+  {w:'bird',ipa:'/bɜːd/',zh:'鸟',ex:'The bird can fly.',cat:'动物'},
+  {w:'fish',ipa:'/fɪʃ/',zh:'鱼',ex:'The fish is small.',cat:'动物'},
+  {w:'horse',ipa:'/hɔːs/',zh:'马',ex:'The horse runs fast.',cat:'动物'},
+  {w:'sheep',ipa:'/ʃiːp/',zh:'羊',ex:'The sheep eats grass.',cat:'动物'},
+  {w:'monkey',ipa:'/ˈmʌŋki/',zh:'猴子',ex:'The monkey is funny.',cat:'动物'},
+  {w:'duck',ipa:'/dʌk/',zh:'鸭子',ex:'The duck can swim.',cat:'动物'},
+  {w:'panda',ipa:'/ˈpændə/',zh:'熊猫',ex:'I love pandas.',cat:'动物'},
+  {w:'elephant',ipa:'/ˈelɪfənt/',zh:'大象',ex:'The elephant is big.',cat:'动物'},
+  {w:'rice',ipa:'/raɪs/',zh:'米饭',ex:'I eat rice.',cat:'食物'},
+  {w:'noodles',ipa:'/ˈnuːdlz/',zh:'面条',ex:'Noodles are long.',cat:'食物'},
+  {w:'egg',ipa:'/eɡ/',zh:'鸡蛋',ex:'I like eggs.',cat:'食物'},
+  {w:'bread',ipa:'/bred/',zh:'面包',ex:'Bread is soft.',cat:'食物'},
+  {w:'banana',ipa:'/bəˈnɑːnə/',zh:'香蕉',ex:'The banana is yellow.',cat:'食物'},
+  {w:'grape',ipa:'/ɡreɪp/',zh:'葡萄',ex:'Grapes are sweet.',cat:'食物'},
+  {w:'chicken',ipa:'/ˈtʃɪkɪn/',zh:'鸡肉',ex:'Chicken is yummy.',cat:'食物'},
+  {w:'black',ipa:'/blæk/',zh:'黑色',ex:'My cat is black.',cat:'颜色'},
+  {w:'white',ipa:'/waɪt/',zh:'白色',ex:'The cloud is white.',cat:'颜色'},
+  {w:'purple',ipa:'/ˈpɜːpl/',zh:'紫色',ex:'I have a purple pen.',cat:'颜色'},
+  {w:'pink',ipa:'/pɪŋk/',zh:'粉色',ex:'The flower is pink.',cat:'颜色'},
+  {w:'brown',ipa:'/braʊn/',zh:'棕色',ex:'The bear is brown.',cat:'颜色'},
+  {w:'brother',ipa:'/ˈbrʌðə/',zh:'哥哥；弟弟',ex:'My brother is tall.',cat:'家庭'},
+  {w:'sister',ipa:'/ˈsɪstə/',zh:'姐姐；妹妹',ex:'My sister is kind.',cat:'家庭'},
+  {w:'grandpa',ipa:'/ˈɡrænpɑː/',zh:'爷爷',ex:'Grandpa tells stories.',cat:'家庭'},
+  {w:'grandma',ipa:'/ˈɡrænmɑː/',zh:'奶奶',ex:'Grandma cooks well.',cat:'家庭'},
+  {w:'uncle',ipa:'/ˈʌŋkl/',zh:'叔叔',ex:'My uncle is a driver.',cat:'家庭'},
+  {w:'school',ipa:'/skuːl/',zh:'学校',ex:'I go to school.',cat:'学校'},
+  {w:'class',ipa:'/klɑːs/',zh:'班级',ex:'Our class is big.',cat:'学校'},
+  {w:'eraser',ipa:'/ɪˈreɪzə/',zh:'橡皮',ex:'Where is my eraser?',cat:'学校'},
+  {w:'crayon',ipa:'/ˈkreɪən/',zh:'蜡笔',ex:'I draw with crayons.',cat:'学校'},
+  {w:'blackboard',ipa:'/ˈblækbɔːd/',zh:'黑板',ex:'Look at the blackboard.',cat:'学校'},
+  {w:'sing',ipa:'/sɪŋ/',zh:'唱歌',ex:'I can sing.',cat:'日常'},
+  {w:'dance',ipa:'/dɑːns/',zh:'跳舞',ex:'She likes to dance.',cat:'日常'},
+  {w:'swim',ipa:'/swɪm/',zh:'游泳',ex:'Fish can swim.',cat:'日常'},
+  {w:'walk',ipa:'/wɔːk/',zh:'走路',ex:'I walk to school.',cat:'日常'},
+  {w:'draw',ipa:'/drɔː/',zh:'画画',ex:'I draw a picture.',cat:'日常'},
+];
+const CATS = ['动物','食物','颜色','数字','家庭','学校','日常'];
+function byCat(c){ return WORDS.filter(x=>x.cat===c); }
+
+/* ============ 字母点读 ============ */
+const LETTERS = [
+  ['A','a','🍎','apple'],['B','b','⚽','ball'],['C','c','🐱','cat'],['D','d','🐶','dog'],
+  ['E','e','🥚','egg'],['F','f','🐟','fish'],['G','g','🎁','gift'],['H','h','🎩','hat'],
+  ['I','i','🧊','ice'],['J','j','🧃','juice'],['K','k','🪁','kite'],['L','l','🦁','lion'],
+  ['M','m','🌙','moon'],['N','n','👃','nose'],['O','o','🍊','orange'],['P','p','🐷','pig'],
+  ['Q','q','👑','queen'],['R','r','🐰','rabbit'],['S','s','☀️','sun'],['T','t','🐯','tiger'],
+  ['U','u','☂️','umbrella'],['V','v','🎻','violin'],['W','w','💧','water'],['X','x','📦','box'],
+  ['Y','y','🥛','yogurt'],['Z','z','🦓','zebra']
+];
+let abcMode = 'name';
+function setAbcMode(m){
+  abcMode = m;
+  document.getElementById('abcModeName').classList.toggle('on', m==='name');
+  document.getElementById('abcModeSound').classList.toggle('on', m==='sound');
+}
+function renderAbc(){
+  const g = document.getElementById('abcGrid'); g.innerHTML = '';
+  LETTERS.forEach(([up,low,emo,kw])=>{
+    const b = document.createElement('button');
+    b.className = 'abc-cell';
+    b.innerHTML = `<div class="big">${up}</div><div class="low">${low}</div><div class="emoji">${emo}</div>`;
+    b.onclick = ()=>{
+      if(abcMode==='name'){ speak(up); }
+      else { speak(kw); }
+      b.style.background = '#e9e4ff';
+      setTimeout(()=>b.style.background='',200);
+    };
+    g.appendChild(b);
+  });
+}
+
+/* ============ 字母每日挑战（随机 5 个） ============ */
+let letterState = { date:'', letters:[], read:{} };
+function loadLetterState(){
+  try { letterState = Accounts.get(APP, ME, 'letters', { date:'', letters:[], read:{} }); } catch(e){ letterState = { date:'', letters:[], read:{} }; }
+  const t = todayStr();
+  if(letterState.date !== t){
+    const idx = [...Array(LETTERS.length).keys()];
+    for(let i=idx.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [idx[i],idx[j]]=[idx[j],idx[i]]; }
+    letterState = { date:t, letters:idx.slice(0,5), read:{} };
+    saveLetterState();
+  }
+}
+function saveLetterState(){ try{ Accounts.set(APP, ME, 'letters', letterState); }catch(e){} }
+function renderLetterChallenge(){
+  const box = document.getElementById('letterChallenge'); if(!box) return; box.innerHTML='';
+  letterState.letters.forEach(i=>{
+    const [up,low,emo,kw] = LETTERS[i];
+    const done = !!letterState.read[i];
+    const c = document.createElement('button');
+    c.className = 'ch-card' + (done?' done':'');
+    c.innerHTML = `<div class="ch-up">${up}</div><div class="ch-low">${low} ${emo}</div><div class="ch-flag">${done?'✓ 我会读':'点我会读'}</div>`;
+    c.onclick = ()=>{
+      if(!letterState.read[i]){
+        letterState.read[i] = true; saveLetterState();
+        if(abcMode==='name') speak(up); else speak(kw);
+      }
+      renderLetterChallenge();
+      checkLetterModule();
+    };
+    box.appendChild(c);
+  });
+}
+function checkLetterModule(){
+  const all = letterState.letters.length>0 && letterState.letters.every(i=>letterState.read[i]);
+  if(all && !state.done.letter){ state.done.letter = true; saveState(); }
+  const box = document.querySelector(".m-done[onclick*=\"'letter'\"]");
+  if(box){ box.classList.toggle('on', !!state.done.letter); updateProgress(); }
+}
+
+/* ============ 自然拼读墙 ============ */
+const PHONICS = [
+  {l:'a',ip:'/æ/',ex:'apple'},{l:'e',ip:'/e/',ex:'egg'},{l:'i',ip:'/ɪ/',ex:'ink'},
+  {l:'o',ip:'/ɒ/',ex:'orange'},{l:'u',ip:'/ʌ/',ex:'umbrella'},
+  {l:'b',ip:'/b/',ex:'ball'},{l:'c',ip:'/k/',ex:'cat'},{l:'d',ip:'/d/',ex:'dog'},
+  {l:'f',ip:'/f/',ex:'fish'},{l:'g',ip:'/ɡ/',ex:'goat'},{l:'h',ip:'/h/',ex:'hat'},
+  {l:'j',ip:'/dʒ/',ex:'jam'},{l:'k',ip:'/k/',ex:'kite'},{l:'l',ip:'/l/',ex:'lion'},
+  {l:'m',ip:'/m/',ex:'moon'},{l:'n',ip:'/n/',ex:'nose'},{l:'p',ip:'/p/',ex:'pig'},
+  {l:'r',ip:'/r/',ex:'red'},{l:'s',ip:'/s/',ex:'sun'},{l:'t',ip:'/t/',ex:'tiger'},
+  {l:'v',ip:'/v/',ex:'van'},{l:'w',ip:'/w/',ex:'water'},{l:'z',ip:'/z/',ex:'zebra'},
+  {l:'sh',ip:'/ʃ/',ex:'ship'},{l:'ch',ip:'/tʃ/',ex:'chip'},{l:'th',ip:'/θ/',ex:'three'},
+  {l:'ee',ip:'/iː/',ex:'tree'},{l:'oo',ip:'/uː/',ex:'moon'},{l:'ar',ip:'/ɑː/',ex:'car'},{l:'or',ip:'/ɔː/',ex:'horse'},{l:'er',ip:'/ɜː/',ex:'river'},{l:'ai',ip:'/eɪ/',ex:'rain'},{l:'oa',ip:'/əʊ/',ex:'boat'},{l:'ir',ip:'/ɜː/',ex:'bird'},{l:'ur',ip:'/ɜː/',ex:'nurse'},{l:'qu',ip:'/kw/',ex:'queen'},{l:'wh',ip:'/w/',ex:'whale'},{l:'bl',ip:'/bl/',ex:'blue'},{l:'br',ip:'/br/',ex:'bread'},{l:'cl',ip:'/kl/',ex:'clock'},{l:'fl',ip:'/fl/',ex:'flower'},{l:'fr',ip:'/fr/',ex:'frog'},{l:'gr',ip:'/ɡr/',ex:'grape'},{l:'pl',ip:'/pl/',ex:'plane'},{l:'tr',ip:'/tr/',ex:'train'},{l:'dr',ip:'/dr/',ex:'dragon'},{l:'st',ip:'/st/',ex:'star'},{l:'sp',ip:'/sp/',ex:'spring'},{l:'sk',ip:'/sk/',ex:'sky'},{l:'sw',ip:'/sw/',ex:'sweet'}
+];
+function renderPhonics(){
+  const g = document.getElementById('phonicsGrid'); g.innerHTML = '';
+  PHONICS.forEach(p=>{
+    const b = document.createElement('button');
+    b.className = 'ph-cell';
+    b.innerHTML = `<div class="ltr">${p.l}</div><div class="ip">${p.ip}</div><div class="ex">${p.ex}</div>`;
+    b.onclick = ()=>{
+      speak(p.ex);
+      b.style.transform='scale(.95)';
+      setTimeout(()=>b.style.transform='',150);
+    };
+    g.appendChild(b);
+  });
+}
+
+/* ============ 儿歌 / 动画（B站 具体视频，国内可看） ============ */
+const SONGS = [
+  {t:'ABC Song 字母歌', bv:'BV1Z8fUYXEdW'},
+  {t:'Twinkle Twinkle 小星星', bv:'BV16P4y127cv'},
+  {t:'The Wheels on the Bus 大巴车', bv:'BV1ba41187xo'},
+  {t:'ABC字母歌 跟唱版', bv:'BV1BZ4y1T7i1'},
+  {t:'英文儿歌启蒙（美音原版）', bv:'BV1yP4y1t77F'}
+];
+const CARTOONS = [
+  {t:'Maisy 小鼠波波', bv:'BV1Rs411K7DE'},
+  {t:'Alphablocks 字母积木（117集合集）', bv:'BV1D9cdeME75'},
+  {t:'Bluey 布鲁伊 第一季', bv:'BV1QT411s7sT'},
+  {t:'Bluey 布鲁伊 第二季', bv:'BV1W24y157QR'}
+];
+function renderMedia(listEl, items, ico){
+  listEl.innerHTML = '';
+  items.forEach(it=>{
+    const card = document.createElement('div');
+    card.className = 'media-card';
+    const id = 'm'+Math.random().toString(36).slice(2);
+    const ext = 'https://www.bilibili.com/video/'+it.bv;
+    card.innerHTML = `
+      <div class="media-top">
+        <span class="mt-ico">${ico}</span>
+        <span class="mt-name">${it.t}</span>
+        <a class="mt-ext" href="${ext}" target="_blank" onclick="event.stopPropagation()">↗ B站</a>
+        <button class="mt-play" onclick="event.stopPropagation();loadFrame('${id}','${it.bv}')">▶ 播放</button>
+      </div>
+      <div class="media-frame" id="${id}"></div>`;
+    listEl.appendChild(card);
+  });
+}
+function loadFrame(id, bv){
+  const f = document.getElementById(id);
+  if(f.dataset.loaded) { f.classList.add('on'); return; }
+  const src = 'https://player.bilibili.com/player.html?bvid='+bv+'&page=1&high_quality=1&danmaku=0&autoplay=0';
+  f.innerHTML = `<iframe src="${src}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+  f.dataset.loaded = '1';
+  f.classList.add('on');
+}
+function toggleFrame(id){
+  const f = document.getElementById(id);
+  if(f.dataset.loaded){ f.classList.toggle('on'); }
+}
+
+/* ============ 主题学习 ============ */
+function renderThemeChips(){
+  const c = document.getElementById('themeChips'); c.innerHTML = '';
+  CATS.forEach((cat,i)=>{
+    const b = document.createElement('button');
+    b.className = 'tchip' + (i===0?' on':'');
+    b.textContent = cat;
+    b.onclick = ()=>{
+      document.querySelectorAll('.tchip').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      renderWords(cat);
+    };
+    c.appendChild(b);
+  });
+  renderWords(CATS[0]);
+}
+function renderWords(cat){
+  const g = document.getElementById('wordGrid'); g.innerHTML = '';
+  byCat(cat).forEach(d=>{
+    const real = d.alias || d.w;
+    const b = document.createElement('button');
+    b.className = 'wcell';
+    b.innerHTML = `<div class="w">${real}</div><div class="ipa">${d.ipa}</div><div class="zh">${d.zh}</div><div class="ex">${d.ex}</div>`;
+    b.onclick = ()=>{ speak(real); b.style.background='#e9e4ff'; setTimeout(()=>b.style.background='',200); };
+    g.appendChild(b);
+  });
+}
+function pickThreeThemes(){
+  const pool = CATS.slice();
+  for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
+  const pick = pool.slice(0,3);
+  const box = document.getElementById('threeBox'); box.innerHTML = '';
+  pick.forEach(cat=>{
+    const col = document.createElement('div');
+    col.className = 'three-col';
+    const ws = byCat(cat).slice(0,5).map(d=>d.alias||d.w);
+    col.innerHTML = `<h4>${cat}</h4>` + ws.map(w=>`<span class="wcell" style="display:inline-block;margin:3px;padding:6px 10px;font-size:14px;font-weight:900;color:var(--accent);cursor:pointer" onclick="speak('${w}')">${w}</span>`).join('');
+    box.appendChild(col);
+  });
+  toast('已随机抽取 3 个主题，点单词听发音 👂');
+  document.querySelector('.module[data-mod="theme"]').classList.add('open');
+  document.querySelector('.module[data-mod="theme"] .m-body').style.display='block';
+}
+
+/* ============ 日常英语听说 ============ */
+const TALKS = [
+  {en:'Hello!',zh:'你好！'},
+  {en:'Thank you!',zh:'谢谢你！'},
+  {en:'Good morning!',zh:'早上好！'},
+  {en:'Good night!',zh:'晚安！'},
+  {en:"I'm hungry.",zh:'我饿了。'},
+  {en:'I like apples.',zh:'我喜欢苹果。'},
+  {en:"What's your name?",zh:'你叫什么名字？'},
+  {en:'How are you?',zh:'你好吗？'}
+];
+function renderTalks(){
+  const list = document.getElementById('talkList'); list.innerHTML = '';
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  TALKS.forEach(t=>{
+    const card = document.createElement('div');
+    card.className = 'talk-card';
+    card.innerHTML = `
+      <div class="talk-en">${t.en}</div>
+      <div class="talk-zh">${t.zh}</div>
+      <div class="talk-row">
+        <button class="b-listen" onclick="speak('${t.en}')">🔊 听发音</button>
+        <button class="b-speak" ${SR?'':'disabled'} onclick="startTalk('${encodeURIComponent(t.en)}', this)">🎤 跟读</button>
+      </div>
+      <div class="talk-fb"></div>`;
+    list.appendChild(card);
+  });
+}
+function startTalk(enCode, btn){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const fb = btn.parentElement.nextElementSibling;
+  if(!SR){ fb.textContent = '📱 当前设备不支持语音识别，请点🔊听后自己大声跟读～'; return; }
+  const en = decodeURIComponent(enCode);
+  const recog = new SR();
+  recog.lang = accent==='uk' ? 'en-GB' : 'en-US';
+  recog.interimResults = false; recog.maxAlternatives = 1;
+  fb.textContent = '🎤 请大声说出这句话…';
+  btn.disabled = true;
+  recog.onresult = e=>{
+    const said = e.results[0][0].transcript.toLowerCase().replace(/[.,!?]/g,'');
+    const target = en.toLowerCase().replace(/[.,!?]/g,'');
+    const tset = new Set(target.split(' ').filter(Boolean));
+    const sset = new Set(said.split(' ').filter(Boolean));
+    let hit = 0; tset.forEach(w=>{ if(sset.has(w)) hit++; });
+    const score = tset.size ? Math.round(hit/tset.size*100) : 0;
+    fb.innerHTML = `你说：「${said}」<br>匹配度 ${score}% ` + (score>=80?'🎉 太棒了！':score>=40?'👍 不错，再练一次':'🔁 再试一次');
+  };
+  recog.onerror = ()=>{ fb.textContent = '⚠️ 没听清，请允许麦克风权限再试一次'; };
+  recog.onend = ()=>{ btn.disabled = false; };
+  try { recog.start(); } catch(err){ fb.textContent='⚠️ 无法启动麦克风'; btn.disabled=false; }
+}
+
+/* ============ 模块展开 / 打卡进度 ============ */
+function toggleModule(head){ head.parentElement.classList.toggle('open'); }
+const MODS = ['song','letter','phonics','cartoon','theme','talk'];
+let state = { date:'', done:{} };
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function loadState(){
+  let raw = null;
+  try { raw = Accounts.get(APP, ME, 'state', null); } catch(e){}
+  const t = todayStr();
+  if(raw && raw.date===t){ state = raw; }
+  else { state = { date:t, done:{} }; saveState(); }
+  // 同步勾选
+  MODS.forEach(m=>{
+    const box = document.querySelector(`.m-done[onclick*="'${m}'"]`);
+    if(box) box.classList.toggle('on', !!state.done[m]);
+  });
+  updateProgress();
+}
+function saveState(){ try{ Accounts.set(APP, ME, 'state', state); }catch(e){} }
+function toggleDone(mod, box){
+  state.done[mod] = !state.done[mod];
+  box.classList.toggle('on', state.done[mod]);
+  saveState(); updateProgress();
+  if(state.done[mod]) toast('✅ 完成一项，真棒！');
+}
+function yesterdayStr(){
+  const d = new Date(); d.setDate(d.getDate()-1);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function loadStreak(){ return Accounts.get(APP, ME, 'streak', {last:'',streak:0}); }
+function saveStreak(s){ try{ Accounts.set(APP, ME, 'streak', s); }catch(e){} }
+function renderStreak(){
+  const s = loadStreak();
+  const t = todayStr();
+  let shown = 0;
+  if(s.last===t || s.last===yesterdayStr()) shown = s.streak || 0;
+  const el = document.getElementById('streakBadge');
+  if(el){
+    el.textContent = '🔥 连续打卡 '+shown+' 天';
+    el.className = 'streak-badge' + (shown>=30?' gold':shown>=7?' purple':'');
+  }
+}
+function updateStreakOnComplete(){
+  const s = loadStreak();
+  const t = todayStr();
+  if(s.last===t) return;
+  s.streak = (s.last===yesterdayStr()) ? (s.streak||0)+1 : 1;
+  s.last = t;
+  saveStreak(s);
+  renderStreak();
+}
+function updateProgress(){
+  const n = MODS.filter(m=>state.done[m]).length;
+  document.getElementById('pText').textContent = n + ' / 6';
+  document.getElementById('pfill').style.width = (n/6*100) + '%';
+  document.getElementById('pbar').classList.toggle('done', n===6);
+  recordHistory();
+  if(n===6){ updateStreakOnComplete(); toast('🎉 今日英语打卡全部完成！'); }
+}
+
+/* ============ 打卡历史（供热力图 / 连续天数统计） ============ */
+function loadHistory(){ return Accounts.get(APP, ME, 'history', {}); }
+function saveHistory(h){ try{ Accounts.set(APP, ME, 'history', h); }catch(e){} }
+function dateKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function recordHistory(){
+  const h = loadHistory();
+  h[todayStr()] = MODS.filter(m=>state.done[m]).length;
+  saveHistory(h);
+}
+let heatYM = { y:new Date().getFullYear(), m:new Date().getMonth() };
+let heatView = 'month';
+let heatYear = new Date().getFullYear();
+function shiftHeat(dir){
+  if(heatView==='year'){ heatYear += dir; renderYear(); }
+  else { const d0 = new Date(heatYM.y, heatYM.m+dir, 1); heatYM = { y:d0.getFullYear(), m:d0.getMonth() }; renderHeatmap(); }
+}
+function levelOf(n){ if(n<=0) return ''; if(n<=2) return ' l1'; if(n<=4) return ' l2'; if(n<=5) return ' l3'; return ' l4'; }
+function computeHeatStats(h){
+  const dates = Object.keys(h).filter(k=>h[k]>0).sort();
+  let cur = 0; const cd = new Date(); cd.setHours(0,0,0,0);
+  if(!(h[dateKey(cd)]>0)) cd.setDate(cd.getDate()-1);
+  while(h[dateKey(cd)]>0){ cur++; cd.setDate(cd.getDate()-1); }
+  let longest = 0, run = 0, prev = null;
+  dates.forEach(k=>{
+    if(prev){
+      const pd = new Date(prev); pd.setDate(pd.getDate()+1);
+      run = (dateKey(pd)===k) ? run+1 : 1;
+    } else run = 1;
+    if(run>longest) longest = run;
+    prev = k;
+  });
+  return { dates, cur, longest };
+}
+function renderHeatmap(){
+  const h = loadHistory();
+  const y = heatYM.y, m = heatYM.m;
+  document.getElementById('heatMonth').textContent = y+'年'+(m+1)+'月';
+  document.getElementById('navPrev').textContent = '◀ 上月';
+  document.getElementById('navNext').textContent = '下月 ▶';
+  const first = new Date(y, m, 1);
+  const startW = first.getDay();            // 0=周日，与中文“日一二三四五六”对齐
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const grid = document.getElementById('heatGrid'); grid.innerHTML = '';
+  for(let i=0;i<startW;i++){
+    const c = document.createElement('div'); c.className = 'heat-cell empty'; grid.appendChild(c);
+  }
+  for(let d=1; d<=daysInMonth; d++){
+    const dt = new Date(y, m, d); dt.setHours(0,0,0,0);
+    const k = dateKey(dt);
+    const n = h[k] || 0;
+    const future = dt > today;
+    const c = document.createElement('div');
+    c.className = 'heat-cell' + (n>0 ? levelOf(n) : (future ? ' future' : ''));
+    c.innerHTML = '<span>'+d+'</span>';
+    if(!future){
+      c.onclick = ()=> toast(k+'：完成 '+(h[k]||0)+' / 6 项'+(n>=6?' 🏆 全勤':''));
+    }
+    grid.appendChild(c);
+  }
+  const s = computeHeatStats(h);
+  let monthCnt = 0;
+  s.dates.forEach(k=>{ const p=k.split('-').map(Number); if(p[0]===y && p[1]-1===m) monthCnt++; });
+  document.getElementById('heatStats').innerHTML =
+    '🔥 连续 <b>'+s.cur+'</b> 天 · 🏆 最长连续 <b>'+s.longest+'</b> 天 · 📆 本月已打卡 <b>'+monthCnt+'</b> 天';
+}
+function toggleHeatView(){
+  heatView = heatView==='month' ? 'year' : 'month';
+  document.getElementById('viewToggle').textContent = heatView==='month' ? '📊 整年' : '📅 月历';
+  document.getElementById('heatGrid').style.display = heatView==='month' ? 'grid' : 'none';
+  document.getElementById('heatWeekdays').style.display = heatView==='month' ? 'grid' : 'none';
+  document.getElementById('heatYearWrap').style.display = heatView==='year' ? 'block' : 'none';
+  document.getElementById('navPrev').style.display = heatView==='month' ? '' : 'none';
+  document.getElementById('navNext').style.display = heatView==='month' ? '' : 'none';
+  document.getElementById('heatMonth').style.display = heatView==='month' ? '' : 'none';
+  if(heatView==='year') renderYear(); else renderHeatmap();
+}
+function renderYear(){
+  const h = loadHistory();
+  const y = heatYear;
+  document.getElementById('heatMonth').textContent = y+' 年';
+  document.getElementById('navPrev').textContent = '◀ 上一年';
+  document.getElementById('navNext').textContent = '下一年 ▶';
+  const jan1 = new Date(y, 0, 1);
+  const startW = jan1.getDay();
+  const firstCell = new Date(y, 0, 1-startW);
+  const dec31 = new Date(y, 11, 31);
+  const totalDays = Math.round((dec31 - firstCell)/86400000) + 1;
+  const weeks = Math.ceil(totalDays/7);
+  const monthsEl = document.getElementById('heatMonths'); monthsEl.innerHTML='';
+  const yearEl = document.getElementById('heatYear'); yearEl.innerHTML='';
+  let prevMonth = -1;
+  for(let w=0; w<weeks; w++){
+    const sunday = new Date(firstCell); sunday.setDate(firstCell.getDate()+w*7);
+    const mm = sunday.getMonth();
+    const label = (mm!==prevMonth && sunday.getFullYear()===y) ? (mm+1)+'月' : '';
+    const ml = document.createElement('div'); ml.textContent = label; monthsEl.appendChild(ml);
+    prevMonth = mm;
+  }
+  for(let w=0; w<weeks; w++){
+    for(let dow=0; dow<7; dow++){
+      const dt = new Date(firstCell); dt.setDate(firstCell.getDate()+w*7+dow); dt.setHours(0,0,0,0);
+      const c = document.createElement('div');
+      if(dt.getFullYear()!==y){ c.className = 'heat-yc empty'; yearEl.appendChild(c); continue; }
+      const k = dateKey(dt);
+      const n = h[k] || 0;
+      c.className = 'heat-yc' + (n>0 ? levelOf(n) : '');
+      c.title = k+'：完成 '+(h[k]||0)+' / 6 项'+(n>=6?' 🏆 全勤':'');
+      c.onclick = ()=> toast(k+'：完成 '+(h[k]||0)+' / 6 项'+(n>=6?' 🏆 全勤':''));
+      yearEl.appendChild(c);
+    }
+  }
+  const s = computeHeatStats(h);
+  let yearCnt = 0;
+  s.dates.forEach(k=>{ const p=k.split('-').map(Number); if(p[0]===y) yearCnt++; });
+  document.getElementById('heatStats').innerHTML =
+    '🔥 连续 <b>'+s.cur+'</b> 天 · 🏆 最长连续 <b>'+s.longest+'</b> 天 · 📆 今年已打卡 <b>'+yearCnt+'</b> 天';
+}
+
+/* ============ 初始化 ============ */
+function init(){
+  const d = new Date();
+  document.getElementById('todayDate').textContent =
+    d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 · 周'+'日一二三四五六'[d.getDay()];
+  loadLetterState();
+  renderAbc();
+  renderLetterChallenge();
+  renderPhonics();
+  renderMedia(document.getElementById('songList'), SONGS, '🎵');
+  renderMedia(document.getElementById('cartoonList'), CARTOONS, '📺');
+  renderThemeChips();
+  renderTalks();
+  loadState();
+  checkLetterModule();
+  renderStreak();
+  renderHeatmap();
+}
+
+/* ============ 幼儿模式：每日听读打卡（Zoran / 学前） ============ */
+var TODDLER_LISTEN = [
+  {e:'apple', zh:'苹果', emoji:'🍎'},
+  {e:'cat', zh:'小猫', emoji:'🐱'},
+  {e:'dog', zh:'小狗', emoji:'🐶'},
+  {e:'sun', zh:'太阳', emoji:'☀️'},
+  {e:'ball', zh:'皮球', emoji:'⚽'},
+  {e:'book', zh:'书', emoji:'📖'},
+  {e:'star', zh:'星星', emoji:'⭐'},
+  {e:'milk', zh:'牛奶', emoji:'🥛'},
+  {e:'banana', zh:'香蕉', emoji:'🍌'},
+  {e:'fish', zh:'小鱼', emoji:'🐟'},
+  {e:'bird', zh:'小鸟', emoji:'🐦'},
+  {e:'flower', zh:'花', emoji:'🌸'},
+  {e:'tree', zh:'大树', emoji:'🌳'},
+  {e:'car', zh:'小汽车', emoji:'🚗'},
+  {e:'water', zh:'水', emoji:'💧'},
+  {e:'cake', zh:'蛋糕', emoji:'🍰'},
+  {e:'ice cream', zh:'冰淇淋', emoji:'🍦'},
+  {e:'bear', zh:'小熊', emoji:'🧸'},
+  {e:'Hello', zh:'你好', emoji:'👋'},
+  {e:'Thank you', zh:'谢谢', emoji:'🙏'},
+  {e:'I love you', zh:'我爱你', emoji:'💛'},
+  {e:'Good morning', zh:'早上好', emoji:'🌞'},
+  {e:'Good night', zh:'晚安', emoji:'🌙'},
+  {e:'Bye bye', zh:'再见', emoji:'🤗'}
+];
+var tcItem = null;
+function tcPlay(){
+  if(!tcItem) return;
+  if(window.speak) speak(tcItem.e, 0.85);
+  else { var u=new SpeechSynthesisUtterance(tcItem.e); u.lang='en-US'; u.rate=0.85; try{ speechSynthesis.cancel(); }catch(e){} window.__ttsUtt=u; setTimeout(function(){ try{ speechSynthesis.speak(u); }catch(e){} }, 60); }
+}
+function tcPick(){
+  tcItem = TODDLER_LISTEN[Math.floor(Math.random()*TODDLER_LISTEN.length)];
+  var em=document.getElementById('tcEmoji'); if(em) em.textContent = tcItem.emoji;
+  var pr=document.getElementById('tcPrompt'); if(pr) pr.textContent = '点小喇叭，听一听：' + tcItem.zh;
+}
+function startToddlerCheckin(){
+  var d=new Date();
+  var dt=document.getElementById('tcDate'); if(dt) dt.textContent = d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
+  var t=document.getElementById('toddlerCheckin'); if(t) t.hidden=false;
+  if(window.Accounts && Accounts.toddler) Accounts.toddler.start(ME);
+  tcPick();
+  var h = loadHistory();
+  var done = h[todayStr()] > 0;
+  var btn=document.getElementById('tcDone'); if(btn) btn.disabled = done;
+  var msg=document.getElementById('tcMsg'); if(msg) msg.textContent = done ? '🎉 今天已经打卡啦！明天再来～' : '';
+  renderToddlerStars(h);
+}
+function renderToddlerStars(h){
+  var el=document.getElementById('tcStars'); if(!el) return;
+  var wd=['日','一','二','三','四','五','六'];
+  var today=new Date(); today.setHours(0,0,0,0);
+  var cells=[], weekCnt=0;
+  for(var i=6;i>=0;i--){
+    var d=new Date(today); d.setDate(d.getDate()-i);
+    var k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    var on=(h&&h[k]>0);
+    if(on) weekCnt++;
+    cells.push('<div class="tc-star'+(on?' on':'')+'">'+(on?'⭐':'☆')+'<div class="tc-star-d">周'+wd[d.getDay()]+'</div></div>');
+  }
+  el.innerHTML=cells.join('');
+  var note=document.getElementById('tcStarsNote'); if(note) note.textContent='本周已打卡 '+weekCnt+' 天 ✨';
+}
+function tcMarkDone(){
+  var h = loadHistory();
+  h[todayStr()] = 1;
+  saveHistory(h);
+  if(window.Accounts && Accounts.toddler){ Accounts.toddler.addSticker(ME); Accounts.toddler.burst(); Accounts.toddler.flash('太棒了！今天打卡完成 🌟'); }
+  var btn=document.getElementById('tcDone'); if(btn) btn.disabled = true;
+  var msg=document.getElementById('tcMsg'); if(msg) msg.textContent = '🎉 今天已经打卡啦！明天再来～';
+  renderToddlerStars(h);
+}
+
+window.addEventListener('load', function(){
+  function engciBootstrap(){ if(window.Accounts && Accounts.isToddler(ME)) startToddlerCheckin(); else init(); }
+  function enableSwitchReload(bootstrap){
+    if(Accounts.mountSwitch._withReload) return;
+    var _orig = Accounts.mountSwitch;
+    Accounts.mountSwitch = function(app){
+      var r = _orig(app);
+      var btn = document.getElementById('accSwitch');
+      if(btn){ btn.onclick = function(){
+        Accounts.current = null;
+        var s = document.getElementById('accSwitch'); if(s && s.parentNode) s.parentNode.removeChild(s);
+        Accounts.gate(app, { onLogin: function(){ bootstrap(); Accounts.mountSwitch(app); } });
+      }; }
+      return r;
+    };
+    Accounts.mountSwitch._withReload = true;
+  }
+Accounts.gate(APP, { onLogin: function(user){
+  ME = user;
+  if(window.StudyTime) StudyTime.track(ME, 'engci');
+  if(window.Accounts && Accounts.isToddler(ME)) startToddlerCheckin();
+  else init();
+  enableSwitchReload(engciBootstrap);
+  Accounts.mountSwitch(APP);
+}});
+});
+</script>
+<script>
+if('serviceWorker' in navigator){var _h=location.hostname;if(_h!=='localhost'&&_h!=='127.0.0.1'){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}}
+</script>
+</body>
+</html>

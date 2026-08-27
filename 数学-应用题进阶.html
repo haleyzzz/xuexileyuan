@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧠 数学应用题进阶</title>
+<style>
+  :root{ --c1:#4cc9f0; --c2:#06d6a0; --green:#06d6a0; --ink:#3d3a4b; }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#f0faff,#eafaf4);color:var(--ink);padding:18px;max-width:560px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  .back{position:fixed;left:14px;top:14px;z-index:30;border:none;background:rgba(255,255,255,.85);border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink)}
+  header{background:linear-gradient(120deg,var(--c1),var(--c2));color:#fff;border-radius:24px;padding:20px;text-align:center;box-shadow:0 8px 22px rgba(76,201,240,.4)}
+  header h1{font-size:22px}
+  .date{font-size:14px;opacity:.95;margin-top:4px}
+  .stats{display:flex;gap:10px;margin:14px 0}
+  .stat{flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .stat .num{font-size:26px;font-weight:800;color:var(--c2)}
+  .stat .lbl{font-size:12px;color:#999;margin-top:2px}
+  .screen{display:none}
+  .screen.on{display:block}
+  .btn{display:block;width:100%;border:none;border-radius:16px;padding:14px;font-size:16px;font-family:inherit;cursor:pointer;font-weight:800;color:#fff;background:var(--c1);margin-top:8px}
+  .btn.gh{background:var(--c2)}
+  .btn.sec{background:#eafaf4;color:var(--c1)}
+  .prog-wrap{margin:6px 0 14px}
+  .progress{height:14px;background:#d6f3ec;border-radius:10px;overflow:hidden}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--c1),var(--c2));border-radius:10px;transition:width .4s}
+  .prog-txt{font-size:13px;color:#888;text-align:center;margin-top:4px}
+  .q{background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.06);padding:14px;margin-bottom:12px;border:3px solid transparent;transition:border-color .2s}
+  .q.done-ok{border-color:var(--green)}
+  .q.done-no{border-color:#ff6b6b}
+  .q .qt{font-size:15px;font-weight:700;margin-bottom:10px;line-height:1.6}
+  .q .qt .qn{color:var(--c1);margin-right:6px}
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{border:none;border-radius:12px;padding:11px 14px;font-size:14px;text-align:left;font-family:inherit;cursor:pointer;background:#eafaf4;color:var(--ink);transition:.15s}
+  .opt:active{transform:scale(.98)}
+  .opt.ok{background:var(--green);color:#fff}
+  .opt.no{background:#ff6b6b;color:#fff}
+  .opt.dim{opacity:.45;pointer-events:none}
+  .why{font-size:13px;color:#888;margin-top:10px;background:#f6f8fb;border-radius:10px;padding:9px;line-height:1.6;display:none}
+  .why.on{display:block}
+  .report{background:#fff;border-radius:24px;box-shadow:0 8px 22px rgba(0,0,0,.08);padding:24px;text-align:center;margin-top:14px}
+  .report .stars{font-size:34px;letter-spacing:4px;margin:6px 0}
+  .report .score{font-size:30px;font-weight:800;color:var(--c1)}
+  .report .sub{font-size:14px;color:#888;margin-top:4px}
+  .report .line{font-size:15px;color:var(--ink);margin-top:10px}
+  .report .pass{color:var(--green);font-weight:800}
+  .report .fail{color:#ff6b6b;font-weight:800}
+  .reset{background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;text-decoration:underline;display:block;margin:10px auto 0;font-family:inherit}
+  .tip{font-size:12px;color:#aaa;text-align:center;margin-top:14px;line-height:1.6}
+  .confetti{position:fixed;top:-40px;font-size:24px;pointer-events:none;z-index:99;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:.2}}
+  .celebrate{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:100}
+  .celebrate .box2{background:#fff;border-radius:24px;padding:28px 34px;text-align:center;animation:pop .4s;max-width:320px}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate h3{font-size:24px;margin-bottom:8px}
+  .celebrate p{color:#888;font-size:14px;line-height:1.6}
+  .celebrate button{margin-top:16px;border:none;background:var(--c2);color:#fff;padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+</style>
+</head>
+<body>
+
+<header><h1>🧠 应用题进阶</h1><div class="date" id="dateStr">今天</div></header>
+<div class="stats">
+  <div class="stat"><div class="num" id="bestNum">0</div><div class="lbl">🏆 最佳对题</div></div>
+  <div class="stat"><div class="num" id="totalNum">0</div><div class="lbl">📝 题目总数</div></div>
+  <div class="stat"><div class="num" id="passNum">80%</div><div class="lbl">✅ 通关线</div></div>
+</div>
+<div class="screen on" id="scrMenu">
+  <h2 style="font-size:17px;margin:6px 4px 10px">🧩 两步 / 三步应用题</h2>
+  <div class="tip" style="margin:0 0 12px">读完题列出算式再选答案，做完看解析。选对 80% 就通关！</div>
+  <button class="btn" onclick="start()">🚀 开始闯关</button>
+  <button class="btn sec" onclick="resetBest()">↺ 清空最佳记录</button>
+</div>
+<div class="screen" id="scrQuiz">
+  <div class="prog-wrap"><div class="progress"><i id="progBar"></i></div><div class="prog-txt" id="progTxt">已答 0 / 0</div></div>
+  <div id="quizArea"></div>
+  <button class="btn gh" id="finishBtn" onclick="finish()" style="display:none">🏁 查看战报</button>
+</div>
+<div class="screen" id="scrReport">
+  <div class="report">
+    <div class="stars" id="rStars">⭐⭐⭐</div>
+    <div class="score" id="rScore">0 / 0</div>
+    <div class="sub" id="rPct">正确率 0%</div>
+    <div class="line" id="rPass"></div>
+  </div>
+  <button class="btn" onclick="start()">🔄 再来一轮</button>
+  <button class="btn sec" onclick="goMenu()">🏠 回到首页</button>
+</div>
+<div class="tip">数据按小朋友分别保存，不会上传。</div>
+<div class="celebrate" id="celeb"><div class="box2"><h3>🎉 解题小高手！</h3><p>两步三步都难不倒你，数学越来越溜！</p><button onclick="closeCeleb()">继续闯关 💪</button></div></div>
+<script>
+var QUIZ=[
+  {q:'小明有 25 元，买文具花了 8 元，妈妈又给了他 15 元，现在小明有多少元？',opts:['32','30','34','22'],ans:0,why:'25 − 8 = 17，17 + 15 = 32（元）。'},
+  {q:'一本书 64 页，小红每天看 8 页，看了 5 天，还剩多少页没看？',opts:['24','30','40','16'],ans:0,why:'已看 8×5=40 页，64−40=24 页。'},
+  {q:'一盒巧克力有 6 排，每排 4 块，3 盒一共有多少块？',opts:['72','48','64','24'],ans:0,why:'一盒 6×4=24 块，3 盒 24×3=72 块。'},
+  {q:'操场上有 3 组同学跳绳，每组 9 人，走了 7 人，还剩多少人？',opts:['20','27','13','21'],ans:0,why:'共 3×9=27 人，27−7=20 人。'},
+  {q:'妈妈买 2 袋糖，每袋 10 颗，分给 4 个小朋友每人 3 颗，还剩几颗？',opts:['8','12','20','6'],ans:0,why:'共 2×10=20 颗，分掉 4×3=12 颗，剩 20−12=8 颗。'},
+  {q:'一个书包 38 元，文具盒比书包便宜 19 元，买一个文具盒要多少元？',opts:['19','21','57','29'],ans:0,why:'38 − 19 = 19（元）。'},
+  {q:'果园里有苹果树 45 棵，梨树比苹果树少 17 棵，两种树一共有多少棵？',opts:['73','62','88','28'],ans:0,why:'梨树 45−17=28 棵，共 45+28=73 棵。'},
+  {q:'24 个同学去春游，每 4 人坐一条船，需要几条船？',opts:['6','8','5','7'],ans:0,why:'24 ÷ 4 = 6（条）。'},
+  {q:'一支笔 3 元，买 5 支笔和 1 个本子（本子 7 元），一共要多少元？',opts:['22','15','29','35'],ans:0,why:'笔 3×5=15 元，加本子 7 元，共 22 元。'},
+  {q:'爸爸今年 35 岁，儿子比爸爸小 27 岁，妈妈比儿子大 24 岁，妈妈多少岁？',opts:['32','11','59','8'],ans:0,why:'儿子 35−27=8 岁，妈妈 8+24=32 岁。'},
+
+  /* ===== 补充题（三步 / 综合）===== */
+  {q:'一个长方形长 12 厘米，宽 8 厘米，长和宽各增加 2 厘米，面积增加多少？',note:'两次面积相减',opts:['44','52','96','40'],ans:0,why:'原 12×8=96，新 14×10=140，增 44'},
+  {q:'小明买 3 本练习本，每本 4 元，又买 2 支笔，每支 5 元，付 50 元找回多少？',note:'先算总价再减',opts:['28','22','18','32'],ans:0,why:'本 12 + 笔 10 = 22，50−22=28'},
+  {q:'果园有桃树 45 棵，梨树比桃树少 18 棵，苹果树是梨树的 2 倍，苹果树多少棵？',note:'两步减与乘',opts:['54','27','63','45'],ans:0,why:'梨 45−18=27，苹 27×2=54'},
+  {q:'一桶油连桶重 15 千克，用去一半油后连桶重 8 千克，桶重多少？',note:'先求油重',opts:['1','2','7','15'],ans:0,why:'油一半 7，油共 14，桶 15−14=1'},
+  {q:'商店运来 4 箱苹果，每箱 12 千克，卖出 30 千克，剩下的平均分给 3 个班，每班多少？',note:'连减再除',opts:['6','18','12','9'],ans:0,why:'共 48，剩 18，18÷3=6'},
+  {q:'小华有零花钱 60 元，买书花去一半，又得到 20 元，现在多少元？',note:'减半后加',opts:['50','30','40','80'],ans:0,why:'60÷2=30，30+20=50'},
+  {q:'会议室每排坐 9 人，坐了 5 排还空 3 个座位，共可坐几人？',note:'先乘后加',opts:['48','45','42','51'],ans:0,why:'5×9=45，加空位 3 = 48'},
+  {q:'两根绳子，一根长 24 米，另一根比它长 13 米，接起来共长多少米？',note:'先加再合',opts:['61','37','24','48'],ans:0,why:'另一根 37，共 24+37=61'},
+  {q:'小红每分钟做 8 道口算，做了 6 分钟，小力比她少做 10 道，小力做了几道？',note:'先乘后减',opts:['38','48','18','58'],ans:0,why:'8×6=48，48−10=38'},
+  {q:'长方形菜地长 15 米，宽 9 米，四周篱笆在宽边各开 2 米的门，需篱笆多少米？',note:'周长减门',opts:['44','46','48','30'],ans:0,why:'周长 48，减两个门 4，需 44'},
+  {q:'一本书小明每天看 12 页，看了 6 天看完一半，这本书共多少页？',note:'先乘再乘 2',opts:['144','72','36','84'],ans:0,why:'一半 72，共 144'},
+  {q:'三年级有 4 个班，每班 38 人，四年级比三年级多 26 人，四年级多少人？',note:'先乘后加',opts:['178','152','126','204'],ans:0,why:'三年级 152，四年级 152+26=178'},
+  {q:'一盒糖 5 排，每排 6 颗，吃掉 18 颗，剩下每 3 颗装一袋可装几袋？',note:'减后除',opts:['4','12','30','2'],ans:0,why:'共 30，剩 12，12÷3=4'},
+  {q:'妈妈买 2 千克苹果花 16 元，买 3 千克香蕉花 18 元，两种水果每千克各多少元？',note:'分别求单价',opts:['苹果8元香蕉6元','苹果6元香蕉8元','都8元','都6元'],ans:0,why:'苹果 16÷2=8，香蕉 18÷3=6'},
+  {q:'一个数乘 4 得 48，这个数加 15 等于多少？',note:'先除后加',opts:['27','12','63','33'],ans:0,why:'48÷4=12，12+15=27'},
+  {q:'操场一圈 200 米，小明跑了 3 圈又多跑 50 米，共跑多少米？',note:'先乘后加',opts:['650','600','250','850'],ans:0,why:'3×200=600，600+50=650'},
+  {q:'把 48 个苹果装盒，每盒 6 个，分给 8 个小朋友，每人几盒？',note:'先除再除',opts:['1','6','8','3'],ans:0,why:'48÷6=8 盒，8÷8=1 盒'},
+  {q:'一根木头锯成 4 段要锯几次？每次 3 分钟，共几分钟？',note:'段数减一',opts:['9','12','6','4'],ans:0,why:'锯 3 次，3×3=9'},
+  {q:'小红有 45 张画片，送同学 17 张，妈妈又给她印 2 套每套 10 张，现在多少张？',note:'减后加',opts:['48','28','65','38'],ans:0,why:'45−17=28，28+20=48'},
+  {q:'一箱牛奶 24 盒，4 天喝完每天几盒？改 3 天喝完每天要多喝几盒？',note:'两次除法相减',opts:['2','4','6','8'],ans:0,why:'24÷4=6，24÷3=8，多 2'}
+  ,{q:'商店运来 5 箱苹果每箱 12 千克，卖出 38 千克，剩多少？',note:'先乘后减',opts:['22','60','18','30'],ans:0,why:'5×12=60，60−38=22'}
+  ,{q:'一套衣服 85 元，买 3 套，优惠 20 元，实付多少？',note:'先乘后减',opts:['235','255','215','275'],ans:0,why:'85×3=255，255−20=235'}
+  ,{q:'小明有 60 元，买书花 28 元，剩下钱买 4 元笔可买几支？',note:'先减后除',opts:['8','7','9','10'],ans:0,why:'60−28=32，32÷4=8'}
+  ,{q:'教室铺地砖每行 9 块铺 8 行，已有 50 块，还需几块？',note:'先乘后减',opts:['22','72','18','40'],ans:0,why:'9×8=72，72−50=22'}
+  ,{q:'一筐桃 64 个，甲吃四分之一，剩多少？再平均分 4 人每人几？',note:'先除后均分',opts:['12','48','16','8'],ans:0,why:'吃16剩48，48÷4=12'}
+  ,{q:'一本书 120 页，前 3 天每天 15 页，剩下 5 天看完每天几页？',note:'先减后除',opts:['15','12','18','20'],ans:0,why:'已45剩75，75÷5=15'}
+  ,{q:'买 2 盒巧克力每盒 18 元，和 3 瓶饮料每瓶 4 元，共多少？',note:'先乘后加',opts:['48','36','52','42'],ans:0,why:'36+12=48'}
+  ,{q:'汽车每小时行 60 千米，行 2 小时，停 30 分，又行 1 小时，共行多少？',note:'分段求和',opts:['180','120','90','240'],ans:0,why:'60×2=120，60×1=60，共180'}
+  ,{q:'三年级 4 个班每班 45 人，去 30 人春游，留校几人？',note:'先乘后减',opts:['150','120','180','135'],ans:0,why:'4×45=180，180−30=150'}
+  ,{q:'一根铁丝 100 厘米，做 4 个正方形框架每个用 12 厘米，剩多少？',note:'先乘后减',opts:['52','48','60','40'],ans:0,why:'4×12=48，100−48=52'}
+  ,{q:'苹果每斤 5 元，香蕉每斤 3 元，买苹果 4 斤香蕉 6 斤共多少？',note:'先乘后加',opts:['38','20','42','30'],ans:0,why:'20+18=38'}
+  ,{q:'一条路长 240 米，第一天修 80 米，第二天修 90 米，剩多少？',note:'先加后减',opts:['70','160','80','60'],ans:0,why:'80+90=170，240−170=70'}
+  ,{q:'小红有 36 张贴纸，给弟弟三分之一，自己留多少？',note:'先除后减',opts:['24','12','36','18'],ans:0,why:'给12，留24'}
+  ,{q:'一个长方形周长 40，长 12，宽多少？',note:'周长公式',opts:['8','10','16','20'],ans:0,why:'(40÷2)−12=8'}
+  ,{q:'买 5 支笔每支 3 元，用 20 元买，够吗？找回多少？',note:'先乘后减',opts:['5','15','10','0'],ans:0,why:'15元，找回5'}
+  ,{q:'工厂每天产 25 件，产 6 天，卖出 80 件，库存多少？',note:'先乘后减',opts:['70','150','90','60'],ans:0,why:'150−80=70'}
+  ,{q:'一桶油 50 千克，用掉 18 千克，剩下的分 4 次用完每次几千克？',note:'先减后除',opts:['8','10','12','32'],ans:0,why:'50−18=32，32÷4=8'}
+  ,{q:'语文 90 数学 96 英语 96，三科平均多少？',note:'求和再除',opts:['94','90','96','92'],ans:0,why:'(90+96+96)÷3=94'}
+  ,{q:'一块地 3 行每行 10 棵菜，浇了 18 棵，剩几棵？',note:'先乘后减',opts:['12','30','20','8'],ans:0,why:'30−18=12'}
+  ,{q:'电影院 8 排每排 25 座，坐了 160 人，空几座？',note:'先乘后减',opts:['40','200','60','25'],ans:0,why:'200−160=40'}
+  ,{q:'一套书 4 本，每本 8 元，买 2 套，付 100 元，找回多少？',note:'先乘再乘后减',opts:['36','64','50','28'],ans:0,why:'4×8=32，32×2=64，100−64=36'}
+  ,{q:'苹果每斤 5 元，香蕉每斤 4 元，买 3 斤苹果和 2 斤香蕉共多少？',note:'两步乘后加',opts:['23','20','25','30'],ans:0,why:'5×3=15，4×2=8，15+8=23'}
+  ,{q:'班级 48 人，6 人一组，每组发 3 本练习册，共发多少本？',note:'先除后乘',opts:['24','18','30','48'],ans:0,why:'48÷6=8组，8×3=24'}
+  ,{q:'小明每天写 8 个字，写了 5 天，又写 12 个，共写多少？',note:'先乘后加',opts:['52','40','60','44'],ans:0,why:'8×5=40，40+12=52'}
+  ,{q:'一盒蛋 30 个，吃了 6 个，剩下的装盘每盘 8 个，装几盘剩几个？',note:'先减后除',opts:['3盘余0','2盘余16','4盘余0','3盘余6'],ans:0,why:'30−6=24，24÷8=3盘余0'}
+  ,{q:'文具盒 12 元，铅笔 2 元，买 1 盒和 5 支铅笔，再减 3 元优惠，付多少？',note:'先乘后加再减',opts:['19','22','25','17'],ans:0,why:'12+2×5=22，22−3=19'}
+  ,{q:'游泳池长 25 米，游 4 个来回，共游多少米？',note:'来回算×2',opts:['200','100','150','250'],ans:0,why:'25×2×4=200'}
+  ,{q:'3 个班每班 35 人，其中 18 人请假，出勤多少人？',note:'先乘后减',opts:['87','90','75','105'],ans:0,why:'35×3=105，105−18=87'}
+  ,{q:'一箱 24 瓶水，发给 4 组每组 5 瓶，剩几瓶？',note:'先乘后减',opts:['4','8','12','0'],ans:0,why:'4×5=20，24−20=4'}
+  ,{q:'每张贺卡 3 元，买 10 张送 2 张，共得几张花多少钱？',note:'数量与钱分开',opts:['12张30元','10张30元','12张36元','8张24元'],ans:0,why:'买10得12张，3×10=30元'}
+  ,{q:'一本书 80 页，前 3 天每天看 10 页，剩下 5 天看完，每天看几页？',note:'先减后除',opts:['10','8','12','15'],ans:0,why:'80−30=50，50÷5=10'}
+  ,{q:'糖果 60 颗，甲拿 1/3，乙拿剩下的 1/2，乙拿几颗？',note:'两次比例',opts:['20','30','10','40'],ans:0,why:'甲20剩40，乙40×1/2=20'}
+  ,{q:'一个书包 56 元，打八折，再减 6 元，实付多少？',note:'先折后减',opts:['38.8','40','45','50'],ans:0,why:'56×0.8=44.8，44.8−6=38.8'}
+  ,{q:'工厂一天产 120 件，3 天产量平均分给 4 店，每店几件？',note:'先乘后除',opts:['90','80','100','60'],ans:0,why:'120×3=360，360÷4=90'}
+  ,{q:'一根铁丝 90 厘米，截成 3 段每段 20 厘米，剩几厘米？',note:'先乘后减',opts:['30','20','40','10'],ans:0,why:'3×20=60，90−60=30'}
+  ,{q:'每千克 8 元，买 2.5 千克，付 50 元，找回多少？',note:'小数乘法',opts:['30','20','40','25'],ans:0,why:'8×2.5=20，50−20=30'}
+  ,{q:'圆周长 31.4 厘米，半径约多少（π取3.14）？',note:'周长÷π÷2',opts:['5','10','3','6'],ans:0,why:'31.4÷3.14=10，10÷2=5'}
+  ,{q:'6 个小朋友分 48 块糖，每人一样多，再给老师 6 块，每人原几块？',note:'先减后除',opts:['7','8','6','9'],ans:0,why:'48−6=42，42÷6=7'}
+  ,{q:'电梯从 1 楼到 8 楼用了 21 秒，每层几秒？',note:'层数=楼差',opts:['3','4','2','7'],ans:0,why:'8−1=7层，21÷7=3'}
+  ,{q:'一笔钱买 5 元本子可买 12 本，改买 6 元笔可买几支？',note:'先求总数后除',opts:['10','12','8','15'],ans:0,why:'5×12=60，60÷6=10'}
+,
+  {
+  q: '小明有 30 元，买 2 个本子每个 4 元，又买笔花 5 元，剩几元？',
+  opts: ['17', '15', '19', '13'],
+  ans: 0,
+  why: '2 × 4 = 8，30 − 8 − 5 = 17'
+  },
+  {
+  q: '一盒蛋糕 24 个，分给 4 组每组 5 个，剩下的分给老师 2 个，还剩几个？',
+  opts: ['2', '4', '6', '0'],
+  ans: 0,
+  why: '4 × 5 = 20，24 − 20 = 4，4 − 2 = 2'
+  },
+  {
+  q: '公交车上 28 人，到站下 9 人上 14 人，又下 6 人，现几人？',
+  opts: ['27', '25', '29', '31'],
+  ans: 0,
+  why: '28 − 9 = 19，19 + 14 = 33，33 − 6 = 27'
+  },
+  {
+  q: '买 3 袋糖每袋 6 元，付 50 元，找回几元？',
+  opts: ['32', '28', '30', '34'],
+  ans: 0,
+  why: '3 × 6 = 18，50 − 18 = 32'
+  },
+  {
+  q: '一根绳 36 米，剪去 12 米做 3 根短绳每根 4 米，剩几米？',
+  opts: ['24', '20', '28', '16'],
+  ans: 0,
+  why: '3 × 4 = 12，36 − 12 = 24'
+  },
+  {
+  q: '仓库有 50 箱，运走 18 箱，又运来 25 箱，再运走 10 箱，现几箱？',
+  opts: ['47', '45', '49', '43'],
+  ans: 0,
+  why: '50 − 18 = 32，32 + 25 = 57，57 − 10 = 47'
+  },
+  {
+  q: '一盒笔 12 支，分给 3 人每人 2 支，剩下的 4 支给老师，原来够吗？多几支？',
+  note: '先算分出的',
+  opts: ['够，多 2', '不够', '够，多 4', '够，多 0'],
+  ans: 0,
+  why: '3 × 2 = 6，12 − 6 = 6，6 − 4 = 2，够且多 2'
+  },
+  {
+  q: '果园苹果树 4 行每行 7 棵，梨树 3 行每行 5 棵，共几棵？',
+  opts: ['43', '40', '38', '45'],
+  ans: 0,
+  why: '4 × 7 = 28，3 × 5 = 15，28 + 15 = 43'
+  },
+  {
+  q: '一本书 80 页，第一天看 25 页，第二天看 30 页，剩几天看完每天 5 页？',
+  opts: ['5', '4', '6', '3'],
+  ans: 0,
+  why: '80 − 25 − 30 = 25，25 ÷ 5 = 5'
+  },
+  {
+  q: '一笔钱买 4 元笔可买 10 支，改买 8 元本可买几本？',
+  opts: ['5', '4', '6', '8'],
+  ans: 0,
+  why: '4 × 10 = 40，40 ÷ 8 = 5'
+  },
+  {
+  q: '水池有 60 升水，每分钟放 8 升，放 5 分钟后又加 20 升，现几升？',
+  opts: ['40', '60', '80', '100'],
+  ans: 0,
+  why: '8 × 5 = 40，60 − 40 = 20，20 + 20 = 40'
+  },
+  {
+  q: '小红买 2 盒彩笔每盒 9 元，又买 1 个书包 25 元，共几元？',
+  opts: ['43', '45', '41', '47'],
+  ans: 0,
+  why: '2 × 9 = 18，18 + 25 = 43'
+  },
+  {q:'小明买 3 盒彩笔每盒 8 元，又买 2 个本子每本 5 元，付 50 元，找回几元？',opts:['16','14','18','20'],ans:0,why:'3 × 8 = 24，2 × 5 = 10，24 + 10 = 34，50 − 34 = 16'},
+  {q:'班级有 4 组每组 9 人，转走 3 人，又转来 5 人，现在几人？',opts:['38','36','40','35'],ans:0,why:'4 × 9 = 36，36 − 3 = 33，33 + 5 = 38'},
+  {q:'苹果 5 元/斤，买 4 斤；香蕉 3 元/斤，买 6 斤，共几元？',opts:['38','36','40','34'],ans:0,why:'5 × 4 = 20，3 × 6 = 18，20 + 18 = 38'},
+  {q:'一本书 120 页，前 3 天每天看 15 页，剩下 5 天看完，每天几页？',opts:['15','14','16','13'],ans:0,why:'3 × 15 = 45，120 − 45 = 75，75 ÷ 5 = 15'},
+  {q:'停车场小车 4 排每排 8 辆，大车 2 排每排 6 辆，共几辆？',opts:['44','40','48','42'],ans:0,why:'4 × 8 = 32，2 × 6 = 12，32 + 12 = 44'},
+  {q:'小华有 5 袋糖每袋 10 颗，吃掉 18 颗，分给 4 人每人 5 颗，剩几颗？',opts:['12','10','14','16'],ans:0,why:'5 × 10 = 50，50 − 18 = 32，4 × 5 = 20，32 − 20 = 12'},
+  {q:'一根绳 50 米，做 6 根跳绳每根 7 米，剩下每 4 米一段，几段？',opts:['2','1','3','4'],ans:0,why:'6 × 7 = 42，50 − 42 = 8，8 ÷ 4 = 2'},
+  {q:'文具盒 12 元，铅笔 2 元，买 2 个文具盒和 5 支铅笔，共几元？',opts:['34','32','36','30'],ans:0,why:'2 × 12 = 24，5 × 2 = 10，24 + 10 = 34'},
+  {q:'果园有 3 行苹果树每行 12 棵，梨树比苹果树少 10 棵，梨树几棵？',opts:['26','28','24','30'],ans:0,why:'3 × 12 = 36，36 − 10 = 26'},
+  {q:'小明每天存 3 元，存 10 天，妈妈奖励 20 元，买 4 本本子每本 5 元，剩几元？',opts:['30','28','32','25'],ans:0,why:'10 × 3 = 30，30 + 20 = 50，4 × 5 = 20，50 − 20 = 30'},
+  {q:'一箱牛奶 24 盒，全家每天喝 3 盒，喝 5 天后又买 1 箱，现在几盒？',opts:['33','30','36','28'],ans:0,why:'24 − 3 × 5 = 9，9 + 24 = 33'},
+  {q:'学校买 6 包书每包 15 本，发掉 40 本，剩下分给 5 个班，每班几本？',opts:['10','9','11','8'],ans:0,why:'6 × 15 = 90，90 − 40 = 50，50 ÷ 5 = 10'},
+  {q:'小明买 2 个汉堡每个 9 元，3 杯可乐每杯 4 元，付 50 元，找回？',opts:['20','18','22','15'],ans:0,why:'2 × 9 = 18，3 × 4 = 12，18 + 12 = 30，50 − 30 = 20'},
+  {q:'水池有 80 吨水，每天用 6 吨用 5 天，又进 30 吨，现有几吨？',opts:['80','70','90','60'],ans:0,why:'80 − 6 × 5 = 50，50 + 30 = 80'},
+  {q:'三年级 4 个班每班 38 人，四年级 3 个班每班 40 人，共几人？',opts:['272','262','282','252'],ans:0,why:'4 × 38 = 152，3 × 40 = 120，152 + 120 = 272'},
+  {"q":"商店运来 3 箱橙，每箱 12 个，卖出 20 个，又运来 2 箱（每箱 10 个），现有几个？","opts":["36","56","26","46"],"ans":0,"why":"3×12=36，36-20=16，2×10=20，16+20=36 个。"},
+  {"q":"一根绳 60 米，先用去 18 米，再用去剩下的一半，还剩几米？","opts":["21","30","42","15"],"ans":0,"why":"60-18=42，42÷2=21 米。"},
+  {"q":"买 2 件上衣每件 35 元，3 条裤子每条 20 元，共几元？","opts":["130","115","150","100"],"ans":0,"why":"2×35=70，3×20=60，70+60=130 元。"},
+  {"q":"水池有 120 吨水，每天用 8 吨用 5 天，又进 40 吨，现有几吨？","opts":["120","80","160","100"],"ans":0,"why":"120-8×5=80，80+40=120 吨。"},
+  {"q":"三年级 4 个班每班 36 人，四年级 3 个班每班 40 人，四年级比三年级少几人？","opts":["24","12","36","48"],"ans":0,"why":"三年级 4×36=144，四年级 3×40=120，144-120=24 人。"},
+  {"q":"一包糖 48 颗，分给 6 个小朋友每人 5 颗，剩几颗？又平均分给 3 人，每人几颗？","opts":["6","18","11","3"],"ans":0,"why":"6×5=30，48-30=18，18÷3=6 颗。"},
+  {"q":"火车每小时行 80 千米，从甲到乙 5 小时，返回多用 1 小时，返回每小时行几千米？","opts":["66","80","70","75"],"ans":0,"why":"80×5=400 千米，返回 6 小时，400÷6≈66 千米。"},
+  {"q":"买 3 束花每束 9 元，付 50 元，找回几元？又用找回的钱买 4 元笔，能买几支？","opts":["5","7","2","3"],"ans":0,"why":"3×9=27，50-27=23，23÷4=5 支余 3。"},
+  {"q":"果园有桃树 25 棵，梨树比桃树多 8 棵，两种树共几棵？","opts":["58","50","33","66"],"ans":0,"why":"梨树 25+8=33，25+33=58 棵。"},
+  {"q":"一本书 90 页，每天看 10 页看 6 天，剩下的 3 天看完，每天几页？","opts":["10","30","20","15"],"ans":0,"why":"90-10×6=30，30÷3=10 页。"}
+  ,{q:'小明买 2 盒彩笔每盒 7 元，又买 3 个本子每个 4 元，付 50 元，找回几元？',opts:['24','26','20','30'],ans:0,why:'2×7=14，3×4=12，14+12=26，50−26=24'}
+  ,{q:'图书馆有 4 层书，每层 25 本，借出 30 本，剩下分给 5 个班，每班几本？',opts:['14','20','16','10'],ans:0,why:'4×25=100，100−30=70，70÷5=14'}
+  ,{q:'小红有 48 元，买笔花 20 元，剩下的钱买 4 元橡皮，可买几块？',opts:['7','8','6','9'],ans:0,why:'48−20=28，28÷4=7'}
+  ,{q:'一支钢笔 9 元，买 3 支，又买 1 个文具盒 15 元，付 50 元，找回几元？',opts:['8','12','10','5'],ans:0,why:'3×9=27，27+15=42，50−42=8'}
+  ,{q:'果园有 5 行苹果树每行 8 棵，梨树比苹果树少 12 棵，梨树几棵？',opts:['28','32','20','40'],ans:0,why:'5×8=40，40−12=28'}
+  ,{q:'小明每天存 2 元，存 15 天，妈妈奖励 10 元，买 5 元本子 4 本，剩几元？',opts:['20','30','10','25'],ans:0,why:'15×2=30，30+10=40，4×5=20，40−20=20'}
+  ,{q:'一根绳 80 米，做 5 根跳绳每根 9 米，剩下的每 5 米一段，几段？',opts:['7','6','8','5'],ans:0,why:'5×9=45，80−45=35，35÷5=7'}
+  ,{q:'商店运来 6 箱苹果每箱 15 千克，卖出 40 千克，剩下分给 5 个班，每班几千克？',opts:['10','9','11','12'],ans:0,why:'6×15=90，90−40=50，50÷5=10'}
+  ,{q:'小华有 5 袋糖每袋 10 颗，吃掉 18 颗，剩下的平均分 4 人，每人几颗？',opts:['8','7','9','6'],ans:0,why:'5×10=50，50−18=32，32÷4=8'}
+  ,{q:'停车场小车 5 排每排 8 辆，大车 3 排每排 6 辆，共几辆？',opts:['58','48','60','54'],ans:0,why:'5×8=40，3×6=18，40+18=58'}
+  ,{q:'一本书 100 页，前 4 天每天看 12 页，剩下 4 天看完，每天看几页？',opts:['13','12','14','11'],ans:0,why:'4×12=48，100−48=52，52÷4=13'}
+  ,{q:'小明买 3 个汉堡每个 8 元，2 杯可乐每杯 5 元，付 50 元，找回几元？',opts:['16','18','14','20'],ans:0,why:'3×8=24，2×5=10，34，50−34=16'}
+  ,{q:'水池有 90 吨水，每天用 7 吨用 6 天，又进 50 吨，现有几吨？',opts:['98','48','60','90'],ans:0,why:'90−7×6=48，48+50=98'}
+  ,{q:'三年级 3 个班每班 42 人，四年级 4 个班每班 40 人，四年级比三年级多几人？',opts:['34','24','44','56'],ans:0,why:'三年级 3×42=126，四年级 4×40=160，160−126=34'}
+  ,{q:'一包糖 60 颗，分给 6 人每人 5 颗，剩几颗？又平均分给 3 人，每人几颗？',opts:['10','6','20','5'],ans:0,why:'6×5=30，60−30=30，30÷3=10'}
+  ,{q:'火车每小时行 70 千米，从甲到乙 4 小时，返回少用 1 小时，返回每小时行几千米？',opts:['93','70','80','94'],ans:0,why:'70×4=280 千米，返回 3 小时，280÷3≈93 千米'}
+  ,{q:'买 4 束花每束 8 元，付 50 元，找回几元？又用找回的钱买 6 元笔，能买几支？',opts:['3','5','2','4'],ans:0,why:'4×8=32，50−32=18，18÷6=3 支'}
+  ,{q:'果园有桃树 30 棵，梨树比桃树多 6 棵，两种树共几棵？',opts:['66','60','36','72'],ans:0,why:'梨树 30+6=36，30+36=66'}
+  ,{q:'一张桌子 120 元，买 2 张，再买 4 把椅子每把 15 元，共几元？',opts:['300','240','360','280'],ans:0,why:'2×120=240，4×15=60，240+60=300'}
+  ,{q:'操场一圈 250 米，小明跑 4 圈又多跑 100 米，共几米？',opts:['1100','1000','900','1200'],ans:0,why:'250×4=1000，1000+100=1100'}
+];/*opts-shuffle:QUIZ*/(function(){for(var i=0;i<QUIZ.length;i++){var it=QUIZ[i];if(!it||!it.opts||!it.opts.length)continue;var ok=it.opts[it.ans];for(var j=it.opts.length-1;j>0;j--){var r=Math.floor(Math.random()*(j+1));var t=it.opts[j];it.opts[j]=it.opts[r];it.opts[r]=t;}it.ans=it.opts.indexOf(ok);}})();
+;
+var CHILD='user', KEY='', store={};
+var TOTAL=0, score=0, answered=0, PASS_LINE=0.8;
+function getStore(){ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; } }
+function setStore(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
+function start(){ score=0; answered=0; setScreen('scrQuiz'); renderQuiz(); }
+function goMenu(){ setScreen('scrMenu'); }
+function setScreen(id){ ['scrMenu','scrQuiz','scrReport'].forEach(function(s){ document.getElementById(s).classList.toggle('on', s===id); }); }
+function renderQuiz(){
+  var html='';
+  QUIZ.forEach(function(q,gi){
+    html+='<div class="q" id="q-'+gi+'">'+
+      '<div class="qt"><span class="qn">Q'+(gi+1)+'.</span>'+q.q+'</div><div class="opts">';
+    q.opts.forEach(function(o,oi){ html+='<button class="opt" id="opt-'+gi+'-'+oi+'" onclick="answer('+gi+','+oi+')">'+o+'</button>'; });
+    html+='</div><div class="why" id="why-'+gi+'"></div><div id="hw-'+gi+'" class="hw-slot"></div>'
+      +'<div style="margin-top:6px"><button onclick="markDone('+gi+')" style="border:none;border-radius:12px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;color:#fff;background:#3a7bd5">✓ 完成本题（对照答案）</button></div></div>';
+  });
+  document.getElementById('quizArea').innerHTML=html;
+  // 手写区：每题一块手写板，写完点「对照答案」看正确数字+解析
+  QUIZ.forEach(function(q,gi){
+    var _slot=document.getElementById('hw-'+gi);
+    if(_slot && window.Handwrite){
+      var _hw=Handwrite.create({revealText:q.opts[q.ans]+'　'+q.why, placeholder:'✍️ 写出算式和答案'});
+      _slot.appendChild(_hw.el);
+    }
+  });
+  updateProg();
+  document.getElementById('finishBtn').style.display='none';
+}
+function answer(gi,oi){
+  var q=QUIZ[gi];
+  var qEl=document.getElementById('q-'+gi);
+  if(qEl.classList.contains('done-ok')||qEl.classList.contains('done-no')||qEl.classList.contains('done-hw')) return;
+  answered++;
+  var ok=(oi===q.ans);
+  if(ok) score++;
+  q.opts.forEach(function(o,bi){
+    var b=document.getElementById('opt-'+gi+'-'+bi);
+    b.classList.add('dim');
+    if(bi===q.ans) b.classList.add('ok');
+    if(bi===oi && !ok) b.classList.add('no');
+  });
+  qEl.classList.add(ok?'done-ok':'done-no');
+  var w=document.getElementById('why-'+gi);
+  w.textContent='解析：'+q.why; w.classList.add('on');
+  updateProg();
+  if(answered>=TOTAL){ document.getElementById('finishBtn').style.display='block'; }
+}
+/* 手写模式：只写不点选项时，也能对照解析并标记完成本题 */
+function markDone(gi){
+  var q=QUIZ[gi];
+  var qEl=document.getElementById('q-'+gi);
+  if(qEl.classList.contains('done-ok')||qEl.classList.contains('done-no')||qEl.classList.contains('done-hw')) return;
+  qEl.classList.add('done-hw');
+  var w=document.getElementById('why-'+gi); w.textContent='解析：'+q.why; w.classList.add('on');
+  answered++; updateProg();
+  if(answered>=TOTAL){ document.getElementById('finishBtn').style.display='block'; }
+}
+function updateProg(){
+  var pct=Math.round(answered/TOTAL*100);
+  document.getElementById('progBar').style.width=pct+'%';
+  document.getElementById('progTxt').textContent='已答 '+answered+' / '+TOTAL;
+}
+function finish(){
+  setScreen('scrReport');
+  var pct=TOTAL?Math.round(score/TOTAL*100):0;
+  var stars=pct>=90?3:pct>=PASS_LINE*100?2:pct>=60?1:0;
+  document.getElementById('rStars').textContent=stars>0?'⭐'.repeat(stars):'—';
+  document.getElementById('rScore').textContent=score+' / '+TOTAL;
+  document.getElementById('rPct').textContent='正确率 '+pct+'%';
+  var pass=pct>=PASS_LINE*100;
+  document.getElementById('rPass').innerHTML=pass?'<span class="pass">🎊 通关成功！达到 '+PASS_LINE*100+'% 过关线</span>':'<span class="fail">💪 还差一点，再练一遍就通关啦</span>';
+  store=getStore();
+  if(score>(store.best||0)){ store.best=score; setStore(store); }
+  document.getElementById('bestNum').textContent=store.best||0;
+  if(pass) celebrate();
+}
+function resetBest(){ if(confirm('确定清空最佳对题记录？')){ setStore({best:0}); document.getElementById('bestNum').textContent='0'; } }
+function celebrate(){
+  var emo=['🎉','✨','🧠','🌟','⭐','💡','🔢','🧩'];
+  for(var k=0;k<26;k++){ (function(){ var c=document.createElement('div'); c.className='confetti'; c.textContent=emo[Math.floor(Math.random()*emo.length)]; c.style.left=Math.random()*100+'vw'; c.style.animationDuration=(2+Math.random()*2)+'s'; document.body.appendChild(c); setTimeout(function(){ c.remove(); },4200); })(); }
+  document.getElementById('celeb').style.display='flex';
+}
+function closeCeleb(){ document.getElementById('celeb').style.display='none'; }
+(function(){
+  TOTAL=QUIZ.length;
+  document.getElementById('totalNum').textContent=TOTAL;
+  var s=Portal.getSession();
+  CHILD=(s&&s.child)?s.child:'user';
+  KEY='math-apply2-'+CHILD;
+  store=getStore();
+  document.getElementById('bestNum').textContent=store.best||0;
+  var d=new Date();
+  var wk=['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+  document.getElementById('dateStr').textContent=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+wk;
+})();
+</script>
+<script src="handwrite.js"></script>
+</body></html>

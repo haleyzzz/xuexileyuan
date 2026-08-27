@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📖 阅读理解</title>
+<style>
+  :root{ --c1:#ff8fab; --c2:#f15bb5; --green:#06d6a0; --ink:#3d2630; }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#fff0f5,#ffe9f3);color:var(--ink);padding:18px;max-width:560px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  .back{position:fixed;left:14px;top:14px;z-index:30;border:none;background:rgba(255,255,255,.85);border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink)}
+  header{background:linear-gradient(120deg,var(--c1),var(--c2));color:#fff;border-radius:24px;padding:20px;text-align:center;box-shadow:0 8px 22px rgba(255,143,171,.4)}
+  header h1{font-size:22px}
+  .date{font-size:14px;opacity:.95;margin-top:4px}
+  .stats{display:flex;gap:10px;margin:14px 0}
+  .stat{flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .stat .num{font-size:26px;font-weight:800;color:var(--c1)}
+  .stat .lbl{font-size:12px;color:#999;margin-top:2px}
+  .screen{display:none}
+  .screen.on{display:block}
+  .btn{display:block;width:100%;border:none;border-radius:16px;padding:14px;font-size:16px;font-family:inherit;cursor:pointer;font-weight:800;color:#fff;background:var(--c1);margin-top:8px}
+  .btn.gh{background:var(--c2)}
+  .btn.sec{background:#ffe9f3;color:var(--c1)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 12px}
+  .chip{border:none;border-radius:999px;padding:8px 13px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;background:#ffe9f3;color:var(--c1)}
+  .chip.on{background:var(--c1);color:#fff}
+  .prog-wrap{margin:6px 0 14px}
+  .progress{height:14px;background:#ffe0ec;border-radius:10px;overflow:hidden}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--c1),var(--c2));border-radius:10px;transition:width .4s}
+  .prog-txt{font-size:13px;color:#888;text-align:center;margin-top:4px}
+  .passage{background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.06);padding:14px;margin-bottom:14px}
+  .passage .ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .passage .pt{font-size:16px;font-weight:800}
+  .passage .pg{font-size:11px;background:#ffe9f3;color:var(--c1);border-radius:8px;padding:2px 9px;font-weight:700}
+  .passage .ptxt{font-size:14px;line-height:1.8;color:#4a3a42}
+  .passage .spk{border:none;background:#ffe9f3;color:var(--c1);border-radius:10px;padding:4px 10px;font-size:13px;cursor:pointer;font-family:inherit}
+  .q{background:#fff;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.05);padding:12px 14px;margin-bottom:12px;border:3px solid transparent;transition:border-color .2s}
+  .q.done-ok{border-color:var(--green)}
+  .q.done-no{border-color:#ff6b6b}
+  .q .qt{font-size:15px;font-weight:700;margin-bottom:10px;line-height:1.6}
+  .q .qt .qn{color:var(--c1);margin-right:6px}
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{border:none;border-radius:12px;padding:11px 14px;font-size:14px;text-align:left;font-family:inherit;cursor:pointer;background:#ffe9f3;color:var(--ink);transition:.15s}
+  .opt:active{transform:scale(.98)}
+  .opt.ok{background:var(--green);color:#fff}
+  .opt.no{background:#ff6b6b;color:#fff}
+  .opt.dim{opacity:.45;pointer-events:none}
+  .why{font-size:13px;color:#888;margin-top:10px;background:#fdf4f8;border-radius:10px;padding:9px;line-height:1.6;display:none}
+  .why.on{display:block}
+  .report{background:#fff;border-radius:24px;box-shadow:0 8px 22px rgba(0,0,0,.08);padding:24px;text-align:center;margin-top:14px}
+  .report .stars{font-size:34px;letter-spacing:4px;margin:6px 0}
+  .report .score{font-size:30px;font-weight:800;color:var(--c1)}
+  .report .sub{font-size:14px;color:#888;margin-top:4px}
+  .report .line{font-size:15px;color:var(--ink);margin-top:10px}
+  .report .pass{color:var(--green);font-weight:800}
+  .report .fail{color:#ff6b6b;font-weight:800}
+  .reset{background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;text-decoration:underline;display:block;margin:10px auto 0;font-family:inherit}
+  .tip{font-size:12px;color:#aaa;text-align:center;margin-top:14px;line-height:1.6}
+  .celebrate{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:100}
+  .celebrate .box2{background:#fff;border-radius:24px;padding:28px 34px;text-align:center;animation:pop .4s;max-width:320px}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate h3{font-size:24px;margin-bottom:8px}
+  .celebrate p{color:#888;font-size:14px;line-height:1.6}
+  .celebrate button{margin-top:16px;border:none;background:var(--c2);color:#fff;padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+</style>
+<script>
+/* iOS 朗读稳定性补丁：保留 utterance 全局引用防 GC 静音 + 朗读前 resume()（与 speech.js 同逻辑，本页未引 speech.js 故内联） */
+(function(){ if(window.__ttsPatched) return; window.__ttsPatched=true;
+  if(!window.speechSynthesis) return;
+  var _sp=window.speechSynthesis.speak.bind(window.speechSynthesis);
+  window.speechSynthesis.speak=function(u){ try{window.speechSynthesis.resume();}catch(e){} window.__ttsUtt=u; return _sp(u); };
+})();
+</script>
+</head>
+<body>
+
+<header><h1>📖 阅读理解</h1><div class="date" id="dateStr">今天</div></header>
+<div class="stats">
+  <div class="stat"><div class="num" id="bestNum">0</div><div class="lbl">🏆 最佳对题</div></div>
+  <div class="stat"><div class="num" id="totalNum">0</div><div class="lbl">📝 题目总数</div></div>
+  <div class="stat"><div class="num" id="passNum">80%</div><div class="lbl">✅ 通关线</div></div>
+</div>
+<div class="screen on" id="scrMenu">
+  <h2 style="font-size:17px;margin:6px 4px 10px">🎯 现代文阅读·1-6年级</h2>
+  <div class="chips" id="gradeChips"></div>
+  <div class="tip" style="margin:0 0 12px">选年级读短文做选择，点 🔊 听朗读。选对 80% 就通关！</div>
+  <button class="btn" onclick="start()">🚀 开始闯关</button>
+  <button class="btn sec" onclick="resetBest()">↺ 清空最佳记录</button>
+</div>
+<div class="screen" id="scrQuiz">
+  <div class="prog-wrap"><div class="progress"><i id="progBar"></i></div><div class="prog-txt" id="progTxt">已答 0 / 0</div></div>
+  <div id="quizArea"></div>
+  <button class="btn gh" id="finishBtn" onclick="finish()" style="display:none">🏁 查看战报</button>
+</div>
+<div class="screen" id="scrReport">
+  <div class="report">
+    <div class="stars" id="rStars">⭐⭐⭐</div>
+    <div class="score" id="rScore">0 / 0</div>
+    <div class="sub" id="rPct">正确率 0%</div>
+    <div class="line" id="rPass"></div>
+  </div>
+  <button class="btn" onclick="start()">🔄 再来一轮</button>
+  <button class="btn sec" onclick="goMenu()">🏠 回到首页</button>
+</div>
+<div class="tip">数据按小朋友分别保存，不会上传。</div>
+<div class="celebrate" id="celeb"><div class="box2"><h3>🎉 阅读小能手！</h3><p>读懂短文，答案全对啦！</p><button onclick="closeCeleb()">继续闯关 💪</button></div></div>
+<script>
+var CHILD='user', KEY='', store={};
+var GRADES=[['全部',''],['一年级','1'],['二年级','2'],['三年级','3'],['四年级','4'],['五年级','5'],['六年级','6']];
+var curGrade='';
+var PASSAGES=
+[
+  {
+    "id": "p1",
+    "emoji": "🐤",
+    "title": "小公鸡和小鸭子",
+    "g": "1",
+    "text": "小公鸡和小鸭子一块儿出去玩。小公鸡找到了许多虫子，吃得可欢了。小鸭子捉不到虫子，急得直叫。小公鸡看见了，捉到虫子就给小鸭子吃。",
+    "qa": [
+      {
+        "q": "小公鸡找到了什么？",
+        "opts": [
+          "虫子",
+          "草",
+          "花",
+          "鱼"
+        ],
+        "ans": 0,
+        "why": "短文说小公鸡找到了许多虫子。"
+      },
+      {
+        "q": "小鸭子为什么急得直叫？",
+        "opts": [
+          "口渴",
+          "迷路",
+          "想回家",
+          "找不到虫子"
+        ],
+        "ans": 3,
+        "why": "小鸭子捉不到虫子，所以急得直叫。"
+      },
+      {
+        "q": "这个故事告诉我们（ ）。",
+        "opts": [
+          "鸭子会游泳",
+          "要自己玩",
+          "虫子好吃",
+          "要互相帮助"
+        ],
+        "ans": 3,
+        "why": "小公鸡把虫子给小鸭子吃，说明朋友间要互相帮助。"
+      }
+    ]
+  },
+  {
+    "id": "p2",
+    "emoji": "🌧️",
+    "title": "下雨了",
+    "g": "1",
+    "text": "天阴了，云黑了，快要下雨了。小动物们赶紧回家。小蜗牛慢慢地爬，小雨点落在它的壳上，像敲小鼓。它一点也不急，因为家就在背上。",
+    "qa": [
+      {
+        "q": "下雨前天空怎么样？",
+        "opts": [
+          "天晴",
+          "起风",
+          "出太阳",
+          "天阴云黑"
+        ],
+        "ans": 3,
+        "why": "短文开头说“天阴了，云黑了”。"
+      },
+      {
+        "q": "小蜗牛为什么一点也不急？",
+        "opts": [
+          "家在背上",
+          "有人接",
+          "跑得快",
+          "会飞"
+        ],
+        "ans": 0,
+        "why": "蜗牛的家就是它的壳，背在身上，所以不急。"
+      }
+    ]
+  },
+  {
+    "id": "p3",
+    "emoji": "🐱",
+    "title": "小猫钓鱼",
+    "g": "2",
+    "text": "猫妈妈带着小猫去河边钓鱼。一只蜻蜓飞来了，小猫放下鱼竿去捉蜻蜓。一只蝴蝶飞来了，小猫又去捉蝴蝶。猫妈妈钓到了一条大鱼，小猫一条也没钓到。",
+    "qa": [
+      {
+        "q": "小猫为什么没钓到鱼？",
+        "opts": [
+          "没带鱼竿",
+          "不会钓鱼",
+          "三心二意去捉虫",
+          "水太清"
+        ],
+        "ans": 2,
+        "why": "小猫被蜻蜓、蝴蝶吸引，分心了，所以钓不到。"
+      },
+      {
+        "q": "猫妈妈钓到了什么？",
+        "opts": [
+          "什么也没有",
+          "虾",
+          "小鱼",
+          "大鱼"
+        ],
+        "ans": 3,
+        "why": "短文说猫妈妈钓到了一条大鱼。"
+      },
+      {
+        "q": "这个故事告诉我们（ ）。",
+        "opts": [
+          "妈妈厉害",
+          "要捉蝴蝶",
+          "要专心",
+          "鱼很难钓"
+        ],
+        "ans": 2,
+        "why": "做事要专心，不能三心二意。"
+      }
+    ]
+  },
+  {
+    "id": "p4",
+    "emoji": "🍂",
+    "title": "秋天的图画",
+    "g": "2",
+    "text": "秋天来啦！山野像一幅彩色的图画。梨树挂起金黄的灯笼，苹果露出红红的脸颊，稻海翻起金色的波浪，高粱举起燃烧的火把。谁使秋天这样美丽？看，蓝天上的大雁作出了回答。",
+    "qa": [
+      {
+        "q": "短文把梨比作了什么？",
+        "opts": [
+          "火把",
+          "波浪",
+          "脸颊",
+          "灯笼"
+        ],
+        "ans": 3,
+        "why": "“梨树挂起金黄的灯笼”，把梨比作灯笼。"
+      },
+      {
+        "q": "“稻海翻起金色的波浪”写的是（ ）。",
+        "opts": [
+          "大海",
+          "云",
+          "成熟的稻田",
+          "河水"
+        ],
+        "ans": 2,
+        "why": "稻海指大片成熟的稻田，风吹像波浪。"
+      },
+      {
+        "q": "让秋天美丽的是（ ）。",
+        "opts": [
+          "人们",
+          "秋风",
+          "大雁",
+          "太阳"
+        ],
+        "ans": 2,
+        "why": "文末说蓝天上的大雁作出了回答，点明是大雁（候鸟南飞报秋）。"
+      }
+    ]
+  },
+  {
+    "id": "p5",
+    "emoji": "⛰️",
+    "title": "爬天都峰",
+    "g": "3",
+    "text": "假日里，我和爸爸去黄山爬天都峰。峰顶这么高，在云彩上面哩！一个小女孩犹豫了，一位白发苍苍的老爷爷也来爬。我们一起努力，终于都爬上了峰顶。",
+    "qa": [
+      {
+        "q": "天都峰给“我”的感觉是（ ）。",
+        "opts": [
+          "平平的",
+          "很高在云彩上",
+          "很矮",
+          "在海里"
+        ],
+        "ans": 1,
+        "why": "“峰顶这么高，在云彩上面哩”说明峰很高。"
+      },
+      {
+        "q": "“我”、小女孩和老爷爷为什么能爬上峰顶？",
+        "opts": [
+          "天气好",
+          "一起努力互相鼓励",
+          "坐缆车",
+          "有绳子"
+        ],
+        "ans": 1,
+        "why": "他们互相鼓励、一起努力才登顶。"
+      },
+      {
+        "q": "这篇短文主要讲（ ）。",
+        "opts": [
+          "爬天都峰的经过和体会",
+          "看云彩",
+          "黄山风景",
+          "老爷爷的故事"
+        ],
+        "ans": 0,
+        "why": "全文围绕爬天都峰的经过与感受展开。"
+      }
+    ]
+  },
+  {
+    "id": "p6",
+    "emoji": "🐦",
+    "title": "灰雀",
+    "g": "3",
+    "text": "公园里有一棵高大的白桦树，树上有三只灰雀：两只胸脯是粉红的，一只胸脯是深红的。列宁每天来看它们。一天，一只灰雀不见了，列宁很着急。后来一个小男孩把灰雀放回了树上。",
+    "qa": [
+      {
+        "q": "灰雀的胸脯有几种颜色？",
+        "opts": [
+          "一种",
+          "四种",
+          "两种",
+          "三种"
+        ],
+        "ans": 2,
+        "why": "粉红和深红两种。"
+      },
+      {
+        "q": "列宁为什么着急？",
+        "opts": [
+          "要迟到了",
+          "一只灰雀不见了",
+          "鸟太多",
+          "天冷"
+        ],
+        "ans": 1,
+        "why": "一只灰雀不见了，列宁很着急。"
+      },
+      {
+        "q": "这个故事表现了列宁（ ）。",
+        "opts": [
+          "很严厉",
+          "会爬树",
+          "喜欢鸟、关爱生命",
+          "不爱说话"
+        ],
+        "ans": 2,
+        "why": "列宁每天来看灰雀、丢了一只很着急，体现他对鸟的喜爱与关爱。"
+      }
+    ]
+  },
+  {
+    "id": "p7",
+    "emoji": "🌊",
+    "title": "观潮",
+    "g": "4",
+    "text": "钱塘江大潮，自古以来被称为天下奇观。宽阔的钱塘江横卧在眼前。午后一点左右，从远处传来隆隆的响声，好像闷雷滚动。顿时人声鼎沸，有人告诉我们潮来了！",
+    "qa": [
+      {
+        "q": "钱塘江大潮被称为（ ）。",
+        "opts": [
+          "闷雷",
+          "天下奇观",
+          "小水花",
+          "普通潮水"
+        ],
+        "ans": 1,
+        "why": "“自古以来被称为天下奇观”。"
+      },
+      {
+        "q": "潮来前的响声像（ ）。",
+        "opts": [
+          "音乐",
+          "鼓声",
+          "风声",
+          "闷雷滚动"
+        ],
+        "ans": 3,
+        "why": "“好像闷雷滚动”。"
+      },
+      {
+        "q": "“人声鼎沸”说明（ ）。",
+        "opts": [
+          "天黑了",
+          "很安静",
+          "潮水小",
+          "人们很吵很兴奋"
+        ],
+        "ans": 3,
+        "why": "人声鼎沸形容人群声音嘈杂喧闹，大家很兴奋。"
+      }
+    ]
+  },
+  {
+    "id": "p8",
+    "emoji": "🐦",
+    "title": "麻雀",
+    "g": "4",
+    "text": "我打猎回来，走在林荫路上。一只小麻雀从巢里掉下来，无可奈何地拍打着小翅膀。猎狗走近它。老麻雀像一块石头似的落在猎狗面前，用自己的身躯掩护小麻雀。",
+    "qa": [
+      {
+        "q": "小麻雀为什么掉下来？",
+        "opts": [
+          "风刮的",
+          "自己跳的",
+          "从巢里掉下",
+          "被赶"
+        ],
+        "ans": 2,
+        "why": "“从巢里掉下来”。"
+      },
+      {
+        "q": "老麻雀用什么掩护小麻雀？",
+        "opts": [
+          "身躯",
+          "翅膀",
+          "叫声",
+          "树枝"
+        ],
+        "ans": 0,
+        "why": "“用自己的身躯掩护小麻雀”。"
+      },
+      {
+        "q": "这个故事赞美了（ ）。",
+        "opts": [
+          "打猎有趣",
+          "母爱的勇敢",
+          "树林美丽",
+          "猎狗凶猛"
+        ],
+        "ans": 1,
+        "why": "老麻雀不顾危险保护孩子，赞美母爱的勇敢。"
+      }
+    ]
+  },
+  {
+    "id": "p9",
+    "emoji": "🥜",
+    "title": "落花生",
+    "g": "5",
+    "text": "我们家的后园有半亩空地。母亲说：“让它荒着怪可惜的，你们那么爱吃花生，就开辟出来种花生吧。”我们姐弟几个都很高兴，买种、翻地、播种、浇水，没过几个月，居然收获了。",
+    "qa": [
+      {
+        "q": "一家人种花生是因为（ ）。",
+        "opts": [
+          "老师要求",
+          "母亲提议别荒着",
+          "好玩",
+          "爱吃花生"
+        ],
+        "ans": 1,
+        "why": "母亲说空地荒着可惜，提议种花生。"
+      },
+      {
+        "q": "“居然收获了”的“居然”表示（ ）。",
+        "opts": [
+          "慢慢",
+          "出乎意料",
+          "容易",
+          "一定"
+        ],
+        "ans": 1,
+        "why": "“居然”表示没想到、出乎意料。"
+      },
+      {
+        "q": "这段话写了种花生的（ ）。",
+        "opts": [
+          "尝花生",
+          "准备和种植经过",
+          "收获过程",
+          "吃花生"
+        ],
+        "ans": 1,
+        "why": "讲买种、翻地、播种、浇水到收获的经过。"
+      }
+    ]
+  },
+  {
+    "id": "p10",
+    "emoji": "🐋",
+    "title": "鲸",
+    "g": "5",
+    "text": "不少人看过象，都说象是很大的动物。其实还有比象大得多的动物，那就是鲸。最大的鲸约有十六万公斤重，最小的也有两千公斤。我国捕获过一头四万公斤重的鲸。",
+    "qa": [
+      {
+        "q": "这段话主要说明（ ）。",
+        "opts": [
+          "鲸比象大得多",
+          "象很大",
+          "鲸会游泳",
+          "象和鲸是朋友"
+        ],
+        "ans": 0,
+        "why": "用象作比较，突出鲸比象大得多。"
+      },
+      {
+        "q": "作者用“象”来写鲸，这样写的好处是（ ）。",
+        "opts": [
+          "更生动具体",
+          "写错",
+          "凑字数",
+          "跑题"
+        ],
+        "ans": 0,
+        "why": "用熟悉的象作比较，让读者更直观地感受鲸的大。"
+      },
+      {
+        "q": "最大的鲸约重（ ）。",
+        "opts": [
+          "四万公斤",
+          "十六万公斤",
+          "两千公斤",
+          "几百公斤"
+        ],
+        "ans": 1,
+        "why": "“最大的鲸约有十六万公斤重”。"
+      }
+    ]
+  },
+  {
+    "id": "p11",
+    "emoji": "🌾",
+    "title": "少年闰土",
+    "g": "6",
+    "text": "深蓝的天空中挂着一轮金黄的圆月，下面是海边的沙地，都种着一望无际的碧绿的西瓜。其间有一个十一二岁的少年，项带银圈，手捏一柄钢叉，向一匹猹尽力地刺去。",
+    "qa": [
+      {
+        "q": "这段话描写的背景是（ ）。",
+        "opts": [
+          "学校",
+          "海边瓜地月夜",
+          "城市街道",
+          "雪地"
+        ],
+        "ans": 1,
+        "why": "写海边沙地、圆月、西瓜地，是瓜地月夜。"
+      },
+      {
+        "q": "少年闰土在做什么？",
+        "opts": [
+          "看书",
+          "钓鱼",
+          "睡觉",
+          "刺猹"
+        ],
+        "ans": 3,
+        "why": "“向一匹猹尽力地刺去”。"
+      },
+      {
+        "q": "这段描写表现了闰土（ ）。",
+        "opts": [
+          "懒惰",
+          "文静",
+          "机敏勇敢",
+          "胆小"
+        ],
+        "ans": 2,
+        "why": "月夜持叉刺猹，表现他机敏勇敢。"
+      }
+    ]
+  },
+  {
+    "id": "p12",
+    "emoji": "🌍",
+    "title": "只有一个地球",
+    "g": "6",
+    "text": "据有幸飞上太空的宇航员介绍，他们在天际遨游时遥望地球，映入眼帘的是一个晶莹的球体，上面蓝色和白色的纹痕相互交错，周围裹着一层薄薄的水蓝色“纱衣”。",
+    "qa": [
+      {
+        "q": "宇航员眼中的地球是（ ）。",
+        "opts": [
+          "红色的",
+          "方形的",
+          "晶莹的球体",
+          "黑色的"
+        ],
+        "ans": 2,
+        "why": "“映入眼帘的是一个晶莹的球体”。"
+      },
+      {
+        "q": "地球表面的颜色主要是（ ）。",
+        "opts": [
+          "黑和灰",
+          "红和黄",
+          "绿和紫",
+          "蓝和白"
+        ],
+        "ans": 3,
+        "why": "“蓝色和白色的纹痕相互交错”。"
+      },
+      {
+        "q": "这段文字表达了（ ）。",
+        "opts": [
+          "地球很小",
+          "太空很冷",
+          "地球美丽珍贵",
+          "宇航员很累"
+        ],
+        "ans": 2,
+        "why": "用“晶莹”“纱衣”等词赞美地球美丽珍贵。"
+      }
+    ]
+  },
+  {
+    "id": "p13",
+    "emoji": "🐦",
+    "title": "翠鸟",
+    "g": "3",
+    "text": "翠鸟喜欢停在水边的苇秆上，一双红色的小爪子紧紧抓住苇秆。它颜色非常鲜艳：头上的羽毛像橄榄色的头巾，绣满了翠绿色的花纹；背上的羽毛像浅绿色的外衣。",
+    "qa": [
+      {
+        "q": "翠鸟停在什么地方？",
+        "opts": [
+          "石头上",
+          "水边的苇秆上",
+          "树枝上",
+          "屋顶"
+        ],
+        "ans": 1,
+        "why": "“停在水边的苇秆上”。"
+      },
+      {
+        "q": "作者把翠鸟头上的羽毛比作（ ）。",
+        "opts": [
+          "手套",
+          "外衣",
+          "衬衫",
+          "头巾"
+        ],
+        "ans": 3,
+        "why": "“头上的羽毛像橄榄色的头巾”。"
+      },
+      {
+        "q": "这段话主要在写翠鸟的（ ）。",
+        "opts": [
+          "颜色鲜艳",
+          "叫声",
+          "动作",
+          "习性"
+        ],
+        "ans": 0,
+        "why": "主要描写翠鸟颜色的鲜艳。"
+      }
+    ]
+  },
+  {
+    "id": "p14",
+    "emoji": "🏞️",
+    "title": "日月潭",
+    "g": "2",
+    "text": "日月潭是我国台湾省最大的一个湖。湖中央有个美丽的小岛，叫光华岛。小岛把湖水分成两半，北边像圆圆的太阳，叫日潭；南边像弯弯的月亮，叫月潭。",
+    "qa": [
+      {
+        "q": "日月潭在哪个省？",
+        "opts": [
+          "福建",
+          "广东",
+          "海南",
+          "台湾"
+        ],
+        "ans": 3,
+        "why": "“我国台湾省最大的一个湖”。"
+      },
+      {
+        "q": "为什么叫“日月潭”？",
+        "opts": [
+          "潭水发光",
+          "有日有月",
+          "岛是圆的",
+          "北边像太阳、南边像月亮"
+        ],
+        "ans": 3,
+        "why": "北边像太阳叫日潭，南边像月亮叫月潭。"
+      },
+      {
+        "q": "光华岛在（ ）。",
+        "opts": [
+          "岸上",
+          "山上",
+          "湖中央",
+          "湖边"
+        ],
+        "ans": 2,
+        "why": "“湖中央有个美丽的小岛，叫光华岛”。"
+      }
+    ]
+  },
+  {
+    "id": "p15",
+    "emoji": "🐰",
+    "title": "小白兔种白菜",
+    "g": "1",
+    "text": "小白兔种了一园白菜。它每天浇水、捉虫。白菜长得绿油油的。冬天来了，它把白菜收进地窖，够吃一冬天。",
+    "qa": [
+      {
+        "q": "小白兔种了什么？",
+        "opts": [
+          "萝卜",
+          "树",
+          "白菜",
+          "花"
+        ],
+        "ans": 2,
+        "why": "短文说小白兔种了一园白菜。"
+      },
+      {
+        "q": "它每天做什么？",
+        "opts": [
+          "浇水捉虫",
+          "睡觉",
+          "看电视",
+          "玩耍"
+        ],
+        "ans": 0,
+        "why": "“它每天浇水、捉虫”。"
+      },
+      {
+        "q": "白菜为什么够吃一冬天？",
+        "opts": [
+          "冻坏了",
+          "送给别人",
+          "丢了",
+          "收起来存好"
+        ],
+        "ans": 3,
+        "why": "它把白菜收进地窖存好，所以够吃一冬天。"
+      }
+    ]
+  },
+  {
+    "id": "p16",
+    "emoji": "🦊",
+    "title": "狐狸和乌鸦",
+    "g": "2",
+    "text": "大树上站着乌鸦，嘴里叼着一块肉。狐狸看见了，夸乌鸦歌声好听。乌鸦一开口，肉掉下来，狐狸叼走了。",
+    "qa": [
+      {
+        "q": "乌鸦嘴里有什么？",
+        "opts": [
+          "果子",
+          "肉",
+          "叶子",
+          "虫子"
+        ],
+        "ans": 1,
+        "why": "“乌鸦嘴里叼着一块肉”。"
+      },
+      {
+        "q": "狐狸用什么办法骗到肉？",
+        "opts": [
+          "夸它唱歌好听",
+          "直接抢",
+          "送礼物",
+          "爬树"
+        ],
+        "ans": 0,
+        "why": "狐狸夸乌鸦歌声好听，骗它开口。"
+      },
+      {
+        "q": "这个故事告诉我们（ ）。",
+        "opts": [
+          "狐狸可爱",
+          "肉很好吃",
+          "要唱歌",
+          "别轻信奉承"
+        ],
+        "ans": 3,
+        "why": "乌鸦被奉承话骗了，说明别轻易信花言巧语。"
+      }
+    ]
+  },
+  {
+    "id": "p17",
+    "emoji": "🪁",
+    "title": "放风筝",
+    "g": "3",
+    "text": "春风轻轻吹，小明在草地上放风筝。风筝像小鸟飞上蓝天。小伙伴都跑来看，拍手叫好。",
+    "qa": [
+      {
+        "q": "小明在哪里放风筝？",
+        "opts": [
+          "草地",
+          "水里",
+          "教室",
+          "屋顶"
+        ],
+        "ans": 0,
+        "why": "“小明在草地上放风筝”。"
+      },
+      {
+        "q": "风筝像什么？",
+        "opts": [
+          "鱼",
+          "汽车",
+          "云朵",
+          "小鸟"
+        ],
+        "ans": 3,
+        "why": "“风筝像小鸟飞上蓝天”。"
+      },
+      {
+        "q": "小伙伴们怎样？",
+        "opts": [
+          "哭起来",
+          "拍手叫好",
+          "睡觉",
+          "走开"
+        ],
+        "ans": 1,
+        "why": "“小伙伴都跑来看，拍手叫好”。"
+      }
+    ]
+  },
+  {
+    "id": "p18",
+    "emoji": "🏯",
+    "title": "长城",
+    "g": "4",
+    "text": "长城像一条巨龙，蜿蜒在崇山峻岭之间。它是古代劳动人民一砖一瓦筑成的，是世界闻名的奇迹。",
+    "qa": [
+      {
+        "q": "作者把长城比作什么？",
+        "opts": [
+          "巨龙",
+          "小河",
+          "大山",
+          "大树"
+        ],
+        "ans": 0,
+        "why": "“长城像一条巨龙”。"
+      },
+      {
+        "q": "长城是谁筑成的？",
+        "opts": [
+          "古代劳动人民",
+          "外国人",
+          "神仙",
+          "机器"
+        ],
+        "ans": 0,
+        "why": "“古代劳动人民一砖一瓦筑成的”。"
+      },
+      {
+        "q": "长城是（ ）。",
+        "opts": [
+          "普通公路",
+          "小土墙",
+          "世界闻名的奇迹",
+          "小河"
+        ],
+        "ans": 2,
+        "why": "文末说它是“世界闻名的奇迹”。"
+      }
+    ]
+  },
+  {
+    "id": "p19",
+    "emoji": "🐦",
+    "title": "鸟的天堂",
+    "g": "5",
+    "text": "我们吃过晚饭，划船去“鸟的天堂”。起初四周静寂，后来一声鸟叫，树上变得热闹，到处是鸟影。",
+    "qa": [
+      {
+        "q": "“鸟的天堂”指的是（ ）。",
+        "opts": [
+          "高山",
+          "公园",
+          "有大群鸟的大树",
+          "庙宇"
+        ],
+        "ans": 2,
+        "why": "这是一篇写大榕树上群鸟的文章，鸟的天堂指那棵大树。"
+      },
+      {
+        "q": "起初那里怎样？",
+        "opts": [
+          "吵闹",
+          "下雨",
+          "热闹",
+          "静寂"
+        ],
+        "ans": 3,
+        "why": "“起初四周静寂”。"
+      },
+      {
+        "q": "后来为什么热闹？",
+        "opts": [
+          "有人来",
+          "刮大风",
+          "鸟叫起来",
+          "天黑了"
+        ],
+        "ans": 2,
+        "why": "“后来一声鸟叫，树上变得热闹”。"
+      }
+    ]
+  },
+  {
+    "id": "p20",
+    "emoji": "🏞️",
+    "title": "桂林山水",
+    "g": "6",
+    "text": "漓江的水真静啊，静得让你感觉不到它在流动；漓江的水真清啊，清得可以看见江底的沙石；漓江的水真绿啊，绿得仿佛那是一块无瑕的翡翠。",
+    "qa": [
+      {
+        "q": "这段话写漓江水的什么特点？",
+        "opts": [
+          "冷、甜、咸",
+          "静、清、绿",
+          "大、深、蓝",
+          "快、响、白"
+        ],
+        "ans": 1,
+        "why": "用三个“真……”写出静、清、绿。"
+      },
+      {
+        "q": "“仿佛一块无瑕的翡翠”写水（ ）。",
+        "opts": [
+          "深",
+          "绿",
+          "静",
+          "清"
+        ],
+        "ans": 1,
+        "why": "翡翠是绿色的，这句突出水绿。"
+      },
+      {
+        "q": "作者用了什么写法？",
+        "opts": [
+          "设问",
+          "排比",
+          "夸张",
+          "反问"
+        ],
+        "ans": 1,
+        "why": "三个结构相似的句子连用，是排比。"
+      }
+    ]
+  },
+  {
+    "id": "p21",
+    "emoji": "🐿️",
+    "title": "小松鼠找松果",
+    "g": "2",
+    "text": "秋天到了，小松鼠忙着找松果。它东跑跑，西跳跳，把找到的松果藏在树洞里、石头缝里。冬天来了，大雪盖住了森林，小松鼠躲在树洞里，吃着藏好的松果，一点儿也不饿。春天，那些被小松鼠忘记的松果发了芽，长成了一棵棵小松树。",
+    "qa": [
+      {
+        "q": "小松鼠把松果藏在哪里？",
+        "opts": [
+          "树洞里、石头缝里",
+          "口袋里",
+          "河边",
+          "窝外面"
+        ],
+        "ans": 0,
+        "why": "短文说它把松果藏在树洞里、石头缝里。"
+      },
+      {
+        "q": "为什么春天会有小松树长出来？",
+        "opts": [
+          "风把树种吹来的",
+          "被忘记的松果发了芽",
+          "小松鼠种的",
+          "小鸟衔来的"
+        ],
+        "ans": 1,
+        "why": "被小松鼠忘记的松果发了芽，长成小松树。"
+      },
+      {
+        "q": "这个故事告诉我们小松鼠很（ ）。",
+        "opts": [
+          "贪玩",
+          "勤劳",
+          "胆小",
+          "粗心"
+        ],
+        "ans": 1,
+        "why": "小松鼠秋天忙藏着粮食，说明它勤劳、会打算。"
+      }
+    ]
+  },
+  {
+    "id": "p22",
+    "emoji": "💌",
+    "title": "信封上的友情",
+    "g": "3",
+    "text": "小熊和小兔是邻居，也是好朋友。有一天，他们吵架了，谁也不理谁。小熊心里很难过，就写了一封信：小兔，对不起，那天是我不对。小兔收到信，也回了信：我也有不对的地方，我们还做好朋友吧！从此，他们的友情比以前更深了。",
+    "qa": [
+      {
+        "q": "小熊和小兔为什么吵架后又不难过了？",
+        "opts": [
+          "他们搬家了",
+          "他们互相写信道歉",
+          "他们忘了这件事",
+          "别人劝了他们"
+        ],
+        "ans": 1,
+        "why": "小熊先写信道歉，小兔回信和好。"
+      },
+      {
+        "q": "小熊的信里写了什么？",
+        "opts": [
+          "我不想和你玩了",
+          "对不起，那天是我不对",
+          "你快点搬家吧",
+          "我们比赛吧"
+        ],
+        "ans": 1,
+        "why": "信上写着「小兔，对不起，那天是我不对」。"
+      },
+      {
+        "q": "这个故事告诉我们（ ）。",
+        "opts": [
+          "吵架了就不要来往",
+          "做错事要勇敢道歉",
+          "写信很浪费时间",
+          "朋友越多越好"
+        ],
+        "ans": 1,
+        "why": "主动道歉让友情更深了。"
+      }
+    ]
+  },
+  {
+    "id": "p23",
+    "emoji": "🥕",
+    "title": "小白兔的红萝卜",
+    "g": "3",
+    "text": "小白兔种了一园子红萝卜。丰收那天，它把最大的三根送给了邻居：一根送给没有牙齿的山羊爷爷，一根送给生病的鼠小弟，一根送给刚搬来的刺猬太太。自己留下的是最小的。大家都很感动，第二年都来帮小白兔种萝卜，园子比原来大了两倍。",
+    "qa": [
+      {
+        "q": "小白兔把最大的萝卜送给了谁？",
+        "opts": [
+          "山羊爷爷、鼠小弟、刺猬太太",
+          "自己留着",
+          "妈妈和爸爸",
+          "卖掉了"
+        ],
+        "ans": 0,
+        "why": "送给山羊爷爷、鼠小弟和刺猬太太三户邻居。"
+      },
+      {
+        "q": "第二年园子为什么变大了？",
+        "opts": [
+          "小白兔买了地",
+          "邻居们都来帮忙",
+          "萝卜自己长大了",
+          "下了一场大雨"
+        ],
+        "ans": 1,
+        "why": "大家受感动，都来帮小白兔种萝卜。"
+      },
+      {
+        "q": "小白兔身上有什么品质？",
+        "opts": [
+          "小气",
+          "乐于分享",
+          "懒惰",
+          "粗心"
+        ],
+        "ans": 1,
+        "why": "把最大的送别人、最小的留自己，是乐于分享。"
+      }
+    ]
+  },
+  {
+    "id": "p24",
+    "emoji": "🚀",
+    "title": "小小宇航员探险记",
+    "g": "4",
+    "text": "丁丁参加了科技馆的「小小宇航员」活动。他穿上宇航服，走进模拟太空舱，体验了失重的感觉——身体轻飘飘的，像一片羽毛。讲解员说，宇航员在太空里喝水要用吸管，睡觉要把自己绑在睡袋里。丁丁心想：宇航员真了不起，我长大也要探索宇宙！",
+    "qa": [
+      {
+        "q": "丁丁在模拟太空舱里体验到什么？",
+        "opts": [
+          "失重",
+          "寒冷",
+          "黑暗",
+          "眩晕"
+        ],
+        "ans": 0,
+        "why": "他体验了失重，身体像一片羽毛。"
+      },
+      {
+        "q": "宇航员在太空里怎么睡觉？",
+        "opts": [
+          "躺在床上",
+          "把自己绑在睡袋里",
+          "坐在椅子上",
+          "不用睡觉"
+        ],
+        "ans": 1,
+        "why": "讲解员说睡觉要把自己绑在睡袋里。"
+      },
+      {
+        "q": "丁丁的梦想是什么？",
+        "opts": [
+          "当飞行员",
+          "当讲解员",
+          "探索宇宙",
+          "造宇宙飞船"
+        ],
+        "ans": 2,
+        "why": "他想长大也去探索宇宙。"
+      }
+    ]
+  },
+  {
+    "id": "p25",
+    "emoji": "🐌",
+    "title": "慢慢爬的蜗牛",
+    "g": "4",
+    "text": "蜗牛想去看山顶的日出。兔子笑它：你爬得这么慢，得爬到明年！蜗牛不说话，只是每天背着重重的壳，一步一步往上爬。下雨了，它躲进壳里；天晴了，它接着爬。一个月后的清晨，蜗牛终于爬上山顶，看到了金灿灿的太阳从云海里升起来。",
+    "qa": [
+      {
+        "q": "兔子为什么笑蜗牛？",
+        "opts": [
+          "蜗牛跑得太快",
+          "蜗牛爬得太慢",
+          "蜗牛的壳太重",
+          "蜗牛不会说话"
+        ],
+        "ans": 1,
+        "why": "兔子觉得蜗牛爬得慢，爬到山顶要很久。"
+      },
+      {
+        "q": "蜗牛是怎么到达山顶的？",
+        "opts": [
+          "兔子背它上去的",
+          "坐车上山的",
+          "一步一步坚持爬",
+          "被风吹上去的"
+        ],
+        "ans": 2,
+        "why": "蜗牛每天一步一步往上爬，坚持了一个月。"
+      },
+      {
+        "q": "这个故事告诉我们（ ）。",
+        "opts": [
+          "爬得快才能成功",
+          "只要坚持，慢也能达成目标",
+          "不要听别人的话",
+          "看日出很容易"
+        ],
+        "ans": 1,
+        "why": "蜗牛虽慢但坚持，最终看到了日出。"
+      }
+    ]
+  }
+];
+function speak(t){ try{ if(!('speechSynthesis'in window))return; window.speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance(t); u.lang='zh-CN'; u.rate=.9; window.speechSynthesis.speak(u); }catch(e){} }
+function getStore(){ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; } }
+function setStore(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
+function setScreen(id){ document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('on');}); document.getElementById(id).classList.add('on'); }
+var score=0, answered=0, list=[];
+function renderChips(){
+  var h=''; GRADES.forEach(function(t){ h+='<button class="chip'+(t[1]===curGrade?' on':'')+'" onclick="pickGrade(\''+t[1]+'\')">'+t[0]+'</button>'; });
+  document.getElementById('gradeChips').innerHTML=h;
+}
+function pickGrade(g){ curGrade=g; renderChips(); }
+function start(){
+  score=0; answered=0;
+  var ps = curGrade? PASSAGES.filter(function(p){return p.g===curGrade;}):PASSAGES.slice();
+  list=[]; ps.forEach(function(p){ p.qa.forEach(function(q){ list.push({p:p, q:q}); }); });
+  setScreen('scrQuiz'); renderQuiz();
+}
+function renderQuiz(){
+  var html2='';
+  PASSAGES.forEach(function(p){
+    if(curGrade && p.g!==curGrade) return;
+    html2+='<div class="passage"><div class="ph"><span class="pt">'+p.emoji+' '+p.title+'</span><span class="pg">'+p.g+'年级</span></div>';
+    html2+='<div class="ptxt" id="txt'+p.id+'">'+p.text+'</div><button class="spk" onclick="speak(document.getElementById(\'txt'+p.id+'\').innerText)" style="margin:8px 0">🔊 朗读短文</button>';
+    p.qa.forEach(function(q){
+      var gidx = list.findIndex(function(l){return l.p.id===p.id && l.q===q;});
+      html2+='<div class="q" id="q'+gidx+'"><div class="qt"><span class="qn">Q</span>'+q.q+'</div><div class="opts">';
+      q.opts.forEach(function(op,oi){ html2+='<button class="opt" onclick="choose('+gidx+','+oi+')" id="o'+gidx+'_'+oi+'">'+op+'</button>'; });
+      html2+='</div><div class="why" id="w'+gidx+'"></div><div id="hw'+gidx+'" class="hw-slot"></div></div>';
+    });
+    html2+='</div>';
+  });
+  document.getElementById('quizArea').innerHTML=html2;
+  document.getElementById('finishBtn').style.display='none';
+  updateProg();
+  if(window.Handwrite){
+    list.forEach(function(entry, idx){
+      var it=entry.q;
+      var hw=Handwrite.create({revealText: it.opts[it.ans], placeholder:'✍️ 在这里用手写答案'});
+      document.getElementById('hw'+idx).appendChild(hw.el);
+      var rb=hw.el.querySelector('.hw-tools .hw-btn:last-child');
+      if(rb) rb.addEventListener('click', function(){ markHW(it, idx, list.length); });
+    });
+  }
+}
+function choose(idx,oi){
+  var it=list[idx]; var q=document.getElementById('q'+idx);
+  if(q.classList.contains('done-ok')||q.classList.contains('done-no')) return;
+  answered++;
+  var ok=(oi===it.q.ans);
+  var opts=q.querySelectorAll('.opt');
+  opts.forEach(function(b,i){ b.classList.add('dim'); if(i===it.q.ans) b.classList.add('ok'); });
+  if(ok){ q.classList.add('done-ok'); score++; } else { q.classList.add('done-no'); opts[oi].classList.add('no'); }
+  var w=document.getElementById('w'+idx); w.textContent='💡 '+it.q.why; w.classList.add('on');
+  updateProg();
+  if(answered>=list.length) document.getElementById('finishBtn').style.display='block';
+}
+function markHW(it, idx, total){
+  var q=document.getElementById('q'+idx);
+  if(q.classList.contains('done-ok')||q.classList.contains('done-no')||q.classList.contains('done-hw')) return;
+  answered++;
+  q.classList.add('done-hw');
+  var w=document.getElementById('w'+idx);
+  if(w){ w.innerHTML='💡 '+it.why; w.classList.add('on'); }
+  updateProg();
+  if(answered>=total) document.getElementById('finishBtn').style.display='block';
+}
+function updateProg(){
+  document.getElementById('progBar').style.width=(answered/list.length*100)+'%';
+  document.getElementById('progTxt').textContent='已答 '+answered+' / '+list.length;
+}
+function finish(){
+  var pct=Math.round(score/list.length*100);
+  document.getElementById('rScore').textContent=score+' / '+list.length;
+  document.getElementById('rPct').textContent='正确率 '+pct+'%';
+  var stars = pct>=90?'⭐⭐⭐':pct>=70?'⭐⭐':'⭐';
+  document.getElementById('rStars').textContent=stars;
+  var pass = score/list.length>=0.8;
+  document.getElementById('rPass').innerHTML = pass?'<span class="pass">🎊 通关！阅读小能手</span>':'<span class="fail">再读读，争取通关 80%</span>';
+  if(score>(store.best||0)){ store.best=score; setStore(store); }
+  if(pass) showCeleb();
+  setScreen('scrReport');
+}
+function resetBest(){ if(confirm('确定清空最佳对题记录？')){ setStore({best:0}); store={best:0}; document.getElementById('bestNum').textContent='0'; } }
+function goMenu(){ setScreen('scrMenu'); }
+function showCeleb(){ var c=document.getElementById('celeb'); c.style.display='flex'; }
+function closeCeleb(){ document.getElementById('celeb').style.display='none'; }
+(function init(){
+  var s=Portal.getSession(); CHILD=(s&&s.child)?s.child:'user'; KEY='cnread-'+CHILD; store=getStore();
+  document.getElementById('dateStr').textContent=new Date().toLocaleDateString('zh-CN');
+  var n=0; PASSAGES.forEach(function(p){ n+=p.qa.length; });
+  document.getElementById('totalNum').textContent=n;
+  document.getElementById('bestNum').textContent=store.best||0;
+  renderChips();
+})();
+</script>
+<script src="handwrite.js"></script>
+</body>
+</html>

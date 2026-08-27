@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🪢 跳绳打卡（统一版）</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;font-size:17px;color:#3d3a4b;
+    background:linear-gradient(135deg,#fff8ef,#eafaf1);padding:16px;max-width:760px;margin:0 auto}
+  .card{background:#fff;border-radius:22px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.06);margin-bottom:16px}
+  h2{font-size:18px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  /* 英雄区 */
+  .hero{background:linear-gradient(120deg,#06d6a0,#4cc9f0);color:#fff;border-radius:24px;
+    padding:22px;text-align:center;box-shadow:0 8px 22px rgba(6,214,160,.4);margin-bottom:16px}
+  .hero .streak{font-size:48px;font-weight:800;line-height:1}
+  .hero .sub{font-size:14px;opacity:.95;margin-top:6px}
+  .hero .stars{font-size:22px;margin-top:8px}
+  .challenge{background:rgba(255,255,255,.22);border-radius:14px;padding:10px;margin-top:14px}
+  .challenge .lab{font-size:13px;display:flex;justify-content:space-between}
+  .cbar{height:14px;background:rgba(255,255,255,.35);border-radius:10px;overflow:hidden;margin-top:6px}
+  .cbar>i{display:block;height:100%;background:#ffd166;border-radius:10px;transition:width .4s}
+  .bigbtn{border:none;border-radius:18px;min-height:66px;width:100%;margin-top:14px;font-size:21px;
+    font-weight:800;font-family:inherit;color:#fff;cursor:pointer;background:rgba(255,255,255,.25);
+    border:3px solid #fff;transition:transform .1s}
+  .bigbtn:active{transform:scale(.98)}
+  .bigbtn.done{background:#ffd166;color:#b8860b;border-color:#ffd166}
+  /* 统计 */
+  .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  @media(min-width:560px){.stats{grid-template-columns:repeat(4,1fr)}}
+  .stat{background:#fff8ef;border-radius:16px;padding:14px;text-align:center;border:2px solid #eafff6}
+  .stat .n{font-size:24px;font-weight:800;color:#06d6a0}
+  .stat .l{font-size:12px;color:#999;margin-top:2px}
+  /* 记录面板 */
+  .rec .row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+  .field{flex:1;min-width:140px}
+  .field label{font-size:13px;color:#888;display:block;margin-bottom:4px}
+  .field input{width:100%;border:2px solid #e3f0ff;border-radius:12px;padding:12px;font-size:17px;
+    font-family:inherit;min-height:50px}
+  .field input:focus{outline:none;border-color:#06d6a0}
+  .btnrow{display:flex;gap:10px}
+  .btn{border:none;border-radius:14px;min-height:54px;padding:0 20px;font-size:17px;font-weight:800;
+    font-family:inherit;cursor:pointer;color:#fff}
+  .btn:active{transform:scale(.97)}
+  .save{background:linear-gradient(120deg,#06d6a0,#4cc9f0);flex:1}
+  .del{background:#ff8fab}
+  .doneTag{display:inline-block;background:#eafff6;color:#06d6a0;border-radius:20px;
+    padding:4px 14px;font-size:14px;font-weight:700;margin-bottom:10px}
+  /* 日历 */
+  .calbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .calbar button{border:none;background:#fff8ef;border-radius:14px;min-width:48px;min-height:48px;
+    padding:0 14px;font-size:17px;font-family:inherit;cursor:pointer;font-weight:700}
+  .calbar .period{flex:1;text-align:center;font-weight:800;font-size:17px;min-width:120px}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .wd{text-align:center;font-size:13px;color:#bbb;padding:4px 0;font-weight:700}
+  .cell{min-height:60px;border-radius:14px;background:#fff8ef;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;cursor:pointer;border:3px solid transparent;position:relative;padding:4px}
+  .cell:active{transform:scale(.96)}
+  .cell .d{font-weight:700;font-size:16px}
+  .cell .cnt{font-size:11px;color:#06d6a0;margin-top:2px}
+  .cell.done{background:#eafff6;border-color:#06d6a0}
+  .cell.today{outline:3px solid #ff9f1c}
+  .cell.sel{box-shadow:0 0 0 3px #4cc9f0}
+  .cell.other{opacity:.35;cursor:default}
+  /* 成就墙 */
+  .wall{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  @media(min-width:560px){.wall{grid-template-columns:repeat(3,1fr)}}
+  .badge{background:#fff8ef;border-radius:16px;padding:14px;text-align:center;border:2px solid #eee}
+  .badge.on{background:linear-gradient(135deg,#fff3c4,#ffe08a);border-color:#ffd166}
+  .badge .e{font-size:34px}
+  .badge .t{font-size:14px;font-weight:700;margin-top:4px}
+  .badge .d{font-size:12px;color:#999}
+  .badge.on .d{color:#b8860b}
+  /* 提醒 */
+  .remind .rrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .remind input[type=time]{border:2px solid #e3f0ff;border-radius:12px;padding:10px;font-size:17px;
+    font-family:inherit;min-height:50px}
+  .switch{display:flex;align-items:center;gap:8px;font-size:15px}
+  .tip{font-size:12px;color:#aaa;line-height:1.7;margin-top:10px}
+  .banner{position:fixed;top:0;left:0;right:0;background:linear-gradient(120deg,#ff9f1c,#ff8fab);
+    color:#fff;text-align:center;padding:14px;font-weight:700;font-size:16px;z-index:50;display:none;
+    box-shadow:0 4px 14px rgba(0,0,0,.2)}
+  .banner button{border:none;background:#fff;color:#ff9f1c;border-radius:12px;padding:6px 14px;
+    font-weight:800;margin-left:10px;font-family:inherit;cursor:pointer}
+  /* 分享/里程碑 弹窗 */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;
+    justify-content:center;z-index:80;padding:20px}
+  .overlay.show{display:flex}
+  .modal{background:#fff;border-radius:24px;padding:22px;max-width:360px;width:100%;text-align:center;
+    animation:pop .4s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes pop{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+  .modal .big{font-size:70px}
+  .modal h3{font-size:22px;margin:6px 0}
+  .modal p{font-size:15px;color:#666;line-height:1.6}
+  .modal .mbtns{display:flex;gap:10px;margin-top:16px}
+  .modal .mbtns .btn{flex:1;min-height:50px}
+  .modal img{width:100%;border-radius:16px;margin-top:6px}
+  .sharebtn{background:linear-gradient(120deg,#ff9f1c,#ff8fab);color:#fff;border:none;border-radius:14px;
+    min-height:54px;width:100%;font-size:17px;font-weight:800;font-family:inherit;cursor:pointer;margin-top:4px}
+  .sharebtn:active{transform:scale(.98)}
+  .confetti{position:fixed;top:-30px;font-size:24px;pointer-events:none;z-index:60;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(540deg);opacity:.2}}
+  /* 主题化里程碑勋章弹窗（30/50/100 天通用，靠 CSS 变量切换主题皮肤） */
+  #badgeOverlay{background:radial-gradient(circle at 50% 38%,var(--lightA,rgba(255,209,102,.28)),var(--lightB,rgba(10,12,30,.78)))}
+  #badgeOverlay .modal{position:relative;overflow:hidden;
+    background:var(--modalBg,linear-gradient(160deg,#1f2a4d,#3a1f57 70%,#4a234f));
+    color:#fff;border:2px solid var(--border,rgba(255,209,102,.65));box-shadow:0 0 50px var(--glow,rgba(255,209,102,.45))}
+  .badgecontent{position:relative;z-index:1;padding:8px;text-align:center}
+  .ring{width:150px;height:150px;margin:8px auto 0;border-radius:50%;
+    background:var(--ring,conic-gradient(from 0deg,#ffd166,#ff9f1c,#ff8fab,#4cc9f0,#06d6a0,#ffd166));
+    animation:spin 4s linear infinite;filter:blur(.4px);
+    -webkit-mask:radial-gradient(circle,transparent 54px,#000 56px);mask:radial-gradient(circle,transparent 54px,#000 56px)}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .bigbadge{font-size:76px;margin-top:-150px;filter:drop-shadow(0 0 16px var(--glow,#ffd166))}
+  .shine{background:linear-gradient(90deg,#fff 0%,var(--grad1,#ffd166) 30%,#fff 50%,var(--grad2,#ffb703) 70%,#fff 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;background-size:200% auto;
+    animation:shine 2.4s linear infinite;font-weight:800}
+  @keyframes shine{to{background-position:200% center}}
+  .glowtxt{text-shadow:0 0 12px var(--glow,rgba(255,209,102,.9));line-height:1.7}
+  .ray{position:absolute;top:42%;left:50%;width:340px;height:340px;margin:-170px 0 0 -170px;
+    background:var(--ray,conic-gradient(from 0deg,transparent 0 8deg,rgba(255,209,102,.22) 8deg 12deg,transparent 12deg 30deg));
+    animation:spin 14s linear infinite;z-index:0;pointer-events:none}
+  .sharecard .field{margin:12px 0}
+  .sharecard label{font-size:13px;color:#888;display:block;margin-bottom:4px}
+  .sharecard input{width:100%;border:2px solid #e3f0ff;border-radius:12px;padding:12px;font-size:17px;
+    font-family:inherit;min-height:50px}
+  .sharecard input:focus{outline:none;border-color:#06d6a0}
+  .fab-back{position:fixed;left:14px;bottom:16px;z-index:60;border:0;border-radius:99px;padding:12px 18px;font-size:15px;font-weight:800;background:linear-gradient(135deg,#06d6a0,#4cc9f0);color:#fff;box-shadow:0 8px 20px rgba(6,214,160,.4);cursor:pointer;text-decoration:none;}
+</style>
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#ff8fab">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="暑假打卡">
+<link rel="manifest" href="manifest.webmanifest">
+<script src="tracker.js"></script>
+</head>
+<body>
+
+
+<div class="banner" id="banner">🪢 该去跳绳啦！今天还没打卡哦 <button onclick="hideBanner()">知道啦</button></div>
+
+<!-- 英雄区 -->
+<div class="hero">
+  <div class="streak" id="streakNum">21</div>
+  <div class="sub">🔥 连续打卡天数</div>
+  <div class="stars" id="starNum">⭐ 0</div>
+  <div class="challenge">
+    <div class="lab"><span>🎯 21天跳绳挑战</span><span id="chalTxt">21 / 21</span></div>
+    <div class="cbar"><i id="chalBar" style="width:100%"></i></div>
+  </div>
+  <button class="bigbtn" id="heroBtn">🪢 今日打卡</button>
+</div>
+
+<!-- 统计 -->
+<div class="card">
+  <div class="stats">
+    <div class="stat"><div class="n" id="sDays">0</div><div class="l">累计打卡天数</div></div>
+    <div class="stat"><div class="n" id="sCount">0</div><div class="l">累计跳绳次数</div></div>
+    <div class="stat"><div class="n" id="sMin">0</div><div class="l">累计时长(分)</div></div>
+    <div class="stat"><div class="n" id="sAvg">0</div><div class="l">日均次数</div></div>
+  </div>
+</div>
+
+<!-- 记录面板 -->
+<div class="card rec">
+  <h2>🪢 跳绳记录 <span id="recDate" style="font-size:14px;color:#999"></span></h2>
+  <div id="recBody"></div>
+</div>
+
+<!-- 日历 -->
+<div class="card">
+  <div class="calbar">
+    <button id="prevBtn">‹</button>
+    <span class="period" id="periodLabel"></span>
+    <button id="todayBtn">今天</button>
+    <button id="nextBtn">›</button>
+  </div>
+  <div class="grid" id="calendar"></div>
+  <div class="tip">点击任意日期可补打卡或修改；点「今日打卡」大按钮可一键标记今天完成。</div>
+</div>
+
+<!-- 成就墙 -->
+<div class="card">
+  <h2>🏆 小成就墙</h2>
+  <div class="wall" id="wall"></div>
+</div>
+
+<!-- 提醒 + 备份 -->
+<div class="card remind">
+  <h2>⏰ 每日打卡提醒</h2>
+  <div class="rrow">
+    <label class="switch"><input type="checkbox" id="remChk"> 开启提醒</label>
+    <input type="time" id="remTime" value="19:00">
+    <button class="btn save" style="flex:0 0 auto;padding:0 18px" id="notifBtn">🔔 允许通知</button>
+  </div>
+  <div class="tip">提醒在<b>本页面打开时</b>生效：到达设定时间且今天还没打卡，会弹出横幅与系统通知。<br>
+  数据保存在本机浏览器，关掉再开也不会丢；换设备可用「导出备份」。</div>
+  <div class="btnrow" style="margin-top:12px">
+    <button class="btn save" id="exportBtn" style="flex:1">📤 导出备份(JSON)</button>
+    <button class="btn del" id="importBtn" style="flex:1">📥 导入备份</button>
+  </div>
+  <input type="file" id="importFile" accept="application/json" style="display:none">
+</div>
+
+<!-- 分享 -->
+<div class="card sharecard">
+  <h2>📤 分享给爸爸妈妈</h2>
+  <div class="tip" style="margin-bottom:6px">生成一张专属跳绳成绩单，带你的署名和二维码，保存图片或一键分享给家人～</div>
+  <div class="field">
+    <label>署名（显示在成绩单上，如你的名字，最多 12 字）</label>
+    <input type="text" id="signInput" maxlength="12" placeholder="跳绳小达人">
+  </div>
+  <button class="sharebtn" id="shareBtn">🎴 生成我的跳绳成绩单</button>
+</div>
+
+<div class="foot" style="text-align:center;font-size:12px;color:#bbb;padding:6px 0 2px">统一数据 · 与「跳绳趋势图」同步 · 离线可用</div>
+
+<!-- 里程碑弹窗 -->
+<div class="overlay" id="msOverlay">
+  <div class="modal">
+    <div class="big" id="msEmoji">🏆</div>
+    <h3>🎉 恭喜达成新成就！</h3>
+    <p id="msText"></p>
+    <div class="mbtns"><button class="btn save" onclick="closeMs()">继续加油 💪</button></div>
+  </div>
+</div>
+
+<!-- 分享弹窗 -->
+<div class="overlay" id="shareOverlay">
+  <div class="modal">
+    <h3>🎴 我的跳绳成绩单</h3>
+    <img id="shareImg" alt="成绩单">
+    <div class="mbtns">
+      <button class="btn save" id="saveImgBtn">💾 保存图片</button>
+      <button class="btn del" id="nativeShareBtn" style="display:none">📲 分享</button>
+    </div>
+    <div class="mbtns"><button class="btn" style="background:#ccc;flex:1" onclick="closeShare()">关闭</button></div>
+  </div>
+</div>
+
+<!-- 主题化里程碑勋章弹窗（30/50/100 天通用，由 RopeBadges 主题化渲染） -->
+<div class="overlay" id="badgeOverlay">
+  <div class="modal">
+    <div class="ray"></div>
+    <div class="badgecontent">
+      <div class="ring"></div>
+      <div class="bigbadge" id="badgeEmoji">💎</div>
+      <h3 class="shine" id="badgeTitle" style="font-size:26px;margin:8px 0"></h3>
+      <div id="badgeSub" class="glowtxt" style="font-size:15px"></div>
+      <p id="badgeText" class="glowtxt" style="margin-top:8px"></p>
+      <div id="badgeStars" style="font-size:22px;font-weight:800;margin:6px 0"></div>
+      <div class="mbtns"><button class="btn save" style="flex:1" onclick="closeBadge()">继续闪耀 ✨</button></div>
+    </div>
+  </div>
+</div>
+
+<script src="qrcode.min.js"></script>
+<script src="rope-particles.js"></script>
+<script src="rope-badges.js"></script>
+<script src="accounts.js"></script>
+<script>
+var APP='rope'; var ME=null;
+const KEY='skip_rope_checkin_v1';
+const MILESTONES=[
+  {d:3,e:'🌱',t:'坚持3天',s:1},
+  {d:7,e:'⭐',t:'一周打卡',s:2},
+  {d:14,e:'🔥',t:'半个月',s:3},
+  {d:21,e:'🏆',t:'21天挑战',s:5},
+  {d:30,e:'💎',t:'一个月',s:6},
+  {d:50,e:'👑',t:'50天王者',s:10},
+  {d:100,e:'🌈',t:'百日跳绳侠',s:20}
+];
+let state=null;
+let ui=null;
+
+function load(){
+  let s = Accounts.get(APP, ME, 'state', {});
+  if(!s||!s.records)s={records:{},remind:{time:'19:00',enabled:false},celebrated:[]};
+  if(!s.remind)s.remind={time:'19:00',enabled:false};
+  if(!s.celebrated)s.celebrated=[];
+  // 合并旧「简洁版(21天起步)」数据，统一到一份存储
+  try{
+    const simp = Accounts.get(APP, ME, 'simple', {});
+    if(simp&&simp.records){
+      for(const k in simp.records){
+        if(simp.records[k]&&simp.records[k].done&&!s.records[k]){
+          s.records[k]={count:simp.records[k].count||0,duration:0,note:''};
+        }
+      }
+    }
+  }catch(e){}
+  // 若仍为空（全新用户），把已连续 21 天登记进去
+  if(Object.keys(s.records).length===0){
+    const t=new Date();
+    for(let i=0;i<21;i++){const d=new Date(t);d.setDate(d.getDate()-i);
+      s.records[key(d)]={count:0,duration:0,note:''};}
+  }
+  return s;
+}
+function save(){Accounts.set(APP, ME, 'state', state)}
+function todayKey(){return key(new Date())}
+function key(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function parseKey(k){const p=k.split('-');return new Date(+p[0],+p[1]-1,+p[2])}
+function label(k){const d=parseKey(k);const WK=['周日','周一','周二','周三','周四','周五','周六'];
+  return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 '+WK[d.getDay()]}
+function isDone(k){return !!state.records[k]}
+
+function streak(){
+  let s=0;const d=new Date();
+  if(!isDone(todayKey()))d.setDate(d.getDate()-1);
+  while(isDone(key(d))){s++;d.setDate(d.getDate()-1);}
+  return s;
+}
+function totals(){
+  let days=0,count=0,min=0;
+  for(const k in state.records){const r=state.records[k];days++;count+=(+r.count||0);min+=(+r.duration||0);}
+  return {days,count,min,avg:days?Math.round(count/days):0};
+}
+function totalStars(){
+  let st=totals().days;
+  const s=streak();
+  MILESTONES.forEach(m=>{if(s>=m.d)st+=m.s;});
+  return st;
+}
+
+function render(){
+  const s=streak(),t=totals(),ts=totalStars();
+  document.getElementById('streakNum').textContent=s;
+  document.getElementById('starNum').textContent='⭐ '+ts;
+  document.getElementById('sDays').textContent=t.days;
+  document.getElementById('sCount').textContent=t.count;
+  document.getElementById('sMin').textContent=t.min;
+  document.getElementById('sAvg').textContent=t.avg;
+  const cp=Math.min(s,21);
+  document.getElementById('chalTxt').textContent=cp+' / 21';
+  document.getElementById('chalBar').style.width=(cp/21*100)+'%';
+  renderHeroBtn();
+  renderRecord();
+  renderCalendar();
+  renderWall(s);
+  document.getElementById('remTime').value=state.remind.time||'19:00';
+  document.getElementById('remChk').checked=!!state.remind.enabled;
+  const si=document.getElementById('signInput');if(si)si.value=state.sign||'';
+}
+
+function renderHeroBtn(){
+  const btn=document.getElementById('heroBtn');
+  if(isDone(todayKey())){btn.textContent='✅ 今日已打卡';btn.classList.add('done');}
+  else{btn.textContent='🪢 今日打卡';btn.classList.remove('done');}
+}
+
+function renderRecord(){
+  const k=ui.sel;const rec=state.records[k]||{duration:0,count:0,note:''};
+  const isToday=k===todayKey();
+  document.getElementById('recDate').textContent='（'+label(k)+(isToday?' · 今天':'' )+'）';
+  const b=document.getElementById('recBody');b.innerHTML='';
+  if(isDone(k)){
+    const tag=document.createElement('div');tag.className='doneTag';
+    tag.textContent = (rec.count||rec.duration) ? ('✅ 已打卡：'+(rec.count||0)+' 次 / '+(rec.duration||0)+' 分钟') : '✅ 已打卡';
+    b.appendChild(tag);
+  }
+  const row=document.createElement('div');row.className='row';
+  row.innerHTML=
+    '<div class="field"><label>跳绳次数（下）</label><input type="number" id="inCount" min="0" placeholder="如 200" value="'+(rec.count||'')+'"></div>'+
+    '<div class="field"><label>跳绳时长（分钟）</label><input type="number" id="inMin" min="0" placeholder="如 10" value="'+(rec.duration||'')+'"></div>';
+  b.appendChild(row);
+  const f2=document.createElement('div');f2.className='row';
+  f2.innerHTML='<div class="field" style="flex:1 1 100%"><label>备注（可选）</label><input type="text" id="inNote" placeholder="今天状态/感受…" value="'+((rec.note||'').replace(/"/g,'&quot;'))+'"></div>';
+  b.appendChild(f2);
+  const btns=document.createElement('div');btns.className='btnrow';
+  const save=document.createElement('button');save.className='btn save';save.textContent='💾 保存打卡';
+  save.onclick=()=>{
+    const c=parseInt(document.getElementById('inCount').value)||0;
+    const m=parseInt(document.getElementById('inMin').value)||0;
+    const n=document.getElementById('inNote').value;
+    state.records[k]={count:c,duration:m,note:n};saveS();render();hideBanner();
+  };
+  btns.appendChild(save);
+  if(isDone(k)){
+    const del=document.createElement('button');del.className='btn del';del.textContent='🗑 删除';
+    del.onclick=()=>{if(confirm('确定删除这一天的记录？')){delete state.records[k];saveS();render();}};
+    btns.appendChild(del);
+  }
+  b.appendChild(btns);
+}
+
+function renderCalendar(){
+  const cal=document.getElementById('calendar');cal.innerHTML='';
+  const grid=document.createElement('div');grid.className='grid';
+  ['一','二','三','四','五','六','日'].forEach(w=>{const e=document.createElement('div');
+    e.className='wd';e.textContent=w;grid.appendChild(e);});
+  const y=ui.anchor.getFullYear(),m=ui.anchor.getMonth();
+  const first=new Date(y,m,1);const lead=(first.getDay()+6)%7;
+  const n=new Date(y,m+1,0).getDate();
+  const tk=todayKey();
+  for(let i=0;i<lead;i++){const c=document.createElement('div');c.className='cell other';c.style.cursor='default';grid.appendChild(c);}
+  for(let i=1;i<=n;i++){const k=key(new Date(y,m,i));const rec=state.records[k];
+    const c=document.createElement('div');let cls='cell';
+    if(isDone(k))cls+=' done';
+    if(k===tk)cls+=' today';if(k===ui.sel)cls+=' sel';
+    c.className=cls;
+    c.innerHTML='<div class="d">'+i+'</div>'+(rec&&rec.count?'<div class="cnt">'+rec.count+'下</div>':'');
+    c.onclick=()=>{ui.sel=k;render();};grid.appendChild(c);
+  }
+  cal.appendChild(grid);
+  document.getElementById('periodLabel').textContent=y+'年'+(m+1)+'月';
+}
+
+function renderWall(s){
+  const w=document.getElementById('wall');w.innerHTML='';
+  MILESTONES.forEach(m=>{const on=s>=m.d;const d=document.createElement('div');
+    d.className='badge'+(on?' on':'');
+    d.innerHTML='<div class="e">'+(on?m.e:'🔒')+'</div><div class="t">'+m.t+'</div>'+
+      '<div class="d">'+(on?('+'+m.s+'⭐ 已解锁'):('连续 '+m.d+' 天解锁'))+'</div>';
+    w.appendChild(d);});
+}
+
+/* 一键今日打卡（英雄按钮） */
+function heroToggle(){
+  const k=todayKey();
+  if(isDone(k)){delete state.records[k];saveS();render();return;}
+  const c=parseInt(document.getElementById('inCount')?document.getElementById('inCount').value:0)||0;
+  state.records[k]={count:c,duration:0,note:''};
+  saveS();render();confetti();checkMilestone();
+}
+function checkMilestone(){
+  const s=streak();let hit=null;
+  MILESTONES.forEach(m=>{if(s>=m.d && state.celebrated.indexOf(m.d)<0){if(!hit||m.d>hit.d)hit=m;}});
+  if(hit){
+    state.celebrated.push(hit.d);save();
+    // 30/50/100 天触发主题化炫酷勋章（粒子动画由 RopeBadges 内部调用 RopeParticles）
+    if([30,50,100].indexOf(hit.d)>=0 && window.RopeBadges){ RopeBadges.show(hit.d,{streak:s}); }
+    else showMs(hit);
+  }
+}
+function showMs(m){
+  document.getElementById('msEmoji').textContent=m.e;
+  document.getElementById('msText').innerHTML='你已<b>连续打卡 '+m.d+' 天</b>啦！<br>解锁「'+m.t+'」成就，奖励 <b>+'+m.s+'⭐</b>。<br>坚持住，下个勋章在等你～';
+  document.getElementById('msOverlay').classList.add('show');
+  confetti();
+}
+function closeMs(){document.getElementById('msOverlay').classList.remove('show');}
+/* 主题化里程碑勋章弹窗（由 RopeBadges 控制内容与特效） */
+function closeBadge(){document.getElementById('badgeOverlay').classList.remove('show');}
+
+/* 事件 */
+document.getElementById('heroBtn').onclick=heroToggle;
+document.getElementById('prevBtn').onclick=()=>{ui.anchor.setMonth(ui.anchor.getMonth()-1);renderCalendar();};
+document.getElementById('nextBtn').onclick=()=>{ui.anchor.setMonth(ui.anchor.getMonth()+1);renderCalendar();};
+document.getElementById('todayBtn').onclick=()=>{ui.anchor=new Date();ui.sel=todayKey();render();};
+document.getElementById('remTime').onchange=e=>{state.remind.time=e.target.value;save();};
+document.getElementById('remChk').onchange=e=>{state.remind.enabled=e.target.checked;
+  if(e.target.checked&&'Notification'in window&&Notification.permission==='default')Notification.requestPermission();
+  save();};
+document.getElementById('notifBtn').onclick=()=>{
+  if(!('Notification'in window)){alert('当前浏览器不支持系统通知，开启后仍会在页面内提醒。');return;}
+  Notification.requestPermission().then(p=>{alert(p==='granted'?'已允许通知🔔':'未允许，将使用页面内横幅提醒');});
+};
+/* 导出/导入 */
+document.getElementById('exportBtn').onclick=()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='跳绳打卡备份_'+todayKey()+'.json';a.click();
+};
+document.getElementById('importBtn').onclick=()=>document.getElementById('importFile').click();
+document.getElementById('importFile').onchange=e=>{const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();rd.onload=()=>{try{const s=JSON.parse(rd.result);
+    if(s&&s.records){state=s;save();render();alert('导入成功！');}}catch(err){alert('文件格式不对');}};
+  rd.readAsText(f);};
+
+/* 提醒检查 */
+function hideBanner(){document.getElementById('banner').style.display='none';}
+function checkRemind(){
+  if(!state.remind.enabled)return;
+  const now=new Date();const [h,mi]=state.remind.time.split(':').map(Number);
+  const cur=h*60+mi, nowm=now.getHours()*60+now.getMinutes();
+  if(nowm>=cur && nowm<=cur+30 && !isDone(todayKey())){
+    document.getElementById('banner').style.display='block';
+    if('Notification'in window&&Notification.permission==='granted')
+      new Notification('🪢 跳绳打卡提醒','今天还没跳绳哦，去跳一会儿吧！');
+  }
+}
+
+/* 撒花 */
+function confetti(){
+  const emo=['🪢','⭐','🎉','💪','🔥','🌟'];
+  for(let i=0;i<26;i++){
+    const s=document.createElement('div');s.className='confetti';
+    s.textContent=emo[Math.floor(Math.random()*emo.length)];
+    s.style.left=Math.random()*100+'vw';
+    s.style.animationDuration=(1.6+Math.random()*1.4)+'s';
+    s.style.fontSize=(18+Math.random()*18)+'px';
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),3200);
+  }
+}
+
+/* 分享成绩单 */
+document.getElementById('shareBtn').onclick=makeShareCard;
+function makeShareCard(){
+  const sign=(document.getElementById('signInput').value||'').trim();
+  state.sign=sign;save();
+  const s=streak(),t=totals(),ts=totalStars();
+  const W=640,H=860,c=document.createElement('canvas');c.width=W;c.height=H;
+  const x=c.getContext('2d');
+  const g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,'#06d6a0');g.addColorStop(1,'#4cc9f0');
+  x.fillStyle=g;x.fillRect(0,0,W,H);
+  const m=30,r=40;x.fillStyle='#fff';roundRect(x,m,m,W-2*m,H-2*m,r);x.fill();
+  x.textAlign='center';
+  x.fillStyle='#06b389';x.font='bold 34px sans-serif';
+  x.fillText('🪢 我的跳绳成绩单',W/2,120);
+  x.fillStyle='#ff9f1c';x.font='bold 120px sans-serif';
+  x.fillText(s,W/2,290);
+  x.fillStyle='#3d3a4b';x.font='bold 26px sans-serif';
+  x.fillText('🔥 连续打卡 '+s+' 天',W/2,340);
+  x.fillStyle='#ffb703';x.font='bold 30px sans-serif';
+  x.fillText('⭐ 总星星 '+ts,W/2,400);
+  x.fillStyle='#666';x.font='22px sans-serif';
+  x.fillText('累计 '+t.days+' 天 · '+t.count+' 下 · '+t.min+' 分钟',W/2,455);
+  x.fillStyle='#aaa';x.font='18px sans-serif';
+  x.fillText(label(todayKey()),W/2,500);
+  x.fillStyle='#06b389';x.font='bold 24px sans-serif';
+  x.fillText('每一下绳子，都在雕刻更棒的自己！',W/2,560);
+  // 署名
+  x.fillStyle='#555';x.font='italic 22px sans-serif';
+  x.fillText('—— 署名：'+(sign||'跳绳小达人'),W/2,610);
+  // 二维码（左下，纠错等级 H，中心叠加 🪢 品牌图标）
+  const qrText='【我的跳绳成绩单】署名：'+(sign||'跳绳小达人')+' | 连续'+s+'天 | 累计'+t.count+'下 | 生成于'+todayKey();
+  drawQR(x,qrText,40,H-170,130,'H');
+  // 右侧装饰圆点
+  x.fillStyle='rgba(255,209,102,.5)';
+  for(let i=0;i<8;i++){x.beginPath();x.arc(W-70+Math.random()*40,650+Math.random()*150,6+Math.random()*9,0,7);x.fill();}
+
+  const url=c.toDataURL('image/png');
+  document.getElementById('shareImg').src=url;
+  document.getElementById('shareOverlay').classList.add('show');
+  const nb=document.getElementById('nativeShareBtn');
+  if(navigator.canShare){
+    c.toBlob(b=>{const file=new File([b],'跳绳成绩单.png',{type:'image/png'});
+      if(navigator.canShare({files:[file]})){nb.style.display='block';
+        nb.onclick=()=>navigator.share({files:[file],title:'我的跳绳成绩单'}).catch(()=>{});}});
+  }
+}
+/* 绘制二维码，并在中心叠加 🪢 品牌图标（尺寸随纠错等级自适应，保证可识别） */
+function drawQR(ctx,text,x,y,size,ec){
+  if(typeof qrcode==='undefined')return;
+  ec=ec||'H';
+  // 中心 logo 可覆盖比例与纠错等级挂钩：等级越高容错越大、可放越大
+  const EC_RATIO={'L':0.10,'M':0.14,'Q':0.18,'H':0.22};
+  try{
+    qrcode.stringToBytes=qrcode.stringToBytesFuncs['UTF-8'];
+    let qr=null;
+    for(let tp=4;tp<=14;tp++){try{const q=qrcode(tp,ec);q.addData(text);q.make();qr=q;break;}catch(e){}}
+    if(!qr)return;
+    const cnt=qr.getModuleCount();const cell=size/cnt;
+    ctx.fillStyle='#fff';ctx.fillRect(x-8,y-8,size+16,size+16);
+    ctx.fillStyle='#1a1a1a';
+    for(let r=0;r<cnt;r++)for(let cI=0;cI<cnt;cI++){
+      if(qr.isDark(r,cI))ctx.fillRect(x+cI*cell,y+r*cell,Math.ceil(cell),Math.ceil(cell));}
+    // 中心品牌 logo（🪢）——白底圆角框 + 青绿描边，尺寸按纠错等级适配，避免影响扫码
+    const ratio=EC_RATIO[ec]||0.22;
+    const lw=size*ratio, lx=x+size/2-lw/2, ly=y+size/2-lw/2;
+    ctx.fillStyle='#fff';roundRect(ctx,lx,ly,lw,lw,lw*0.24);ctx.fill();
+    ctx.lineWidth=Math.max(1,size*0.012);ctx.strokeStyle='#06d6a0';ctx.stroke();
+    const f=Math.floor(lw*0.66);
+    ctx.font=f+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('🪢',x+size/2,y+size/2+1);
+    // 底部说明
+    ctx.fillStyle='#06b389';ctx.font='16px sans-serif';ctx.textAlign='center';
+    ctx.fillText('📱 扫码看成绩',x+size/2,y+size+22);
+  }catch(e){}
+}
+function roundRect(x,X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);
+  x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath();}
+function closeShare(){document.getElementById('shareOverlay').classList.remove('show');}
+document.getElementById('saveImgBtn').onclick=()=>{
+  const a=document.createElement('a');a.href=document.getElementById('shareImg').src;
+  a.download='我的跳绳成绩单_'+todayKey()+'.png';a.click();
+};
+
+function saveS(){save();} // 别名，便于统一
+
+Accounts.gate(APP, { onLogin: function(user){
+  ME = user;
+  state = load();
+  ui = {sel:todayKey(), anchor:new Date()};
+  if(window.RopeBadges && RopeBadges.mountMuteToggle) RopeBadges.mountMuteToggle();
+  setInterval(checkRemind,30000);checkRemind();
+  render();
+  Accounts.mountSwitch(APP);
+}});
+</script>
+<script>
+if('serviceWorker' in navigator){var _h=location.hostname;if(_h!=='localhost'&&_h!=='127.0.0.1'){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}}
+</script>
+</body>
+</html>

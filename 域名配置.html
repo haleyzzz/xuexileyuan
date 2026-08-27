@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>🌐 自定义域名配置</title>
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+  :root{--green:#06d6a0;--blue:#4cc9f0;--ink:#3d3a4b}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#fff8ef,#eef6ff);
+    color:var(--ink);padding:16px;max-width:720px;margin:0 auto;min-height:100vh}
+  header{background:linear-gradient(120deg,var(--green),var(--blue));color:#fff;border-radius:24px;
+    padding:20px;text-align:center;box-shadow:0 8px 22px rgba(76,201,240,.35)}
+  header h1{font-size:22px}
+  .card{background:#fff;border-radius:22px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.06);margin-top:16px}
+  .card h2{font-size:17px;margin-bottom:12px}
+  .card h2 .step{display:inline-block;background:var(--blue);color:#fff;border-radius:50%;width:26px;height:26px;
+    line-height:26px;text-align:center;font-size:15px;margin-right:8px}
+  code{background:#f4f6f8;padding:4px 8px;border-radius:8px;font-size:14px;color:#1a6;word-break:break-all}
+  .cname{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .copy{border:none;background:var(--green);color:#fff;border-radius:12px;padding:9px 16px;font-size:14px;
+    font-family:inherit;font-weight:700;cursor:pointer}
+  .copy:active{transform:scale(.96)}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
+  th,td{border:1px solid #eee;padding:10px;text-align:left}
+  th{background:#f7f9fb}
+  ol,ul{margin-left:18px;line-height:1.9;font-size:14px}
+  .verify{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  .verify input{flex:1;min-width:180px;border:2px solid #eee;border-radius:12px;padding:12px;font-size:15px;font-family:inherit}
+  .verify input:focus{outline:none;border-color:var(--blue)}
+  .verify button{border:none;background:var(--blue);color:#fff;border-radius:12px;padding:12px 20px;font-size:15px;
+    font-family:inherit;font-weight:700;cursor:pointer}
+  #vres{margin-top:12px;font-size:14px;line-height:1.7;min-height:20px}
+  .warn{background:#fff7e6;border:2px solid #ffd166;color:#8a6d00;font-size:13px;line-height:1.7;padding:14px 16px}
+  .tip{font-size:12px;color:#aaa;margin-top:8px;line-height:1.6}
+  .foot{text-align:center;margin-top:18px}
+  .foot a{color:var(--blue);font-weight:700;text-decoration:none;font-size:15px}
+</style>
+</head>
+<body>
+<header><h1>🌐 自定义域名配置</h1></header>
+
+<div class="card">
+  <h2><span class="step">1</span>当前访问地址</h2>
+  <p>系统自动生成的地址，已可使用并分享：</p>
+  <p style="margin-top:8px"><code id="curUrl"></code></p>
+</div>
+
+<div class="card">
+  <h2><span class="step">2</span>绑定你的域名（DNS · CNAME）</h2>
+  <p>在你的域名服务商（阿里云 / 腾讯云 / Cloudflare 等）的 DNS 设置里，添加一条 <b>CNAME</b> 记录：</p>
+  <table>
+    <tr><th>主机记录</th><th>记录类型</th><th>记录值 / 目标</th></tr>
+    <tr><td>自定义子域（如 <code>rope</code> 或 <code>www</code>）</td><td>CNAME</td><td><code id="cname"></code></td></tr>
+  </table>
+  <div class="cname">
+    <span>CNAME 目标：<code id="cname2"></code></span>
+    <button class="copy" onclick="copyCNAME()">📋 复制目标</button>
+  </div>
+  <p class="tip">例如想把 <code>rope.你的域名.com</code> 指向本站，主机记录填 <code>rope</code>，记录值填上面的 CNAME 目标。</p>
+</div>
+
+<div class="card">
+  <h2><span class="step">3</span>部署平台绑定（CloudStudio）</h2>
+  <ol>
+    <li>打开 CloudStudio 控制台，找到本工作空间（sandbox）。</li>
+    <li>在「自定义域名 / 绑定域名」处填入你的域名（如 <code>rope.你的域名.com</code>）。</li>
+    <li>平台会要求验证域名所有权（通常也是在 DNS 加一条 TXT 或 CNAME），按提示完成。</li>
+    <li>等待 DNS 生效（通常几分钟到 24 小时），即可用你的域名访问本站点。</li>
+  </ol>
+</div>
+
+<div class="card">
+  <h2><span class="step">4</span>验证域名是否指向本站</h2>
+  <p>域名 CNAME 指向本站后，本站会提供一个验证文件。输入你的域名，点验证即可确认：</p>
+  <div class="verify">
+    <input id="domain" placeholder="例如 rope.你的域名.com" />
+    <button onclick="verify()">🔍 验证</button>
+  </div>
+  <div id="vres"></div>
+  <p class="tip">验证原理：访问 <code>https://你的域名/.well-known/rope-verify.txt</code>，若返回本站标识即说明已正确指向。</p>
+</div>
+
+<div class="card warn">
+  ⚠️ <b>重要说明</b>：本工具运行在沙箱中，<b>无法替你操作域名解析或平台绑定</b>。请按上述 ①~③ 步在你的域名服务商和部署平台完成设置。设置完成后，用上方「验证」按钮确认域名已正确指向本站即可。
+</div>
+
+<div class="foot"></div>
+
+<script>
+  const VERIFY_TOKEN='rope-verify-token: SANDBOX-ROPE-APP-V1';
+  const CNAME=location.hostname;
+  document.getElementById('curUrl').textContent=location.origin;
+  document.getElementById('cname').textContent=CNAME;
+  document.getElementById('cname2').textContent=CNAME;
+  function copyCNAME(){navigator.clipboard&&navigator.clipboard.writeText(CNAME);
+    const b=document.querySelector('.copy');const t=b.textContent;b.textContent='✅ 已复制';setTimeout(()=>b.textContent=t,1500);}
+  const saved=localStorage.getItem('parent_custom_domain_v1');
+  if(saved)document.getElementById('domain').value=saved;
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  async function verify(){
+    const d=document.getElementById('domain').value.trim().replace(/^https?:\/\//,'');
+    const box=document.getElementById('vres');
+    if(!d){alert('请输入要验证的域名');return;}
+    // [安全修复 v81] 域名白名单：仅允许标准主机名，拦截路径/参数/引号/协议等注入
+    if(!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i.test(d)){
+      box.innerHTML='❌ 域名格式不合法：仅支持如 <code>example.com</code> 的主机名（不含路径/协议/特殊字符）。';
+      return;
+    }
+    localStorage.setItem('parent_custom_domain_v1',d);
+    box.innerHTML='⏳ 验证中…';
+    try{
+      const r=await fetch('https://'+d+'/.well-known/rope-verify.txt',{cache:'no-store'});
+      const txt=await r.text();
+      if(r.ok&&txt.indexOf(VERIFY_TOKEN)>=0){
+        box.innerHTML='✅ <b>验证成功！</b>域名已正确指向本站，可直接访问：<a href="https://'+esc(d)+'" target="_blank">'+esc(d)+'</a>';
+      }else{
+        box.innerHTML='⚠️ 该域名可访问，但未检测到本站验证文件。请确认 CNAME 已指向本站的 sandbox 域名（'+esc(CNAME)+'）。';
+      }
+    }catch(e){
+      box.innerHTML='❌ 无法访问该域名。可能 CNAME 尚未生效、域名未解析到本站，或浏览器跨域限制。<br>清直接在浏览器打开 <code>https://'+esc(d)+'</code> 确认是否能看到本站。';
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📕 语文查字典</title>
+<style>
+  :root{ --c1:#ff8fab; --c2:#ff9f1c; --green:#06d6a0; --ink:#3d3a4b; }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#fff8ef,#fdeff4);color:var(--ink);padding:18px;max-width:560px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  .back{position:fixed;left:14px;top:14px;z-index:30;border:none;background:rgba(255,255,255,.85);border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink)}
+  header{background:linear-gradient(120deg,var(--c1),var(--c2));color:#fff;border-radius:24px;padding:20px;text-align:center;box-shadow:0 8px 22px rgba(255,143,171,.4)}
+  header h1{font-size:22px}
+  .date{font-size:14px;opacity:.95;margin-top:4px}
+  .stats{display:flex;gap:10px;margin:14px 0}
+  .stat{flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .stat .num{font-size:26px;font-weight:800;color:var(--c2)}
+  .stat .lbl{font-size:12px;color:#999;margin-top:2px}
+  .screen{display:none}
+  .screen.on{display:block}
+  .btn{display:block;width:100%;border:none;border-radius:16px;padding:14px;font-size:16px;font-family:inherit;cursor:pointer;font-weight:800;color:#fff;background:var(--c1);margin-top:8px}
+  .btn.gh{background:var(--c2)}
+  .btn.sec{background:#fff6f9;color:var(--c1)}
+  .prog-wrap{margin:6px 0 14px}
+  .progress{height:14px;background:#ffe3ec;border-radius:10px;overflow:hidden}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--c1),var(--c2));border-radius:10px;transition:width .4s}
+  .prog-txt{font-size:13px;color:#888;text-align:center;margin-top:4px}
+  .q{background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.06);padding:14px;margin-bottom:12px;border:3px solid transparent;transition:border-color .2s}
+  .q.done-ok{border-color:var(--green)}
+  .q.done-no{border-color:#ff6b6b}
+  .q .qt{font-size:15px;font-weight:700;margin-bottom:10px;line-height:1.6}
+  .q .qt .qn{color:var(--c1);margin-right:6px}
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{border:none;border-radius:12px;padding:11px 14px;font-size:14px;text-align:left;font-family:inherit;cursor:pointer;background:#fff6f9;color:var(--ink);transition:.15s}
+  .opt:active{transform:scale(.98)}
+  .opt.ok{background:var(--green);color:#fff}
+  .opt.no{background:#ff6b6b;color:#fff}
+  .opt.dim{opacity:.45;pointer-events:none}
+  .optrow{display:flex;align-items:center;gap:8px;margin-top:8px}
+  .optrow .opt{margin-top:0;flex:1}
+  .spk{border:none;border-radius:12px;padding:11px 12px;font-size:16px;background:#eef6ff;color:#1d3557;cursor:pointer;flex:0 0 auto}
+  .spk:active{transform:scale(.94)}
+  .qt .spk{margin-left:8px;padding:4px 9px;font-size:14px;vertical-align:middle}
+  .why{font-size:13px;color:#888;margin-top:10px;background:#f6f8fb;border-radius:10px;padding:9px;line-height:1.6;display:none}
+  .why.on{display:block}
+  .report{background:#fff;border-radius:24px;box-shadow:0 8px 22px rgba(0,0,0,.08);padding:24px;text-align:center;margin-top:14px}
+  .report .stars{font-size:34px;letter-spacing:4px;margin:6px 0}
+  .report .score{font-size:30px;font-weight:800;color:var(--c1)}
+  .report .sub{font-size:14px;color:#888;margin-top:4px}
+  .report .line{font-size:15px;color:var(--ink);margin-top:10px}
+  .report .pass{color:var(--green);font-weight:800}
+  .report .fail{color:#ff6b6b;font-weight:800}
+  .reset{background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;text-decoration:underline;display:block;margin:10px auto 0;font-family:inherit}
+  .tip{font-size:12px;color:#aaa;text-align:center;margin-top:14px;line-height:1.6}
+  .confetti{position:fixed;top:-40px;font-size:24px;pointer-events:none;z-index:99;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:.2}}
+  .celebrate{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:100}
+  .celebrate .box2{background:#fff;border-radius:24px;padding:28px 34px;text-align:center;animation:pop .4s;max-width:320px}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate h3{font-size:24px;margin-bottom:8px}
+  .celebrate p{color:#888;font-size:14px;line-height:1.6}
+  .celebrate button{margin-top:16px;border:none;background:var(--c2);color:#fff;padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+</style>
+</head>
+<body>
+
+<header><h1>📕 查字典练习</h1><div class="date" id="dateStr">今天</div></header>
+<div class="stats">
+  <div class="stat"><div class="num" id="bestNum">0</div><div class="lbl">🏆 最佳对题</div></div>
+  <div class="stat"><div class="num" id="totalNum">0</div><div class="lbl">📝 题目总数</div></div>
+  <div class="stat"><div class="num" id="passNum">80%</div><div class="lbl">✅ 通关线</div></div>
+</div>
+<div class="screen on" id="scrMenu">
+  <h2 style="font-size:17px;margin:6px 4px 10px">🔍 部首查字法闯关</h2>
+  <div class="tip" style="margin:0 0 12px">下面这些字，用“部首查字法”应该先查哪个部首？选对 80% 就通关！</div>
+  <button class="btn" onclick="start()">🚀 开始闯关</button>
+  <button class="btn sec" onclick="resetBest()">↺ 清空最佳记录</button>
+</div>
+<div class="screen" id="scrQuiz">
+  <div class="prog-wrap"><div class="progress"><i id="progBar"></i></div><div class="prog-txt" id="progTxt">已答 0 / 0</div></div>
+  <div id="quizArea"></div>
+  <button class="btn gh" id="finishBtn" onclick="finish()" style="display:none">🏁 查看战报</button>
+</div>
+<div class="screen" id="scrReport">
+  <div class="report">
+    <div class="stars" id="rStars">⭐⭐⭐</div>
+    <div class="score" id="rScore">0 / 0</div>
+    <div class="sub" id="rPct">正确率 0%</div>
+    <div class="line" id="rPass"></div>
+  </div>
+  <button class="btn" onclick="start()">🔄 再来一轮</button>
+  <button class="btn sec" onclick="goMenu()">🏠 回到首页</button>
+</div>
+<div class="tip">数据按小朋友分别保存，不会上传。</div>
+<div class="celebrate" id="celeb"><div class="box2"><h3>🎉 查字小能手！</h3><p>部首查字法全掌握，字典一翻就对！</p><button onclick="closeCeleb()">继续闯关 💪</button></div></div>
+<script>
+var QUIZ=[
+  {q:'「晨」用部首查字法，应先查部首（ ）。',opts:['日','辰','巾','曰'],ans:0,why:'“晨”的部首是“日”部（日字头）。'},
+  {q:'「绒」的部首是（ ）。',opts:['纟','戎','毛','戈'],ans:0,why:'“绒”左边是“纟”（绞丝旁），部首为纟。'},
+  {q:'「球」的部首是（ ）。',opts:['王','求','一','玉'],ans:0,why:'“球”左边是“王”（王字旁），部首为王。'},
+  {q:'「艳」的部首是（ ）。',opts:['色','丰','刀','巴'],ans:0,why:'“艳”左边是“色”部。'},
+  {q:'「静」的部首是（ ）。',opts:['青','争','月','丿'],ans:0,why:'“静”左边是“青”部。'},
+  {q:'「影」的部首是（ ）。',opts:['彡','景','日','京'],ans:0,why:'“影”右边三撇“彡”是部首。'},
+  {q:'「装」的部首是（ ）。',opts:['衣','壮','士','丶'],ans:0,why:'“装”下面是“衣”部。'},
+  {q:'「袋」的部首是（ ）。',opts:['衣','代','弋','丶'],ans:0,why:'“袋”下面是“衣”部。'},
+  {q:'「雀」的部首是（ ）。',opts:['隹','小','少','丿'],ans:0,why:'“雀”下面是“隹”部（短尾鸟）。'},
+  {q:'「穿」的部首是（ ）。',opts:['穴','牙','一','丿'],ans:0,why:'“穿”上面是“穴”宝盖头。'},
+  {q:'「窗」的部首是（ ）。',opts:['穴','囱','夕','口'],ans:0,why:'“窗”上面是“穴”宝盖头。'},
+  {q:'「座」的部首是（ ）。',opts:['广','坐','土','人'],ans:0,why:'“座”外面是“广”字头。'},
+
+  /* ===== 补充题 ===== */
+  {q:'「笑」用部首查字法，应先查部首（ ）。',opts:['竹','夭','丿','人'],ans:0,why:'“笑”上面是“竹”字头。'},
+  {q:'「床」的部首是（ ）。',opts:['广','木','丶','一'],ans:0,why:'“床”外面是“广”字头。'},
+  {q:'「闻」的部首是（ ）。',opts:['门','耳','一','口'],ans:0,why:'“闻”外面是“门”字框，从门耳声。'},
+  {q:'「闷」的部首是（ ）。',opts:['心','门','一','丿'],ans:0,why:'“闷”里面是“心”部。'},
+  {q:'「明」的部首是（ ）。',opts:['日','月','一','囗'],ans:0,why:'“明”左边是“日”部。'},
+  {q:'「河」的部首是（ ）。',opts:['氵','可','一','口'],ans:0,why:'“河”左边是“氵”（三点水）。'},
+  {q:'「江」的部首是（ ）。',opts:['氵','工','一','丿'],ans:0,why:'“江”左边是“氵”（三点水）。'},
+  {q:'「笔」的部首是（ ）。',opts:['竹','毛','丿','乙'],ans:0,why:'“笔”上面是“竹”字头。'},
+  {q:'「桌」的部首是（ ）。',opts:['木','卓','卜','一'],ans:0,why:'“桌”下面是“木”部。'},
+  {q:'「椅」的部首是（ ）。',opts:['木','奇','大','可'],ans:0,why:'“椅”左边是“木”部。'},
+  {q:'「想」的部首是（ ）。',opts:['心','相','木','目'],ans:0,why:'“想”下面是“心”部。'},
+  {q:'「忘」的部首是（ ）。',opts:['心','亡','一','丿'],ans:0,why:'“忘”下面是“心”部。'},
+  {q:'「草」的部首是（ ）。',opts:['艹','早','日','十'],ans:0,why:'“草”上面是“艹”（草字头）。'},
+  {q:'「苹」的部首是（ ）。',opts:['艹','平','干','一'],ans:0,why:'“苹”上面是“艹”（草字头）。'},
+  {q:'「园」的部首是（ ）。',opts:['囗','元','二','一'],ans:0,why:'“园”外面是“囗”（大口框）。'},
+  {q:'「圆」的部首是（ ）。',opts:['囗','员','口','贝'],ans:0,why:'“圆”外面是“囗”（大口框）。'},
+  {q:'「问」的部首是（ ）。',opts:['门','口','一','囗'],ans:0,why:'“问”外面是“门”字框。'},
+  {q:'「闪」的部首是（ ）。',opts:['门','人','一','囗'],ans:0,why:'“闪”外面是“门”字框。'},
+  {q:'「因」的部首是（ ）。',opts:['囗','大','一','人'],ans:0,why:'“因”外面是“囗”（大口框）。'}
+  ,{q:'「森」的部首是（ ）。',opts:['木','林','人','三'],ans:0,why:'“森”由三个“木”组成，部首是“木”。'}
+  ,{q:'「众」的部首是（ ）。',opts:['人','从','众','一'],ans:0,why:'“众”由三个“人”组成，部首是“人”。'}
+  ,{q:'「晶」的部首是（ ）。',opts:['日','品','三','白'],ans:0,why:'“晶”三个“日”，部首是“日”。'}
+  ,{q:'「磊」的部首是（ ）。',opts:['石','品','三','岩'],ans:0,why:'“磊”三个“石”，部首是“石”。'}
+  ,{q:'「烤」的部首是（ ）。',opts:['火','考','丷','一'],ans:0,why:'“烤”左边是“火”字旁。'}
+  ,{q:'「海」的部首是（ ）。',opts:['氵','可','母','人'],ans:0,why:'“海”左边是三点水。'}
+  ,{q:'「流」的部首是（ ）。',opts:['氵','㐬','子','水'],ans:0,why:'“流”左边是三点水。'}
+  ,{q:'「打」的部首是（ ）。',opts:['扌','丁','一','人'],ans:0,why:'“打”左边是提手旁。'}
+  ,{q:'「拍」的部首是（ ）。',opts:['扌','白','日','手'],ans:0,why:'“拍”左边是提手旁。'}
+  ,{q:'「吃」的部首是（ ）。',opts:['口','乞','气','人'],ans:0,why:'“吃”左边是口字旁。'}
+  ,{q:'「唱」的部首是（ ）。',opts:['口','昌','日','音'],ans:0,why:'“唱”左边是口字旁。'}
+  ,{q:'「跑」的部首是（ ）。',opts:['足','包','巳','走'],ans:0,why:'“跑”左边是足字旁。'}
+  ,{q:'「跳」的部首是（ ）。',opts:['足','兆','儿','走'],ans:0,why:'“跳”左边是足字旁。'}
+  ,{q:'「红」的部首是（ ）。',opts:['纟','工','一','红'],ans:0,why:'“红”左边是绞丝旁。'}
+  ,{q:'「说」的部首是（ ）。',opts:['讠','兑','口','言'],ans:0,why:'“说”左边是言字旁。'}
+  ,{q:'「读」的部首是（ ）。',opts:['讠','卖','买','言'],ans:0,why:'“读”左边是言字旁。'}
+  ,{q:'「花」的部首是（ ）。',opts:['艹','化','匕','草'],ans:0,why:'“花”上面是草字头。'}
+  ,{q:'「菜」的部首是（ ）。',opts:['艹','采','木','草'],ans:0,why:'“菜”上面是草字头。'}
+  ,{q:'「树」的部首是（ ）。',opts:['木','对','寸','村'],ans:0,why:'“树”左边是木字旁。'}
+  ,{q:'「晚」的部首是（ ）。',opts:['日','免','儿','夕'],ans:0,why:'“晚”左边是日字旁。'}
+  ,{q:'「尖」的部首是（ ）。',opts:['小','大','尖','人'],ans:0,why:'“尖”上面是“小”。'}
+  ,{q:'「歪」的部首是（ ）。',opts:['不','正','歪','一'],ans:0,why:'“歪”由“不”和“正”组成，查“不”。'}
+  ,{q:'「休」的部首是（ ）。',opts:['亻','木','休','人'],ans:0,why:'“休”左边是单人旁。'}
+  ,{q:'「牧」的部首是（ ）。',opts:['牜','攵','牧','牛'],ans:0,why:'“牧”左边是牛字旁。'}
+  ,{q:'「采」的部首是（ ）。',opts:['爫','木','采','爪'],ans:0,why:'“采”上面是“爫”（爪字头）。'}
+  ,{q:'「林」的部首是（ ）。',opts:['木','林','树','村'],ans:0,why:'“林”左边是木字旁。'}
+  ,{q:'「炎」的部首是（ ）。',opts:['火','炎','大','上'],ans:0,why:'“炎”上下都是“火”。'}
+  ,{q:'「吕」的部首是（ ）。',opts:['口','吕','回','日'],ans:0,why:'“吕”上下都是“口”。'}
+  ,{q:'「昌」的部首是（ ）。',opts:['日','昌','明','上'],ans:0,why:'“昌”上下都是“日”。'}
+  ,{q:'「双」的部首是（ ）。',opts:['又','双','友','右'],ans:0,why:'“双”左边是又字旁。'}
+  ,{q:'「从」的部首是（ ）。',opts:['人','从','众','个'],ans:0,why:'“从”左边是人字旁。'}
+  ,{q:'「苗」的部首是（ ）。',opts:['艹','田','苗','草'],ans:0,why:'“苗”上面是草字头。'}
+  ,{q:'「灾」的部首是（ ）。',opts:['宀','火','灾','宝'],ans:0,why:'“灾”上面是宝盖头。'}
+  ,{q:'「囚」的部首是（ ）。',opts:['囗','人','囚','口'],ans:0,why:'“囚”外面是“囗”（大口框）。'}
+  ,{q:'「困」的部首是（ ）。',opts:['囗','木','困','口'],ans:0,why:'“困”外面是“囗”（大口框）。'}
+  ,{q:'「胃」的部首是（ ）。',opts:['月','田','胃','肉'],ans:0,why:'“胃”左边是月字旁。'}
+  ,{q:'「衷」的部首是（ ）。',opts:['衣','中','衷','冖'],ans:0,why:'“衷”外面是衣字底。'}
+  ,{q:'「裹」的部首是（ ）。',opts:['衣','果','裹','中'],ans:0,why:'“裹”外面是衣字底。'}
+  ,{q:'「掰」的部首是（ ）。',opts:['手','分','掰','拜'],ans:0,why:'“掰”中间是手字旁。'}
+  ,{q:'「淼」的部首是（ ）。',opts:['水','淼','木','三'],ans:0,why:'“淼”三个“水”组成，查“水”。'}
+,
+  {
+  q: '「甜」用部首查字法，应先查部首（ ）。',
+  opts: ['甘', '舌', '甜', '甲'],
+  ans: 0,
+  why: '“甜”左边是“舌”、右边是“甘”，部首为“甘”部。'
+  },
+  {
+  q: '「苦」用部首查字法，应先查部首（ ）。',
+  opts: ['艹', '古', '苦', '叶'],
+  ans: 0,
+  why: '“苦”的部首是“艹”（草字头）。'
+  },
+  {
+  q: '「舌」用部首查字法，应先查部首（ ）。',
+  opts: ['舌', '千', '古', '乚'],
+  ans: 0,
+  why: '“舌”是独体字，部首就是“舌”本身。'
+  },
+  {
+  q: '「牙」用部首查字法，应先查部首（ ）。',
+  opts: ['牙', '禾', '乐', '呀'],
+  ans: 0,
+  why: '“牙”是独体字，部首是“牙”部。'
+  },
+  {
+  q: '「耳」用部首查字法，应先查部首（ ）。',
+  opts: ['耳', '取', '闻', '职'],
+  ans: 0,
+  why: '“耳”是独体字，部首是“耳”部。'
+  },
+  {
+  q: '「目」用部首查字法，应先查部首（ ）。',
+  opts: ['目', '日', '自', '眼'],
+  ans: 0,
+  why: '“目”是独体字，部首是“目”部。'
+  },
+  {
+  q: '「手」用部首查字法，应先查部首（ ）。',
+  opts: ['手', '看', '拜', '拿'],
+  ans: 0,
+  why: '“手”是独体字，部首是“手”部。'
+  },
+  {
+  q: '「足」用部首查字法，应先查部首（ ）。',
+  opts: ['足', '口', '走', '趾'],
+  ans: 0,
+  why: '“足”的部首是“足”部（足字旁）。'
+  },
+  {
+  q: '「石」用部首查字法，应先查部首（ ）。',
+  opts: ['石', '厂', '宕', '码'],
+  ans: 0,
+  why: '“石”是独体字，部首是“石”部。'
+  },
+  {
+  q: '「金」用部首查字法，应先查部首（ ）。',
+  opts: ['金', '全', '鑫', '钉'],
+  ans: 0,
+  why: '“金”的部首是“金”部。'
+  },
+  {
+  q: '「田」用部首查字法，应先查部首（ ）。',
+  opts: ['田', '由', '甲', '申'],
+  ans: 0,
+  why: '“田”的部首是“田”部。'
+  },
+  {
+  q: '「刀」用部首查字法，应先查部首（ ）。',
+  opts: ['刀', '刃', '分', '剪'],
+  ans: 0,
+  why: '“刀”的部首是“刀”部。'
+  },
+  {
+  q: '「弓」用部首查字法，应先查部首（ ）。',
+  opts: ['弓', '引', '张', '弛'],
+  ans: 0,
+  why: '“弓”的部首是“弓”部。'
+  },
+  {
+  q: '「舟」用部首查字法，应先查部首（ ）。',
+  opts: ['舟', '船', '般', '航'],
+  ans: 0,
+  why: '“舟”的部首是“舟”部。'
+  },
+  {
+  q: '「门」用部首查字法，应先查部首（ ）。',
+  opts: ['门', '问', '间', '闪'],
+  ans: 0,
+  why: '“门”的部首是“门”部。'
+  },
+  {q:'「勤」用部首查字法，应先查部首（ ）。',opts:['力','堇','勤','文'],ans:0,why:'“勤”的部首是“力”部（左边）。'},
+  {q:'「勇」用部首查字法，应先查部首（ ）。',opts:['力','甬','勇','入'],ans:0,why:'“勇”的部首是“力”部。'},
+  {q:'「诚」用部首查字法，应先查部首（ ）。',opts:['讠','成','诚','言'],ans:0,why:'“诚”的部首是“讠”（言字旁）部。'},
+  {q:'「实」用部首查字法，应先查部首（ ）。',opts:['宀','头','实','大'],ans:0,why:'“实”的部首是“宀”（宝盖头）部。'},
+  {q:'「静」用部首查字法，应先查部首（ ）。',opts:['青','静','争','月'],ans:0,why:'“静”的部首是“青”部。'},
+  {q:'「净」用部首查字法，应先查部首（ ）。',opts:['冫','争','净','水'],ans:0,why:'“净”的部首是“冫”（两点水）部。'},
+  {q:'「整」用部首查字法，应先查部首（ ）。',opts:['攵','正','整','文'],ans:0,why:'“整”的部首是“攵”（反文旁）部。'},
+  {q:'「暖」用部首查字法，应先查部首（ ）。',opts:['日','爰','暖','火'],ans:0,why:'“暖”的部首是“日”部。'},
+  {q:'「雷」用部首查字法，应先查部首（ ）。',opts:['雨','田','雷','电'],ans:0,why:'“雷”的部首是“雨”部。'},
+  {q:'「雪」用部首查字法，应先查部首（ ）。',opts:['雨','彐','雪','水'],ans:0,why:'“雪”的部首是“雨”部。'},
+  {q:'「湖」用部首查字法，应先查部首（ ）。',opts:['氵','胡','湖','水'],ans:0,why:'“湖”的部首是“氵”（三点水）部。'},
+  {q:'「海」用部首查字法，应先查部首（ ）。',opts:['氵','每','海','水'],ans:0,why:'“海”的部首是“氵”（三点水）部。'},
+  {q:'「虹」用部首查字法，应先查部首（ ）。',opts:['虫','工','虹','红'],ans:0,why:'“虹”的部首是“虫”部。'},
+  {q:'「阴」用部首查字法，应先查部首（ ）。',opts:['阝','月','阴','云'],ans:0,why:'“阴”的部首是“阝”（左耳旁）部。'},
+  {q:'「霜」用部首查字法，应先查部首（ ）。',opts:['雨','相','霜','露'],ans:0,why:'“霜”的部首是“雨”部。'},
+  {q:'「齐」用部首查字法，应先查部首（ ）。',opts:['齐','文','广','丷'],ans:0,why:'“齐”的部首本身就是“齐”部。'},
+  {"q":"「寒」的部首是（ ）。","opts":["宀","寒","冷","水"],"ans":0,"why":"“寒”部首是“宀”（宝盖头）。"},
+  {"q":"「暖」的部首是（ ）。","opts":["日","爰","暖","火"],"ans":0,"why":"“暖”左边是“日”（日字旁）。"},
+  {"q":"「勇」的部首是（ ）。","opts":["力","甬","勇","男"],"ans":0,"why":"“勇”下面是“力”部。"},
+  {"q":"「智」的部首是（ ）。","opts":["日","知","智","口"],"ans":0,"why":"“智”上面是“日”部。"},
+  {"q":"「慧」的部首是（ ）。","opts":["心","彗","慧","丰"],"ans":0,"why":"“慧”下面是“心”部。"},
+  {"q":"「勤」的部首是（ ）。","opts":["力","堇","勤","土"],"ans":0,"why":"“勤”左边是“力”部。"},
+  {"q":"「谦」的部首是（ ）。","opts":["讠","兼","谦","言"],"ans":0,"why":"“谦”左边是“讠”（言字旁）。"},
+  {"q":"「诚」的部首是（ ）。","opts":["讠","成","诚","言"],"ans":0,"why":"“诚”左边是“讠”（言字旁）。"},
+  {"q":"「信」的部首是（ ）。","opts":["亻","言","信","人"],"ans":0,"why":"“信”左边是“亻”（单人旁）。"},
+  {"q":"「净」的部首是（ ）。","opts":["冫","争","净","水"],"ans":0,"why":"“净”左边是“冫”（两点水）。"},
+  {"q":"「虚」的部首是（ ）。","opts":["虍","业","虚","虎"],"ans":0,"why":"“虚”上面是“虍”（虎字头）。"},
+  {"q":"「劳」的部首是（ ）。","opts":["力","艹","劳","心"],"ans":0,"why":"“劳”下面是“力”部。"},
+  {"q":"「敢」的部首是（ ）。","opts":["攵","甘","敢","文"],"ans":0,"why":"“敢”右边是“攵”（反文旁）。"}
+,
+  {"q":"「善」的部首是（ ）。","opts":["口","羊","善","言"],"ans":0,"why":"“善”部首是“口”部。"},
+  {"q":"「照」的部首是（ ）。","opts":["灬","昭","日","火"],"ans":0,"why":"“照”下面是“灬”（四点底）。"},
+  {"q":"「思」的部首是（ ）。","opts":["心","田","思","囗"],"ans":0,"why":"“思”下面是“心”部。"},
+  {"q":"「意」的部首是（ ）。","opts":["心","音","意","日"],"ans":0,"why":"“意”下面是“心”部。"},
+  {"q":"「落」的部首是（ ）。","opts":["艹","洛","落","氵"],"ans":0,"why":"“落”上面是“艹”（草字头）。"},
+  {"q":"「蓝」的部首是（ ）。","opts":["艹","监","蓝","皿"],"ans":0,"why":"“蓝”上面是“艹”（草字头）。"},
+  {"q":"「字」的部首是（ ）。","opts":["宀","子","字","汉"],"ans":0,"why":"“字”上面是“宀”（宝盖头）。"},
+  {"q":"「家」的部首是（ ）。","opts":["宀","豕","家","豭"],"ans":0,"why":"“家”上面是“宀”（宝盖头）。"},
+  {"q":"「宝」的部首是（ ）。","opts":["宀","玉","宝","贝"],"ans":0,"why":"“宝”上面是“宀”（宝盖头）。"},
+  {"q":"「题」的部首是（ ）。","opts":["页","是","题","日"],"ans":0,"why":"“题”右边是“页”部。"},
+  {"q":"「颜」的部首是（ ）。","opts":["页","彦","颜","文"],"ans":0,"why":"“颜”右边是“页”部。"},
+  {"q":"「眼」的部首是（ ）。","opts":["目","艮","眼","日"],"ans":0,"why":"“眼”左边是“目”（目字旁）。"},
+  {"q":"「空」的部首是（ ）。","opts":["穴","工","空","亏"],"ans":0,"why":"“空”上面是“穴”（穴字头）。"},
+  {"q":"「突」的部首是（ ）。","opts":["穴","犬","突","大"],"ans":0,"why":"“突”上面是“穴”（穴字头）。"},
+  {"q":"「筐」的部首是（ ）。","opts":["竹","匡","筐","王"],"ans":0,"why":"“筐”上面是“竹”（竹字头）。"},
+  {"q":"「鞋」的部首是（ ）。","opts":["革","圭","鞋","土"],"ans":0,"why":"“鞋”左边是“革”（革字旁）。"},
+  {"q":"「饭」的部首是（ ）。","opts":["饣","反","饭","食"],"ans":0,"why":"“饭”左边是“饣”（食字旁）。"},
+  {"q":"「飘」的部首是（ ）。","opts":["风","票","飘","示"],"ans":0,"why":"“飘”右边是“风”部。"}
+];/*opts-shuffle:QUIZ*/(function(){for(var i=0;i<QUIZ.length;i++){var it=QUIZ[i];if(!it||!it.opts||!it.opts.length)continue;var ok=it.opts[it.ans];for(var j=it.opts.length-1;j>0;j--){var r=Math.floor(Math.random()*(j+1));var t=it.opts[j];it.opts[j]=it.opts[r];it.opts[r]=t;}it.ans=it.opts.indexOf(ok);}})();
+;
+var CHILD='user', KEY='', store={};
+var TOTAL=0, score=0, answered=0, PASS_LINE=0.8;
+function getStore(){ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; } }
+function setStore(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
+function start(){ score=0; answered=0; setScreen('scrQuiz'); renderQuiz(); }
+function goMenu(){ setScreen('scrMenu'); }
+function setScreen(id){ ['scrMenu','scrQuiz','scrReport'].forEach(function(s){ document.getElementById(s).classList.toggle('on', s===id); }); }
+function speakZh(text){
+  if(!window.speechSynthesis){ if(window.toast) window.toast('当前浏览器不支持发音'); return; }
+  try{ speechSynthesis.cancel(); }catch(e){}
+  var u=new SpeechSynthesisUtterance(text);
+  u.lang='zh-CN'; u.rate=0.85; u.pitch=1;
+  var vs=speechSynthesis.getVoices()||[];
+  var zh=vs.filter(function(v){ return v.lang && /^zh[-_]/i.test(v.lang); });
+  if(zh.length){
+    var pick=zh.slice().sort(function(a,b){
+      function sc(v){ var n=(v.name||'').toLowerCase(), s=0;
+        if(/google|natural|neural/.test(n)) s+=5;
+        if(/xiaoxiao|xiaoIce|huihui|tingting|yaoyao|kangkang|mei-|taiwan|hongkong/i.test(n)) s+=3;
+        if(/microsoft/.test(n)) s+=2; return s; }
+      return sc(b)-sc(a);
+    })[0];
+    u.voice=pick;
+  }
+  window.__ttsUtt=u;
+  try{ speechSynthesis.resume(); }catch(e){}
+  var started=false; u.onstart=function(){started=true;};
+  var pt=setTimeout(function(){ if(!started && !speechSynthesis.speaking && window.toast) window.toast('点了没声音？检查：①设备音量 ②iPad 侧边静音键 ③系统语音朗读设置'); },3000);
+  u.onend=function(){ if(pt){clearTimeout(pt);pt=null;} };
+  u.onerror=function(){ if(pt){clearTimeout(pt);pt=null;} };
+  setTimeout(function(){ try{ speechSynthesis.speak(u); }catch(e){} },60);
+}
+
+function renderQuiz(){
+  var html='';
+  QUIZ.forEach(function(q,gi){
+    html+='<div class="q" id="q-'+gi+'">'+
+      '<div class="qt"><span class="qn">Q'+(gi+1)+'.</span>'+q.q+'<button class="spk" onclick="speakZh('+"'"+q.q+"'"+')" title="朗读题目">🔊</button></div><div class="opts">';
+    q.opts.forEach(function(o,oi){ html+='<div class="optrow"><button class="opt" id="opt-'+gi+'-'+oi+'" onclick="answer('+gi+','+oi+')">'+o+'</button>'+'<button class="spk" onclick="speakZh('+"'"+o+"'"+')" title="朗读">🔊</button></div>'; });
+    html+='</div><div class="why" id="why-'+gi+'"></div><div class="hw-slot" id="hw-'+gi+'"></div></div>';
+  });
+  document.getElementById('quizArea').innerHTML=html;
+  if(window.Handwrite){
+    QUIZ.forEach(function(q,gi){
+      var slot=document.getElementById('hw-'+gi);
+      var hw=Handwrite.create({revealText:String(q.opts[q.ans]), placeholder:'✍️ 用手写部首（如 '+q.opts[q.ans]+'）', onReveal:function(){ markHW(gi, TOTAL); }});
+      slot.appendChild(hw.el);
+    });
+  }
+  updateProg();
+  document.getElementById('finishBtn').style.display='none';
+}
+function markHW(gi, total){
+  var qEl=document.getElementById('q-'+gi);
+  if(!qEl || qEl.dataset.hw || qEl.classList.contains('done-ok') || qEl.classList.contains('done-no')) return;
+  qEl.dataset.hw='1';
+  answered++;
+  var w=document.getElementById('why-'+gi); if(w){ w.textContent='解析：'+QUIZ[gi].why; w.classList.add('on'); }
+  updateProg();
+  if(answered>=total){ document.getElementById('finishBtn').style.display='block'; }
+}
+function answer(gi,oi){
+  var q=QUIZ[gi];
+  var qEl=document.getElementById('q-'+gi);
+  if(qEl.dataset.hw) return;
+  if(qEl.classList.contains('done-ok')||qEl.classList.contains('done-no')) return;
+  answered++;
+  var ok=(oi===q.ans);
+  if(ok) score++;
+  q.opts.forEach(function(o,bi){
+    var b=document.getElementById('opt-'+gi+'-'+bi);
+    b.classList.add('dim');
+    if(bi===q.ans) b.classList.add('ok');
+    if(bi===oi && !ok) b.classList.add('no');
+  });
+  qEl.classList.add(ok?'done-ok':'done-no');
+  var w=document.getElementById('why-'+gi);
+  w.textContent='解析：'+q.why; w.classList.add('on');
+  updateProg();
+  if(answered>=TOTAL){ document.getElementById('finishBtn').style.display='block'; }
+}
+function updateProg(){
+  var pct=Math.round(answered/TOTAL*100);
+  document.getElementById('progBar').style.width=pct+'%';
+  document.getElementById('progTxt').textContent='已答 '+answered+' / '+TOTAL;
+}
+function finish(){
+  setScreen('scrReport');
+  var pct=TOTAL?Math.round(score/TOTAL*100):0;
+  var stars=pct>=90?3:pct>=PASS_LINE*100?2:pct>=60?1:0;
+  document.getElementById('rStars').textContent=stars>0?'⭐'.repeat(stars):'—';
+  document.getElementById('rScore').textContent=score+' / '+TOTAL;
+  document.getElementById('rPct').textContent='正确率 '+pct+'%';
+  var pass=pct>=PASS_LINE*100;
+  document.getElementById('rPass').innerHTML=pass?'<span class="pass">🎊 通关成功！达到 '+PASS_LINE*100+'% 过关线</span>':'<span class="fail">💪 还差一点，再练一遍就通关啦</span>';
+  store=getStore();
+  if(score>(store.best||0)){ store.best=score; setStore(store); }
+  document.getElementById('bestNum').textContent=store.best||0;
+  if(pass) celebrate();
+}
+function resetBest(){ if(confirm('确定清空最佳对题记录？')){ setStore({best:0}); document.getElementById('bestNum').textContent='0'; } }
+function celebrate(){
+  var emo=['🎉','✨','🔍','🌟','⭐','💡','📚','📕'];
+  for(var k=0;k<26;k++){ (function(){ var c=document.createElement('div'); c.className='confetti'; c.textContent=emo[Math.floor(Math.random()*emo.length)]; c.style.left=Math.random()*100+'vw'; c.style.animationDuration=(2+Math.random()*2)+'s'; document.body.appendChild(c); setTimeout(function(){ c.remove(); },4200); })(); }
+  document.getElementById('celeb').style.display='flex';
+}
+function closeCeleb(){ document.getElementById('celeb').style.display='none'; }
+(function(){
+  TOTAL=QUIZ.length;
+  document.getElementById('totalNum').textContent=TOTAL;
+  var s=Portal.getSession();
+  CHILD=(s&&s.child)?s.child:'user';
+  KEY='chinese-dict-'+CHILD;
+  store=getStore();
+  document.getElementById('bestNum').textContent=store.best||0;
+  var d=new Date();
+  var wk=['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+  document.getElementById('dateStr').textContent=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+wk;
+})();
+</script>
+<script src="handwrite.js"></script>
+</body></html>

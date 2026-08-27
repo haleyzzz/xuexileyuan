@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔬 科学探究记录</title>
+<style>
+  :root{
+    --green:#06d6a0; --purple:#b292ff; --blue:#4cc9f0; --orange:#ff9f1c;
+    --pink:#f72585; --ink:#2b3a4a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(135deg,#fff3e6,#eafff7);color:var(--ink);
+    padding:18px;max-width:560px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  header{background:linear-gradient(120deg,var(--orange),var(--green));color:#fff;
+    border-radius:24px;padding:20px;text-align:center;box-shadow:0 8px 22px rgba(255,159,28,.35)}
+  header h1{font-size:22px}
+  .date{font-size:14px;opacity:.95;margin-top:4px}
+  .stats{display:flex;gap:10px;margin:14px 0}
+  .stat{flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center;
+    box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .stat .num{font-size:24px;font-weight:800;color:var(--orange)}
+  .stat .lbl{font-size:12px;color:#999;margin-top:2px}
+  h2{font-size:17px;margin:18px 4px 10px;display:flex;align-items:center;gap:8px}
+
+  .items{display:flex;flex-direction:column;gap:12px}
+  .item{background:#fff;border-radius:20px;box-shadow:0 4px 12px rgba(0,0,0,.06);
+    overflow:hidden;border:3px solid transparent;transition:border-color .2s}
+  .item.done{border-color:var(--green)}
+  .ifront{padding:15px 16px;display:flex;align-items:center;gap:14px;cursor:pointer}
+  .ifront .iemoji{font-size:32px;flex-shrink:0}
+  .ifront .itxt{flex:1}
+  .ifront .iname{font-size:16px;font-weight:800}
+  .ifront .ihint{font-size:12px;color:#aaa;margin-top:3px}
+  .ifront .iarrow{font-size:20px;color:var(--orange);flex-shrink:0}
+  .iback{padding:4px 16px 14px}
+  .iback .q{font-size:15px;font-weight:800;color:var(--orange);margin:6px 0 8px}
+  .iback .guide{font-size:13px;color:#666;line-height:1.7;background:#fff6ec;
+    border-radius:12px;padding:10px;margin-bottom:10px}
+  .iback .guide b{color:var(--ink)}
+  .iback label{display:block;font-size:13px;font-weight:700;margin:8px 2px 4px;color:#557}
+  .iback textarea{width:100%;border:1.5px solid #ffe2c2;border-radius:12px;padding:10px;
+    font-size:14px;font-family:inherit;resize:vertical;min-height:54px;color:var(--ink)}
+  .iback textarea:focus{out-line:none;border-color:var(--orange)}
+
+  /* 多媒体区 */
+  .media{border:1.5px dashed #ffd1a3;border-radius:14px;padding:10px;margin:10px 0;background:#fffaf3}
+  .media .mtitle{font-size:13px;font-weight:700;color:var(--orange);margin-bottom:8px}
+  .upload-btn{display:inline-block;background:var(--blue);color:#fff;border:none;border-radius:12px;
+    padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-right:8px}
+  .rec-btn{display:inline-block;background:var(--pink);color:#fff;border:none;border-radius:12px;
+    padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-right:8px}
+  .rec-btn.recording{background:#e22;animation:blink 1s infinite}
+  @keyframes blink{50%{opacity:.55}}
+  .rec-tip{font-size:11px;color:#aaa;margin-top:6px}
+  .previews{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .pwrap{position:relative}
+  .pwrap img{width:74px;height:74px;object-fit:cover;border-radius:10px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.12)}
+  .pwrap .pd{position:absolute;right:-6px;top:-6px;width:20px;height:20px;border-radius:50%;
+    background:#c33;color:#fff;border:none;font-size:12px;line-height:20px;cursor:pointer;font-family:inherit}
+  .voice-tag{display:inline-flex;align-items:center;gap:6px;background:#fdeaff;border:1.5px solid #e9b3ff;
+    border-radius:12px;padding:6px 10px;margin-top:6px;font-size:13px;color:#a23}
+  .voice-tag button{border:none;background:#a23;color:#fff;border-radius:8px;padding:3px 8px;cursor:pointer;font-family:inherit}
+
+  .iback .irow{display:flex;gap:10px;margin-top:12px}
+  .iback .irow button{flex:1;border:none;border-radius:14px;padding:11px;font-size:14px;
+    font-family:inherit;cursor:pointer;font-weight:700;color:#fff}
+  .b-save{background:var(--green)}
+  .b-clear{background:#cdd}
+  .recnote{font-size:12px;color:#999;margin-top:6px;padding:0 4px;line-height:1.5}
+
+  .progress{height:14px;background:#ffe6cc;border-radius:10px;overflow:hidden;margin:14px 0 4px}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--orange),var(--green));
+    border-radius:10px;transition:width .4s}
+  .prog-txt{font-size:13px;color:#888;text-align:center}
+
+  /* 探究日记 */
+  .diary{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+  .drec{background:#fff;border-radius:16px;box-shadow:0 3px 10px rgba(0,0,0,.05);
+    padding:12px 14px;border-left:5px solid var(--orange)}
+  .drec .dh{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .drec .dh .de{font-size:22px}
+  .drec .dh .dn{font-size:14px;font-weight:800;flex:1}
+  .drec .dh .dd{font-size:11px;color:#aaa}
+  .drec .dh .ddel{border:none;background:none;color:#c99;font-size:16px;cursor:pointer;font-family:inherit}
+  .drec .dr{font-size:13px;line-height:1.6;color:#556;margin:2px 0}
+  .drec .dr b{color:var(--ink)}
+  .drec .dphotos{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+  .drec .dphotos img{width:64px;height:64px;object-fit:cover;border-radius:9px;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,.1)}
+  .drec .dvoice{margin:6px 0}
+  .empty{font-size:13px;color:#aaa;text-align:center;padding:14px}
+
+  .reset{background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;
+    text-decoration:underline;display:block;margin:14px auto 0;font-family:inherit}
+  .tip{font-size:12px;color:#aaa;text-align:center;margin-top:14px;line-height:1.6}
+  .confetti{position:fixed;top:-40px;font-size:24px;pointer-events:none;z-index:99;
+    animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:.2}}
+  .celebrate{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;
+    align-items:center;justify-content:center;z-index:100}
+  .celebrate .box2{background:#fff;border-radius:24px;padding:28px 34px;text-align:center;animation:pop .4s;max-width:320px}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate h3{font-size:24px;margin-bottom:8px}
+  .celebrate p{color:#888;font-size:14px;line-height:1.6}
+  .celebrate button{margin-top:16px;border:none;background:var(--orange);color:#fff;
+    padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+  /* 图片放大遮罩 */
+  .imgmodal{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;
+    align-items:center;justify-content:center;z-index:120;flex-direction:column;padding:20px}
+  .imgmodal img{max-width:100%;max-height:80vh;border-radius:12px}
+  .imgmodal .close{margin-top:14px;background:#fff;color:#333;border:none;border-radius:12px;
+    padding:9px 22px;font-size:15px;cursor:pointer;font-family:inherit;font-weight:700}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔬 科学探究记录</h1>
+  <div class="date" id="dateStr">今天</div>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="num" id="doneNum">0</div><div class="lbl">🧪 已探究</div></div>
+  <div class="stat"><div class="num" id="recNum">0</div><div class="lbl">📔 记录条数</div></div>
+  <div class="stat"><div class="num" id="pctNum">0%</div><div class="lbl">🌿 探究度</div></div>
+</div>
+
+<h2>🌟 选一个主题来探究</h2>
+<div class="items" id="items"></div>
+
+<div class="progress"><i id="progBar"></i></div>
+<div class="prog-txt" id="progTxt">完成 0 / 0 个主题</div>
+
+<h2>📔 我的探究日记</h2>
+<div class="diary" id="diary"></div>
+
+<button class="reset" onclick="resetAll()">↺ 清空我的探究日记</button>
+<div class="tip">点主题卡看「问题·材料·步骤」，填好猜想/发现/结论，还能<b>拍张照片</b>或<b>录段语音</b>留下记录。<br>数据按小朋友分别保存，不会上传。</div>
+
+<div class="celebrate" id="celeb">
+  <div class="box2">
+    <h3>🎉 小小科学家！</h3>
+    <p>所有探究主题都留下记录啦，你真的会做实验、会思考！</p>
+    <button onclick="closeCeleb()">继续探究 🔬</button>
+  </div>
+</div>
+
+<div class="imgmodal" id="imgModal" onclick="closeImg()">
+  <img id="imgBig" src="" alt="">
+  <button class="close" onclick="closeImg()">关闭 ✕</button>
+</div>
+
+<script>
+var TOPICS=[
+  {id:'seed',emoji:'🌱',name:'种子发芽需要什么？',
+    mat:'绿豆、棉花、水、两个小盘',
+    step:'一盘每天浇水放阳台，一盘不浇水；每天去看一次，记下来。',
+    think:'哪盘先冒出小白芽？没有水的小盘会怎样？'},
+  {id:'sink',emoji:'💧',name:'什么会沉下水？',
+    mat:'一盆水、橡皮、木块、石子、塑料瓶盖',
+    step:'把每件东西轻轻放进水里，看看是沉下去还是浮起来。',
+    think:'沉下去的东西摸起来有什么共同点？'},
+  {id:'bridge',emoji:'🌉',name:'纸桥能承重多少？',
+    mat:'一张纸、两本书、几枚硬币',
+    step:'两本书隔开一点，把纸搭成桥，一枚枚放硬币直到塌掉。',
+    think:'把纸折成波浪形，能放更多硬币吗？'},
+  {id:'shadow',emoji:'🌗',name:'影子怎么变长变短？',
+    mat:'手电筒、小玩偶、一面白墙',
+    step:'玩偶放在墙前，手电筒远近移动，看墙上的影子。',
+    think:'手电筒离玩偶近，影子是大还是小？'},
+  {id:'magnet',emoji:'🧲',name:'磁铁能吸什么？',
+    mat:'磁铁、回形针、硬币、橡皮、纸片',
+    step:'用磁铁挨个去碰这些东西，看哪个被吸住。',
+    think:'被吸住的东西，是用什么做的？'},
+  {id:'ice',emoji:'🧊',name:'冰怎么变成水？',
+    mat:'两块冰块、两个杯子、一点温水',
+    step:'一块放室温，一块放温水里，计时看哪块先化完。',
+    think:'温水里的冰化得快还是慢？为什么？'},
+  {id:'bubble',emoji:'🫧',name:'怎样吹出大泡泡？',
+    mat:'洗洁精、水、吸管、一小勺白糖',
+    step:'调不同比例的泡泡水，用吸管吹，比一比谁的大。',
+    think:'加了一点白糖的泡泡水，吹得更大吗？'},
+  {id:'plant',emoji:'🌿',name:'植物会朝着光长吗？',
+    mat:'小豆苗、一个鞋盒、剪刀',
+    step:'在鞋盒侧面开个小窗，把苗放进去盖好，几天后看它往哪边歪。',
+    think:'苗的叶子朝着小窗，还是朝着暗的那边？'},
+  {id:'sound',emoji:'🔔',name:'声音能穿过什么？',
+    mat:'响着的闹钟、木桌、枕头、铁盒',
+    step:'让闹钟响着，分别隔木桌、枕头、铁盒去听，比一比响不响。',
+    think:'哪种东西传声音最清楚？'},
+  {id:'color',emoji:'🌈',name:'颜色怎么混出来？',
+    mat:'红、黄、蓝三杯有色水、透明杯',
+    step:'把两种颜色两两倒在一起，看看变成了什么新颜色。',
+    think:'黄加蓝变什么色？红加黄呢？'},
+  {id:'salt',emoji:'🧂',name:'盐去哪儿了？',
+    mat:'盐、温水、透明杯、搅拌棒',
+    step:'一勺盐放进温水，搅拌，看盐粒消失；再把这杯水放阳台晒几天。',
+    think:'盐真的没了吗？晒过之后杯底会出现什么？'},
+  {id:'volcano',emoji:'🌋',name:'小苏打火山喷发',
+    mat:'小苏打、醋、洗洁精、小瓶子',
+    step:'瓶里放小苏打和一点洗洁精，倒进醋，看泡沫涌出来。',
+    think:'为什么倒进醋就会冒出那么多泡泡？'},
+  {id:'elec',emoji:'⚡',name:'摩擦能起电吗？',
+    mat:'气球、碎纸片、头发',
+    step:'气球在头发上快速摩擦几下，再去靠近小纸片。',
+    think:'纸片被吸起来，是因为气球带了什么？'},
+  {id:'rainbow',emoji:'🌧️',name:'自己做一道彩虹',
+    mat:'小镜子、水盆、手电筒、白纸',
+    step:'镜子斜放在水盆里，用手电筒照镜面，把光投到白纸上。',
+    think:'白光里藏了几种颜色？彩虹是怎么分开的？'},
+  {id:'candle',emoji:'🕯️',name:'蜡烛为什么会熄灭？',
+    mat:'蜡烛、盘子、玻璃杯、一点水',
+    step:'点燃蜡烛，用杯子罩住它，看火苗和杯里的水位。',
+    think:'火苗灭了，杯里的水为什么往上涨了一点？'},
+  {id:'sugar',emoji:'🍬',name:'糖溶解得快慢',
+    mat:'方糖、糖粉、温水、冷水',
+    step:'把方糖和糖粉分别放进温水和冷水，比谁先化完。',
+    think:'什么温度、什么形状让糖化得最快？'},
+  {id:'leaves',emoji:'🍂',name:'叶子会出汗吗？',
+    mat:'带叶的树枝、透明塑料袋、橡皮筋',
+    step:'把塑料袋套在几片叶子上扎紧，放到太阳下晒一上午。',
+    think:'袋子里出现了什么？水是从哪里来的？'},
+  {id:'mirror',emoji:'🪞',name:'镜子里有几个我？',
+    mat:'两面小镜子',
+    step:'把两面镜子立成夹角，从缝隙里看镜子，慢慢把夹角变小。',
+    think:'夹角越小，镜子里出现了几个"我"？'},
+  {id:'spin',emoji:'🌀',name:'怎么转得最久？',mat:'陀螺、光滑桌面、粗糙地面',step:'在光滑桌上让陀螺转计时，再到粗糙地面转一次。',think:'光滑面转得久还是粗糙面转得久？为什么？'},
+  {id:'absorb',emoji:'🧽',name:'谁吸水更多？',mat:'海绵、纸巾、布、塑料',step:'四种材料各剪一块，同时浸入水中，再拿出看谁最湿。',think:'哪种吸水最多？塑料和海绵差别在哪？'},
+  {id:'warm',emoji:'☀️',name:'颜色与吸热',mat:'黑纸、白纸、两块冰',step:'黑纸和白纸各包一块同样大的冰，放太阳下看哪块先化。',think:'哪种颜色的纸里冰化得快？说明什么？'},
+  {id:'lever',emoji:'⚖️',name:'撬动重物',mat:'长尺、橡皮、厚书',step:'橡皮垫尺下当支点，一端压住书，手压另一端把书抬起。',think:'支点离书近时省力还是远时省力？'},
+  {id:'filter',emoji:'☕',name:'过滤脏水',mat:'脏泥水、棉花、沙子、漏斗',step:'漏斗里依次铺棉花和沙子，把泥水倒进去看流出的水。',think:'流出的水变清了吗？能直接喝吗？为什么？'},
+  {id:'echo',emoji:'📣',name:'回声在哪里？',mat:'一面大墙、空旷地',step:'面对大墙喊一声听回声，再到空旷操场喊一声比较。',think:'为什么大墙前有回声，空旷地没有？'},
+  {id:'bendl',emoji:'🌊',name:'让光拐弯',mat:'透明塑料瓶、水、激光笔（大人陪同）',step:'瓶装满水在侧面扎小孔让水流出，用激光照进瓶顶。',think:'光跟着水流出来了吗？光在哪里拐的弯？'},
+  {id:'phone',emoji:'📞',name:'纸杯电话',mat:'两个纸杯、长棉线',step:'两杯底用线连起绷紧，一人对杯说话、一人贴耳听。',think:'声音是怎么沿线传过去的？线松了还行吗？'}
+];
+
+var CHILD, store={records:[]}, openId=null;
+var KEY='sci-inquiry-'+ (CHILD||'');
+
+function load(){
+  CHILD = (window.Portal && Portal.getSession && Portal.getSession().child) || 'child';
+  KEY = 'sci-inquiry-'+CHILD;
+  try{ var s=localStorage.getItem(KEY); if(s) store=JSON.parse(s); }catch(e){}
+  if(!store.records) store.records=[];
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){ alert('存储空间满了，照片太多啦，删掉一些再试～'); } }
+
+function init(){
+  load();
+  var d=new Date();
+  var wk=['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+  document.getElementById('dateStr').textContent=(d.getMonth()+1)+'月'+d.getDate()+'日 '+wk;
+  renderTopics(); renderDiary(); renderStats();
+}
+
+function doneTopics(){
+  var set={}; store.records.forEach(function(r){ set[r.topicId]=1; });
+  return Object.keys(set).length;
+}
+function renderStats(){
+  var dn=doneTopics(), tot=TOPICS.length, rn=store.records.length;
+  document.getElementById('doneNum').textContent=dn;
+  document.getElementById('recNum').textContent=rn;
+  document.getElementById('pctNum').textContent=Math.round(dn/tot*100)+'%';
+  document.getElementById('progBar').style.width=(dn/tot*100)+'%';
+  document.getElementById('progTxt').textContent='完成 '+dn+' / '+tot+' 个主题';
+}
+
+function renderTopics(){
+  var html='';
+  TOPICS.forEach(function(t){
+    var has=store.records.some(function(r){return r.topicId===t.id;});
+    html+='<div class="item'+(has?' done':'')+'" id="it-'+t.id+'">'+
+      '<div class="ifront" onclick="toggle(\''+t.id+'\')">'+
+        '<div class="iemoji">'+t.emoji+'</div>'+
+        '<div class="itxt"><div class="iname">'+esc(t.name)+'</div>'+
+        '<div class="ihint">'+(has?'已留下记录 ✅':'点开做实验、写记录')+'</div></div>'+
+        '<div class="iarrow">'+(openId===t.id?'▲':'▶')+'</div>'+
+      '</div>'+
+      (openId===t.id? backHtml(t):'')+
+    '</div>';
+  });
+  document.getElementById('items').innerHTML=html;
+  if(openId) requestAnimationFrame(initPen);
+}
+function backHtml(t){
+  var photos=(openDraft&&openDraft.photos)||[];
+  var voice=(openDraft&&openDraft.voice)||null;
+  var pv='';
+  photos.forEach(function(p,i){
+    pv+='<div class="pwrap"><img src="'+p+'" onclick="showImg(\''+p.replace(/'/g,"\\'")+'\')"><button class="pd" onclick="delPhoto('+i+')">✕</button></div>';
+  });
+  var vt = voice ? '<div class="voice-tag">🎤 已录语音 <button onclick="playVoice(\''+voice.replace(/'/g,"\\'")+'\')">▶ 试听</button> <button onclick="delVoice()">删</button></div>' : '';
+  var recState = (recTopicId===t.id && recording)? ' recording':'';
+  return '<div class="iback">'+
+    '<div class="q">❓ '+esc(t.name)+'</div>'+
+    '<div class="guide"><b>🧰 准备材料：</b>'+esc(t.mat)+'<br>'+
+      '<b>🪜 怎么做：</b>'+esc(t.step)+'<br>'+
+      '<b>💡 引导思考：</b>'+esc(t.think)+'</div>'+
+    '<label>🌟 我的猜想</label>'+
+    '<textarea id="tg" placeholder="你觉得会发生什么？">'+draftVal(t.id,'guess')+'</textarea>'+
+    '<label>👀 我观察到的</label>'+
+    '<textarea id="ts" placeholder="实验里你看到了什么？">'+draftVal(t.id,'see')+'</textarea>'+
+    '<label>🧠 我的结论</label>'+
+    '<textarea id="tc" placeholder="你发现了什么道理？">'+draftVal(t.id,'concl')+'</textarea>'+
+    '<div class="media">'+
+      '<div class="mtitle">📷 拍张照片 / 🎤 录段语音（选填）</div>'+
+      '<label class="upload-btn">📷 选照片<input type="file" accept="image/*" multiple id="tphoto" style="display:none" onchange="onPick(event)"></label>'+
+      '<button class="rec-btn'+recState+'" id="trec" onclick="'+(recording? 'stopRec(\''+t.id+'\')':'startRec(\''+t.id+'\')')+'">'+(recording&&recTopicId===t.id?'⏹ 停止录音':'🎤 录语音')+'</button>'+
+      '<div class="rec-tip">照片会自动压缩保存；语音最多 30 秒。都可以不填。</div>'+
+      '<div class="mtitle" style="margin-top:10px">🖌 画一张示意图（选填）</div>'+
+      '<div id="penSlot"></div>'+
+      '<div class="pp-tools"><button class="pp-btn save" onclick="savePen()">📥 保存笔迹到记录</button></div>'+
+      '<div class="rec-tip">画完点「保存笔迹到记录」，会像照片一样存进这条记录；图（照片+笔迹）最多共 6 张。</div>'+
+      '<div class="previews" id="tpreviews">'+pv+'</div>'+
+      vt+
+    '</div>'+
+    '<div class="irow">'+
+      '<button class="b-save" onclick="saveRec(\''+t.id+'\')">💾 保存这条记录</button>'+
+      '<button class="b-clear" onclick="clearDraft(\''+t.id+'\')">🧹 清空</button>'+
+    '</div>'+
+    '<div class="recnote">提示：猜想、发现、结论都填一点，保存后会出现在下方「探究日记」里。有照片/语音会一起存进去。</div>'+
+  '</div>';
+}
+function draftVal(topicId,key){
+  if(!openDraft||openDraft.topicId!==topicId) return '';
+  return esc(openDraft[key]||'');
+}
+var openDraft=null;
+var recTopicId=null, recording=false;
+var _pen=null;
+function initPen(){
+  var slot=document.getElementById('penSlot'); if(!slot) return;
+  if(!window.PenPaint){ return; }
+  _pen=PenPaint.create({height:180, placeholder:'🖌 画实验装置 / 你看到的现象'});
+  slot.appendChild(_pen.el);
+}
+function savePen(){
+  if(!openId || !_pen || _pen.isEmpty()){ alert('先在画板上画点什么吧～'); return; }
+  if(openDraft.photos.length>=6){ alert('每个主题最多存 6 张图（照片 + 笔迹）哦～'); return; }
+  openDraft.photos.push(_pen.toDataURL());
+  renderTopics();
+}
+
+function toggle(id){
+  if(openId===id){ openId=null; openDraft=null; }
+  else {
+    openId=id;
+    var rec=store.records.filter(function(r){return r.topicId===id;}).pop();
+    openDraft= rec? {topicId:id,guess:rec.guess||'',see:rec.see||'',concl:rec.concl||'',photos:(rec.photos||[]).slice(),voice:rec.voice||null}
+                 : {topicId:id,guess:'',see:'',concl:'',photos:[],voice:null};
+  }
+  renderTopics();
+}
+function syncDraft(){
+  if(!openDraft) return;
+  var g=document.getElementById('tg'), s=document.getElementById('ts'), c=document.getElementById('tc');
+  if(g) openDraft.guess=g.value; if(s) openDraft.see=s.value; if(c) openDraft.concl=c.value;
+}
+function clearDraft(id){
+  syncDraft();
+  openDraft={topicId:id,guess:'',see:'',concl:'',photos:[],voice:null};
+  renderTopics();
+}
+function saveRec(id){
+  syncDraft();
+  var g=openDraft.guess.trim(), s=openDraft.see.trim(), c=openDraft.concl.trim();
+  if(!g && !s && !c && !(openDraft.photos&&openDraft.photos.length) && !openDraft.voice){
+    alert('先写一点猜想、发现或结论，或拍张照片/录段语音吧～'); return;
+  }
+  var t=TOPICS.filter(function(x){return x.id===id;})[0];
+  store.records.push({topicId:id, topicName:t.name, emoji:t.emoji, guess:g, see:s, concl:c,
+    photos:(openDraft.photos||[]).slice(), voice:openDraft.voice||null, ts:Date.now()});
+  save();
+  renderTopics(); renderDiary(); renderStats();
+  if(doneTopics()===TOPICS.length) celebrate();
+  else confetti();
+}
+
+/* 图片：选择 -> 压缩 -> 存草稿 */
+function onPick(ev){
+  if(!openDraft) return;
+  var files=ev.target.files||[];
+  var left=6-((openDraft.photos||[]).length);
+  var n=Math.min(files.length, Math.max(0,left));
+  if(left<=0){ alert('每个主题最多存 6 张照片哦～'); }
+  var pending=n;
+  if(pending===0) return;
+  for(var i=0;i<n;i++){
+    compressImg(files[i], function(b64){
+      if(b64){ openDraft.photos.push(b64); }
+      pending--;
+      if(pending===0){ renderTopics(); }
+    });
+  }
+  ev.target.value='';
+}
+function compressImg(file, cb){
+  if(!file || !/^image\//.test(file.type)){ cb(null); return; }
+  var reader=new FileReader();
+  reader.onload=function(){
+    var img=new Image();
+    img.onload=function(){
+      var max=900, w=img.width, h=img.height;
+      if(w>max||h>max){ var r=Math.min(max/w,max/h); w=Math.round(w*r); h=Math.round(h*r); }
+      try{
+        var cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+        cv.getContext('2d').drawImage(img,0,0,w,h);
+        cb(cv.toDataURL('image/jpeg',0.72));
+      }catch(e){ cb(null); }
+    };
+    img.onerror=function(){ cb(null); };
+    img.src=reader.result;
+  };
+  reader.onerror=function(){ cb(null); };
+  reader.readAsDataURL(file);
+}
+function delPhoto(i){
+  if(!openDraft||!openDraft.photos) return;
+  openDraft.photos.splice(i,1); renderTopics();
+}
+
+/* 语音：MediaRecorder 录制 -> base64 */
+var mediaRec=null, recChunks=[], recStream=null, recTimer=null;
+function canRecord(){ return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder); }
+function startRec(topicId){
+  if(!openDraft||openDraft.topicId!==topicId) return;
+  if(!canRecord()){ alert('当前浏览器不支持录音（需 https 或较新手机）'); return; }
+  recTopicId=topicId;
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(st){
+    recStream=st; recChunks=[];
+    var opt={}; try{ if(MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm')) opt.mimeType='audio/webm'; }catch(e){}
+    mediaRec=new MediaRecorder(st,opt);
+    mediaRec.ondataavailable=function(e){ if(e.data&&e.data.size) recChunks.push(e.data); };
+    mediaRec.onstop=function(){
+      var blob=new Blob(recChunks,{type:mediaRec.mimeType||'audio/webm'});
+      var rd=new FileReader();
+      rd.onload=function(){ openDraft.voice=rd.result; recording=false; renderTopics(); };
+      rd.readAsDataURL(blob);
+      if(recStream) recStream.getTracks().forEach(function(t){t.stop();});
+    };
+    mediaRec.start();
+    recording=true; renderTopics();
+    recTimer=setTimeout(function(){ if(mediaRec&&mediaRec.state==='recording') stopRec(topicId); }, 30000);
+  }).catch(function(){ alert('无法访问麦克风，请检查浏览器权限'); recording=false; });
+}
+function stopRec(topicId){
+  if(recTimer){ clearTimeout(recTimer); recTimer=null; }
+  if(mediaRec&&mediaRec.state==='recording'){ mediaRec.stop(); }
+  else { recording=false; renderTopics(); }
+}
+function delVoice(){
+  if(!openDraft) return;
+  openDraft.voice=null; recording=false; renderTopics();
+}
+function playVoice(src){ var a=new Audio(src); a.play(); }
+
+/* 图片放大 */
+function showImg(src){ document.getElementById('imgBig').src=src; document.getElementById('imgModal').style.display='flex'; }
+function closeImg(){ document.getElementById('imgModal').style.display='none'; }
+
+function renderDiary(){
+  var box=document.getElementById('diary');
+  if(!store.records.length){ box.innerHTML='<div class="empty">还没有记录，去上面选个主题做实验吧 🔬</div>'; return; }
+  var arr=store.records.slice().sort(function(a,b){return b.ts-a.ts;});
+  var html='';
+  arr.forEach(function(r,idx){
+    var realIdx=store.records.indexOf(r);
+    var photos=(r.photos||[]);
+    var pv='';
+    photos.forEach(function(p){ pv+='<img src="'+p+'" onclick="showImg(\''+p.replace(/'/g,"\\'")+'\')">'; });
+    var vv = r.voice ? '<div class="dvoice"><audio controls src="'+r.voice+'"></audio></div>' : '';
+    html+='<div class="drec">'+
+      '<div class="dh"><span class="de">'+r.emoji+'</span>'+
+        '<span class="dn">'+esc(r.topicName)+'</span>'+
+        '<span class="dd">'+fmt(r.ts)+'</span>'+
+        '<button class="ddel" onclick="delRec('+realIdx+')">✕</button></div>'+
+      (r.guess?'<div class="dr"><b>🌟 猜想：</b>'+esc(r.guess)+'</div>':'')+
+      (r.see?'<div class="dr"><b>👀 发现：</b>'+esc(r.see)+'</div>':'')+
+      (r.concl?'<div class="dr"><b>🧠 结论：</b>'+esc(r.concl)+'</div>':'')+
+      (pv?'<div class="dphotos">'+pv+'</div>':'')+
+      vv+
+    '</div>';
+  });
+  box.innerHTML=html;
+}
+function delRec(i){
+  if(!confirm('删除这条探究记录？')) return;
+  store.records.splice(i,1); save();
+  renderTopics(); renderDiary(); renderStats();
+}
+function fmt(ts){
+  var d=new Date(ts);
+  return (d.getMonth()+1)+'/'+d.getDate()+' '+(d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();
+}
+
+function resetAll(){
+  if(!confirm('清空「'+CHILD+'」的所有探究日记？此操作不可恢复。')) return;
+  store={records:[]}; save(); openId=null; openDraft=null; recording=false; recTopicId=null;
+  renderTopics(); renderDiary(); renderStats();
+}
+
+/* 撒花 */
+function confetti(){
+  var emojis=['🎉','🔬','✨','🌟','💡','🧪','🌈','⭐'];
+  for(var i=0;i<24;i++){
+    (function(i){
+      var s=document.createElement('div');
+      s.className='confetti'; s.textContent=emojis[i%emojis.length];
+      s.style.left=(Math.random()*100)+'vw';
+      s.style.animationDuration=(1.6+Math.random()*1.4)+'s';
+      document.body.appendChild(s);
+      setTimeout(function(){ s.remove(); },3200);
+    })(i);
+  }
+}
+function celebrate(){ document.getElementById('celeb').style.display='flex'; confetti(); }
+function closeCeleb(){ document.getElementById('celeb').style.display='none'; }
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+init();
+</script>
+<script src="penpaint.js"></script>
+</body>
+</html>

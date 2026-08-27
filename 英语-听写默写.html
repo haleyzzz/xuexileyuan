@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>英语听写默写</title>
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<script src="util.js"></script>
+<script src="speech.js"></script>
+<style>
+  :root{ --c1:#3b82f6; --c2:#22c55e; --bg:#eef4ff; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:#1f2d3d;padding:14px 14px 40px}
+  h1{font-size:20px;margin:4px 2px 2px}
+  .sub{color:#7a8aa0;font-size:13px;margin:0 2px 12px}
+  .screen{display:none}
+  .screen.on{display:block}
+  .tip{background:#fff;border-radius:14px;padding:10px 12px;font-size:13px;color:#5a6b80;margin:0 0 12px;line-height:1.6}
+  .btn{display:block;width:100%;border:none;border-radius:16px;padding:14px;font-size:16px;font-family:inherit;cursor:pointer;font-weight:800;color:#fff;background:var(--c1);margin-top:8px}
+  .btn.sec{background:#fff;color:var(--c1);border:2px solid var(--c1)}
+  .btn.green{background:var(--c2)}
+  .btn:active{transform:scale(.98)}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .row .btn{flex:1}
+  /* tab */
+  .tabs{display:flex;gap:8px;margin:0 0 12px}
+  .tabs .tab{flex:1;text-align:center;padding:10px;border-radius:14px;background:#fff;color:#7a8aa0;font-weight:800;font-size:14px;cursor:pointer;border:2px solid transparent}
+  .tabs .tab.on{color:var(--c1);border-color:var(--c1);background:#eaf1ff}
+  /* chips */
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+  .chip{padding:7px 12px;border-radius:20px;background:#fff;color:#5a6b80;font-size:13px;font-weight:700;cursor:pointer;border:2px solid transparent}
+  .chip.on{color:#fff;background:var(--c1);border-color:var(--c1)}
+  /* card */
+  .card{background:#fff;border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(30,60,120,.06)}
+  .ct{font-size:16px;font-weight:800}
+  .cd{font-size:13px;color:#8a99ad;margin-top:2px}
+  .cen{font-size:22px;font-weight:800;color:var(--c1)}
+  .enbox{font-size:26px;font-weight:800;letter-spacing:1px;color:#1f2d3d;margin:6px 0}
+  .zhbox{font-size:16px;color:#5a6b80;margin:4px 0 10px}
+  .hint{font-size:12px;color:#9aa9bd;margin-top:8px}
+  input.txt{width:100%;border:2px solid #d8e2f0;border-radius:14px;padding:13px 14px;font-size:18px;font-family:inherit;margin-top:10px;outline:none}
+  input.txt:focus{border-color:var(--c1)}
+  .feedback{margin-top:10px;font-size:15px;font-weight:700;padding:10px 12px;border-radius:12px;display:none}
+  .feedback.ok{display:block;background:#e7f9ee;color:#1a8a4f}
+  .feedback.no{display:block;background:#fdecec;color:#c0392b}
+  .feedback .corr{font-weight:800}
+  .mini{display:inline-block;margin-left:8px;font-size:13px;color:#9aa9bd;cursor:pointer;text-decoration:underline}
+  .celeb{display:none;position:fixed;inset:0;background:rgba(20,30,50,.5);z-index:50;align-items:center;justify-content:center}
+  .celeb.on{display:flex}
+  .celeb .box2{background:#fff;border-radius:22px;padding:26px 30px;text-align:center;max-width:80%}
+  .celeb h3{margin:0 0 6px;font-size:22px}
+  .celeb p{margin:4px 0;color:#5a6b80}
+  .celeb button{margin-top:14px;border:none;background:var(--c2);color:#fff;padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+</style>
+</head>
+<body>
+<h1>✍️ 英语听写 · 默写</h1>
+<p class="sub">听音写词 / 看中文写词，把单词真正"写"进脑子里。</p>
+
+<!-- 设置页 -->
+<div class="screen on" id="scrSetup">
+  <div class="tip">选好年级和模式，点「开始练习」。每轮 10 个词，听写模式会朗读英文、你拼出来；默写模式给中文、你写英文。正确率 ≥ 80% 通关！</div>
+  <div style="font-size:13px;color:#999;margin:2px 4px 6px;font-weight:700">练习模式</div>
+  <div class="tabs" id="modeTabs">
+    <div class="tab on" data-mode="dictate" onclick="setMode('dictate')">🔊 听写（听音写词）</div>
+    <div class="tab" data-mode="recite" onclick="setMode('recite')">📝 默写（看中文写词）</div>
+  </div>
+  <div style="font-size:13px;color:#999;margin:2px 4px 6px;font-weight:700">年级</div>
+  <div class="chips" id="gradeChips"></div>
+  <div class="btn green" onclick="startRound()">开始练习 →</div>
+  <div class="tip" id="bestTip" style="margin-top:14px"></div>
+</div>
+
+<!-- 练习页 -->
+<div class="screen" id="scrPlay">
+  <div class="card">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <div class="ct" id="progTxt">第 1 / 10</div>
+      <div class="cd" id="modeTxt">听写</div>
+    </div>
+    <div id="promptArea"></div>
+    <div id="hwSlot"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" onclick="checkAnswer()">核对 ✓</button>
+      <button class="btn sec" id="replayBtn" onclick="replay()">🔊 再听</button>
+    </div>
+    <div class="feedback" id="fb"></div>
+    <div id="nextWrap" style="display:none;margin-top:10px">
+      <button class="btn green" onclick="nextQ()">下一题 →</button>
+    </div>
+  </div>
+  <button class="btn sec" onclick="quit()">← 退出本组</button>
+</div>
+
+<!-- 结算页 -->
+<div class="screen" id="scrOver">
+  <div class="card" style="text-align:center">
+    <div class="ct" style="font-size:15px;color:#8a99ad">本轮成绩</div>
+    <div class="cen" id="scoreBig">8 / 10</div>
+    <div class="cd" id="scorePct">正确率 80%</div>
+    <div id="overMsg" class="zhbox" style="margin-top:6px"></div>
+  </div>
+  <button class="btn green" onclick="again()">再来一组 🔁</button>
+  <button class="btn sec" onclick="goSetup()">返回设置</button>
+</div>
+
+<div class="celeb" id="celeb"><div class="box2"><h3>🎉 听写小能手！</h3><p id="celebMsg">正确率达标，太棒啦！</p><button onclick="closeCeleb()">继续 ✍️</button></div></div>
+
+<script>
+/* ===== 词库：1-6 年级各 15 词，共 90 ===== */
+var WORDS=[
+  /* G1 */ {id:'w01',g:1,en:'cat',zh:'猫'},{id:'w02',g:1,en:'dog',zh:'狗'},{id:'w03',g:1,en:'red',zh:'红色'},{id:'w04',g:1,en:'blue',zh:'蓝色'},{id:'w05',g:1,en:'apple',zh:'苹果'},{id:'w06',g:1,en:'book',zh:'书'},{id:'w07',g:1,en:'sun',zh:'太阳'},{id:'w08',g:1,en:'run',zh:'跑'},{id:'w09',g:1,en:'big',zh:'大的'},{id:'w10',g:1,en:'happy',zh:'开心的'},
+  /* G1b */ {id:'w61',g:1,en:'ball',zh:'球'},{id:'w62',g:1,en:'fish',zh:'鱼'},{id:'w63',g:1,en:'tree',zh:'树'},{id:'w64',g:1,en:'egg',zh:'鸡蛋'},{id:'w65',g:1,en:'star',zh:'星星'},
+  /* G2 */ {id:'w11',g:2,en:'teacher',zh:'老师'},{id:'w12',g:2,en:'water',zh:'水'},{id:'w13',g:2,en:'friend',zh:'朋友'},{id:'w14',g:2,en:'school',zh:'学校'},{id:'w15',g:2,en:'green',zh:'绿色'},{id:'w16',g:2,en:'jump',zh:'跳'},{id:'w17',g:2,en:'small',zh:'小的'},{id:'w18',g:2,en:'eat',zh:'吃'},{id:'w19',g:2,en:'pen',zh:'钢笔'},{id:'w20',g:2,en:'milk',zh:'牛奶'},
+  /* G2b */ {id:'w66',g:2,en:'bread',zh:'面包'},{id:'w67',g:2,en:'table',zh:'桌子'},{id:'w68',g:2,en:'chair',zh:'椅子'},{id:'w69',g:2,en:'morning',zh:'早晨'},{id:'w70',g:2,en:'night',zh:'夜晚'},
+  /* G3 */ {id:'w21',g:3,en:'window',zh:'窗户'},{id:'w22',g:3,en:'rabbit',zh:'兔子'},{id:'w23',g:3,en:'yellow',zh:'黄色'},{id:'w24',g:3,en:'write',zh:'写'},{id:'w25',g:3,en:'swim',zh:'游泳'},{id:'w26',g:3,en:'summer',zh:'夏天'},{id:'w27',g:3,en:'family',zh:'家庭'},{id:'w28',g:3,en:'plant',zh:'植物'},{id:'w29',g:3,en:'cold',zh:'冷的'},{id:'w30',g:3,en:'brown',zh:'棕色'},
+  /* G3b */ {id:'w71',g:3,en:'spring',zh:'春天'},{id:'w72',g:3,en:'autumn',zh:'秋天'},{id:'w73',g:3,en:'warm',zh:'暖和的'},{id:'w74',g:3,en:'cool',zh:'凉爽的'},{id:'w75',g:3,en:'windy',zh:'有风的'},
+  /* G4 */ {id:'w31',g:4,en:'weather',zh:'天气'},{id:'w32',g:4,en:'mountain',zh:'山'},{id:'w33',g:4,en:'animal',zh:'动物'},{id:'w34',g:4,en:'winter',zh:'冬天'},{id:'w35',g:4,en:'orange',zh:'橙色；橙子'},{id:'w36',g:4,en:'study',zh:'学习'},{id:'w37',g:4,en:'tomato',zh:'西红柿'},{id:'w38',g:4,en:'quiet',zh:'安静的'},{id:'w39',g:4,en:'cloud',zh:'云'},{id:'w40',g:4,en:'wind',zh:'风'},
+  /* G4b */ {id:'w76',g:4,en:'season',zh:'季节'},{id:'w77',g:4,en:'picnic',zh:'野餐'},{id:'w78',g:4,en:'island',zh:'岛'},{id:'w79',g:4,en:'forest',zh:'森林'},{id:'w80',g:4,en:'umbrella',zh:'雨伞'},
+  /* G5 */ {id:'w41',g:5,en:'beautiful',zh:'美丽的'},{id:'w42',g:5,en:'favorite',zh:'最喜欢的'},{id:'w43',g:5,en:'library',zh:'图书馆'},{id:'w44',g:5,en:'science',zh:'科学'},{id:'w45',g:5,en:'remember',zh:'记得'},{id:'w46',g:5,en:'exercise',zh:'锻炼；练习'},{id:'w47',g:5,en:'vegetable',zh:'蔬菜'},{id:'w48',g:5,en:'hospital',zh:'医院'},{id:'w49',g:5,en:'expensive',zh:'昂贵的'},{id:'w50',g:5,en:'vacation',zh:'假期'},
+  /* G5b */ {id:'w81',g:5,en:'festival',zh:'节日'},{id:'w82',g:5,en:'delicious',zh:'美味的'},{id:'w83',g:5,en:'famous',zh:'著名的'},{id:'w84',g:5,en:'magazine',zh:'杂志'},{id:'w85',g:5,en:'museum',zh:'博物馆'},
+  /* G6 */ {id:'w51',g:6,en:'environment',zh:'环境'},{id:'w52',g:6,en:'information',zh:'信息'},{id:'w53',g:6,en:'temperature',zh:'温度'},{id:'w54',g:6,en:'refrigerator',zh:'冰箱'},{id:'w55',g:6,en:'immediately',zh:'立刻'},{id:'w56',g:6,en:'necessary',zh:'必要的'},{id:'w57',g:6,en:'dictionary',zh:'字典'},{id:'w58',g:6,en:'February',zh:'二月'},{id:'w59',g:6,en:'travel',zh:'旅行'},{id:'w60',g:6,en:'celebrate',zh:'庆祝'},
+  /* G6b */ {id:'w86',g:6,en:'restaurant',zh:'餐馆'},{id:'w87',g:6,en:'university',zh:'大学'},{id:'w88',g:6,en:'comfortable',zh:'舒服的'},{id:'w89',g:6,en:'excellent',zh:'优秀的'},{id:'w90',g:6,en:'dangerous',zh:'危险的'}
+];
+
+var CHILD='user', KEY='';
+var mode='dictate';           // dictate | recite
+var gradeFilter='all';
+var pool=[], qIdx=0, results=[], roundDone=false;
+
+function norm(s){ return (s||'').toLowerCase().replace(/[^a-z]/g,''); }
+function loadStore(){ try{ return JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ return {}; } }
+function saveStore(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
+
+function init(){
+  var s=Portal.getSession();
+  CHILD = (s&&s.child)? s.child : 'user';
+  KEY='en-dictation-'+CHILD;
+  renderGrades();
+  showBest();
+}
+function renderGrades(){
+  var box=document.getElementById('gradeChips'); box.innerHTML='';
+  var opts=[['all','全部']].concat([1,2,3,4,5,6].map(function(g){return [String(g),g+'年级'];}));
+  opts.forEach(function(o){
+    var c=document.createElement('div'); c.className='chip'+(gradeFilter===o[0]?' on':'');
+    c.textContent=o[1]; c.onclick=function(){ gradeFilter=o[0]; renderGrades(); showBest(); };
+    box.appendChild(c);
+  });
+}
+function setMode(m){
+  mode=m;
+  document.querySelectorAll('#modeTabs .tab').forEach(function(t){ t.classList.toggle('on', t.getAttribute('data-mode')===m); });
+  showBest();
+}
+function showBest(){
+  var st=loadStore(); var k=mode+'-'+gradeFilter;
+  var best=st[k];
+  var modeName= mode==='dictate'?'听写':'默写';
+  var gname= gradeFilter==='all'?'全部年级':(gradeFilter+'年级');
+  document.getElementById('bestTip').textContent = best!==undefined
+    ? ('🏅 '+gname+' · '+modeName+' 最佳正确率：'+best+'%')
+    : ('🏅 '+gname+' · '+modeName+' 还没有记录，加油！');
+}
+
+function startRound(){
+  var list=WORDS.filter(function(w){ return gradeFilter==='all' || String(w.g)===gradeFilter; });
+  // 打乱
+  list=list.slice().sort(function(){ return Math.random()-0.5; });
+  pool=list.slice(0, Math.min(10, list.length));
+  qIdx=0; results=[]; roundDone=false;
+  setScreen('scrPlay');
+  renderQ();
+}
+function renderQ(){
+  var w=pool[qIdx];
+  document.getElementById('progTxt').textContent='第 '+(qIdx+1)+' / '+pool.length;
+  document.getElementById('modeTxt').textContent = mode==='dictate'?'听写':'默写';
+  var pa=document.getElementById('promptArea'); pa.innerHTML='';
+  if(mode==='dictate'){
+    pa.innerHTML='<div class="enbox" id="enShow">🔊 点击「再听」听发音</div>'
+      +'<div class="hint">听清楚，把单词拼写出来～ <span class="mini" onclick="peekZh()">看中文提示？</span></div>'
+      +'<div class="zhbox" id="zhHint" style="display:none">中文意思：'+esc(w.zh)+'</div>';
+    document.getElementById('replayBtn').style.display='block';
+  } else {
+    pa.innerHTML='<div class="zhbox" style="font-size:20px;font-weight:800;color:#1f2d3d">「'+esc(w.zh)+'」</div>'
+      +'<div class="hint">写出对应的英文单词</div>';
+    document.getElementById('replayBtn').style.display='none';
+  }
+  var _slot=document.getElementById('hwSlot');
+  if(_slot){
+    _slot.innerHTML='';
+    if(window.Handwrite){
+      window._hwCurrent=Handwrite.create({revealText:w.en+'　'+w.zh, showRevealBtn:false, placeholder:'✍️ 用手写出这个单词'});
+      _slot.appendChild(window._hwCurrent.el);
+    }
+  }
+  document.getElementById('fb').className='feedback'; document.getElementById('fb').style.display='none';
+  document.getElementById('nextWrap').style.display='none';
+  if(mode==='dictate') replay();
+}
+function peekZh(){ var h=document.getElementById('zhHint'); if(h) h.style.display='block'; }
+function replay(){
+  if(mode!=='dictate') return;
+  var w=pool[qIdx];
+  if(window.Speech&&Speech.speak) Speech.speak(w.en, 0.85);
+  else if(window.toast) toast('当前浏览器不支持发音，可切到「默写」模式');
+}
+function checkAnswer(){
+  var w=pool[qIdx];
+  var hw=window._hwCurrent;
+  if(hw) hw.reveal();
+  var fb=document.getElementById('fb');
+  fb.style.display='block';
+  fb.className='feedback';
+  fb.innerHTML='对照正确拼写：<b style="color:#0a7d3c;font-size:16px">'+esc(w.en)+'</b> · '+esc(w.zh)
+    +'<br><button class="btn green" onclick="selfRate(true)">✓ 我写对了</button> '
+    +'<button class="btn sec" onclick="selfRate(false)">✗ 写错了</button>';
+  document.getElementById('nextWrap').style.display='block';
+  if(qIdx>=pool.length-1){ document.querySelector('#nextWrap .btn').textContent='查看成绩 📊'; }
+}
+function selfRate(ok){
+  results[qIdx]=ok;
+  var w=pool[qIdx];
+  var fb=document.getElementById('fb');
+  fb.innerHTML=(ok?'✅ 你觉得自己写对啦，真棒！':'💡 没关系，看看正确拼写多写几遍：<b style="color:#0a7d3c">'+esc(w.en)+'</b>')
+    +' <span class="mini">已记录，点「下一题」继续</span>';
+}
+function nextQ(){
+  if(qIdx>=pool.length-1){ finish(); return; }
+  qIdx++; renderQ();
+}
+function finish(){
+  var total=pool.length, okN=results.filter(function(r){return r;}).length;
+  var pct= total? Math.round(okN/total*100):0;
+  // 保存最佳
+  var st=loadStore(); var k=mode+'-'+gradeFilter;
+  if(st[k]===undefined || pct>st[k]){ st[k]=pct; saveStore(st); }
+  document.getElementById('scoreBig').textContent=okN+' / '+total;
+  document.getElementById('scorePct').textContent='正确率 '+pct+'%';
+  document.getElementById('overMsg').textContent = pct>=80 ? '太棒了，通关！' : '再练练，争取达到 80% 哦～';
+  setScreen('scrOver');
+  showBest();
+  if(pct>=80){ setTimeout(celebrate, 300); }
+}
+function celebrate(){ document.getElementById('celeb').classList.add('on'); }
+function closeCeleb(){ document.getElementById('celeb').classList.remove('on'); }
+function again(){ startRound(); }
+function quit(){ setScreen('scrPlay'); finish(); }
+function goSetup(){ setScreen('scrSetup'); showBest(); }
+
+function setScreen(id){
+  ['scrSetup','scrPlay','scrOver'].forEach(function(s){ document.getElementById(s).classList.toggle('on', s===id); });
+}
+function esc(t){ return String(t).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
+
+init();
+</script>
+<script src="handwrite.js"></script>
+</body>
+</html>

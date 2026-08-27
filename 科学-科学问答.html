@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔬 科学小问答</title>
+<style>
+  :root{ --c1:#06d6a0; --c2:#b292ff; --green:#06d6a0; --ink:#3d3a4b; }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#eafaf4,#f3efff);color:var(--ink);padding:18px;max-width:560px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  .back{position:fixed;left:14px;top:14px;z-index:30;border:none;background:rgba(255,255,255,.85);border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink)}
+  header{background:linear-gradient(120deg,var(--c1),var(--c2));color:#fff;border-radius:24px;padding:20px;text-align:center;box-shadow:0 8px 22px rgba(6,214,160,.4)}
+  header h1{font-size:22px}
+  .date{font-size:14px;opacity:.95;margin-top:4px}
+  .stats{display:flex;gap:10px;margin:14px 0}
+  .stat{flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .stat .num{font-size:26px;font-weight:800;color:var(--c2)}
+  .stat .lbl{font-size:12px;color:#999;margin-top:2px}
+  .screen{display:none}
+  .screen.on{display:block}
+  .btn{display:block;width:100%;border:none;border-radius:16px;padding:14px;font-size:16px;font-family:inherit;cursor:pointer;font-weight:800;color:#fff;background:var(--c1);margin-top:8px}
+  .btn.gh{background:var(--c2)}
+  .btn.sec{background:#f3efff;color:var(--c1)}
+  .prog-wrap{margin:6px 0 14px}
+  .progress{height:14px;background:#d9f3ea;border-radius:10px;overflow:hidden}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--c1),var(--c2));border-radius:10px;transition:width .4s}
+  .prog-txt{font-size:13px;color:#888;text-align:center;margin-top:4px}
+  .q{background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.06);padding:14px;margin-bottom:12px;border:3px solid transparent;transition:border-color .2s}
+  .q.done-ok{border-color:var(--green)}
+  .q.done-no{border-color:#ff6b6b}
+  .q .qt{font-size:15px;font-weight:700;margin-bottom:10px;line-height:1.6}
+  .q .qt .qn{color:var(--c1);margin-right:6px}
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{border:none;border-radius:12px;padding:11px 14px;font-size:14px;text-align:left;font-family:inherit;cursor:pointer;background:#f3efff;color:var(--ink);transition:.15s}
+  .opt:active{transform:scale(.98)}
+  .opt.ok{background:var(--green);color:#fff}
+  .opt.no{background:#ff6b6b;color:#fff}
+  .opt.dim{opacity:.45;pointer-events:none}
+  .why{font-size:13px;color:#888;margin-top:10px;background:#f6f8fb;border-radius:10px;padding:9px;line-height:1.6;display:none}
+  .why.on{display:block}
+  .report{background:#fff;border-radius:24px;box-shadow:0 8px 22px rgba(0,0,0,.08);padding:24px;text-align:center;margin-top:14px}
+  .report .stars{font-size:34px;letter-spacing:4px;margin:6px 0}
+  .report .score{font-size:30px;font-weight:800;color:var(--c1)}
+  .report .sub{font-size:14px;color:#888;margin-top:4px}
+  .report .line{font-size:15px;color:var(--ink);margin-top:10px}
+  .report .pass{color:var(--green);font-weight:800}
+  .report .fail{color:#ff6b6b;font-weight:800}
+  .reset{background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;text-decoration:underline;display:block;margin:10px auto 0;font-family:inherit}
+  .tip{font-size:12px;color:#aaa;text-align:center;margin-top:14px;line-height:1.6}
+  .confetti{position:fixed;top:-40px;font-size:24px;pointer-events:none;z-index:99;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:.2}}
+  .celebrate{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:100}
+  .celebrate .box2{background:#fff;border-radius:24px;padding:28px 34px;text-align:center;animation:pop .4s;max-width:320px}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate h3{font-size:24px;margin-bottom:8px}
+  .celebrate p{color:#888;font-size:14px;line-height:1.6}
+  .celebrate button{margin-top:16px;border:none;background:var(--c2);color:#fff;padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+
+  /* 年级筛选 */
+  .gg-label{font-size:13px;color:#888;margin:12px 2px 2px}
+  .grades{display:flex;gap:6px;overflow-x:auto;padding:4px 0 8px}
+  .grades button{flex:0 0 auto;border:2px solid #d9f3ea;background:#fff;color:#2bb98a;
+    border-radius:14px;padding:6px 12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit}
+  .grades button.on{background:linear-gradient(120deg,var(--c1),var(--c2));color:#fff;border-color:transparent}
+</style>
+</head>
+<body>
+
+<header><h1>🔬 科学小问答</h1><div class="date" id="dateStr">今天</div></header>
+<div class="stats">
+  <div class="stat"><div class="num" id="bestNum">0</div><div class="lbl">🏆 最佳对题</div></div>
+  <div class="stat"><div class="num" id="totalNum">0</div><div class="lbl">📝 题目总数</div></div>
+  <div class="stat"><div class="num" id="passNum">80%</div><div class="lbl">✅ 通关线</div></div>
+</div>
+
+<div class="gg-label">🎚️ 选择年级（默认全部）：</div>
+<nav class="grades" id="grades"></nav>
+
+<div class="screen on" id="scrMenu">
+  <h2 style="font-size:17px;margin:6px 4px 10px">🌈 身边的科学</h2>
+  <div class="tip" id="menuTip" style="margin:0 0 12px">12 个有趣的小知识，选对 80% 就通关！做完看解析，长见识～</div>
+  <button class="btn" onclick="start()">🚀 开始闯关</button>
+  <button class="btn sec" onclick="resetBest()">↺ 清空最佳记录</button>
+</div>
+<div class="screen" id="scrQuiz">
+  <div class="prog-wrap"><div class="progress"><i id="progBar"></i></div><div class="prog-txt" id="progTxt">已答 0 / 0</div></div>
+  <div id="quizArea"></div>
+  <button class="btn gh" id="finishBtn" onclick="finish()" style="display:none">🏁 查看战报</button>
+</div>
+<div class="screen" id="scrReport">
+  <div class="report">
+    <div class="stars" id="rStars">⭐⭐⭐</div>
+    <div class="score" id="rScore">0 / 0</div>
+    <div class="sub" id="rPct">正确率 0%</div>
+    <div class="line" id="rPass"></div>
+  </div>
+  <button class="btn" onclick="start()">🔄 再来一轮</button>
+  <button class="btn sec" onclick="goMenu()">🏠 回到首页</button>
+</div>
+<div class="tip">数据按小朋友分别保存，不会上传。</div>
+<div class="celebrate" id="celeb"><div class="box2"><h3>🎉 科学小博士！</h3><p>12 个为什么都搞懂啦，世界真奇妙！</p><button onclick="closeCeleb()">继续闯关 💪</button></div></div>
+<script>
+var QUIZ=[
+  {q:'彩虹通常有几种颜色？',opts:['7 种','5 种','3 种','9 种'],ans:0,why:'彩虹一般是红橙黄绿蓝靛紫 7 种颜色。'},
+  {q:'绿色植物长大主要靠什么制造养分？',opts:['阳光','声音','月亮','风'],ans:0,why:'植物通过光合作用，利用阳光把水和二氧化碳变成养分。'},
+  {q:'我们看到的月亮，它本身会发光吗？',opts:['不会，是反射太阳光','会自己发光','只有晚上才发光','从不出现'],ans:0,why:'月亮不发光，我们见到的是它反射的太阳光。'},
+  {q:'蜜蜂在花丛中飞来飞去，主要帮植物做什么？',opts:['传播花粉','捉害虫','浇水','松土'],ans:0,why:'蜜蜂采蜜时把花粉带到别的花上，帮助植物结果。'},
+  {q:'常压下，水在多少摄氏度会结成冰？',opts:['0℃','100℃','50℃','10℃'],ans:0,why:'水在 0℃ 结冰，100℃ 沸腾。'},
+  {q:'北极熊主要生活在地球的哪个区域？',opts:['北极','南极','沙漠','热带草原'],ans:0,why:'北极熊生活在北极附近的冰原上。'},
+  {q:'人呼吸时，空气主要进出哪个器官？',opts:['肺','胃','肝脏','肾脏'],ans:0,why:'肺是呼吸器官，负责吸入氧气、排出二氧化碳。'},
+  {q:'下面哪种动物是卵生的（从蛋里孵化）？',opts:['鸡','猫','狗','牛'],ans:0,why:'鸡是鸟类，从蛋里孵出来；猫狗牛是胎生。'},
+  {q:'打雷闪电时，为什么先看到闪电后听到雷声？',opts:['光比声音跑得快','雷声被云挡住','闪电没有声音','眼睛比耳朵快'],ans:0,why:'光速远快于声速，所以先见闪电后闻雷声。'},
+  {q:'地球上面积最大的海洋是？',opts:['太平洋','大西洋','印度洋','北冰洋'],ans:0,why:'太平洋是世界上最大、最深的海洋。'},
+  {q:'在阳光下，人的影子是怎么形成的？',opts:['光被身体挡住','身体自己发光','空气变暗','水反射光'],ans:0,why:'光沿直线传播，被身体挡住的地方照不到，就形成了影子。'},
+  {q:'废电池属于哪一类垃圾？',opts:['有害垃圾','厨余垃圾','可回收物','其他垃圾'],ans:0,why:'电池含重金属，会污染土壤和水，要放进有害垃圾。'}
+
+  /* 高年级补充题 */
+  ,{q:'声音不能在下面哪种地方传播？',opts:['真空','空气','水','木头'],ans:0,why:'太空是真空，没有空气等介质，声音无法传播。',g:4}
+  ,{q:'下面哪种动物属于昆虫？',opts:['蚂蚁','蜘蛛','蚯蚓','蜗牛'],ans:0,why:'昆虫有头胸腹三节、六条腿，蚂蚁是；蜘蛛八条腿不是昆虫。',g:4}
+  ,{q:'白天和黑夜的交替，主要是地球在做什么？',opts:['自转','公转','平移','静止'],ans:0,why:'地球绕地轴自转，约 24 小时转一圈，产生昼夜交替。',g:5}
+  ,{q:'食物链一般从哪里开始？',opts:['绿色植物','食肉动物','真菌','石头'],ans:0,why:'植物能自己制造养分，是食物链的起点（生产者）。',g:5}
+  ,{q:'要让小灯泡亮起来，下面哪样不能少？',opts:['闭合的回路','只要一节电池','只要一个开关','只要一个灯泡'],ans:0,why:'电需要形成闭合回路才能流动，灯泡才会亮。',g:6}
+  ,{q:'水烧开变成水蒸气，这属于什么变化？',opts:['物理变化','化学变化','生物变化','没有变化'],ans:0,why:'水变成水蒸气只是状态改变，没有新物质生成，是物理变化。',g:6}
+
+  /* ===== 补充题 ===== */
+  ,{q:'为什么树叶到秋天会变黄或变红？',opts:['叶绿素减少','温度变高','被虫吃掉','缺水'],ans:0,why:'秋天光照变短变冷，叶绿素分解，叶黄素、花青素显现出来。',g:3}
+  ,{q:'蜗牛爬过的地方为什么留下亮亮的线？',opts:['分泌黏液','在出汗','在喝水','在尿尿'],ans:0,why:'蜗牛身体会分泌黏液，减少摩擦也留下亮痕。',g:2}
+  ,{q:'夏天冰棍为什么会冒“白气”？',opts:['水汽遇冷凝结','冰在燃烧','太甜了','有电'],ans:0,why:'周围的水蒸气遇冷结成小水滴，看起来像白雾。',g:3}
+  ,{q:'被蚊子叮了为什么会起包发痒？',opts:['它注入唾液','咬破皮','带电','有毒气'],ans:0,why:'蚊子唾液含抗凝血物质，身体过敏就起包。',g:2}
+  ,{q:'罐头食品为什么能放很久？',opts:['高温杀菌又密封','加了糖','冻住了','晒过太阳'],ans:0,why:'密封前高温杀灭细菌并隔绝空气，细菌进不去。',g:4}
+  ,{q:'大海为什么是咸的？',opts:['河流把盐带入海','鱼吐盐','盐从天上掉','本来就咸'],ans:0,why:'河水把陆地上的盐分带入海洋，水蒸发盐留了下来。',g:4}
+  ,{q:'为什么用镜子能看到自己？',opts:['光被反射回来','镜子会发光','镜子是透明的','眼睛变快'],ans:0,why:'镜子表面光滑，光线按规律反射回我们的眼睛。',g:3}
+  ,{q:'冬天嘴里为什么会“冒白烟”？',opts:['热气遇冷凝结','在抽烟','太冷了','有雾气'],ans:0,why:'呼出的热气遇到冷空气，凝结成小水滴。',g:2}
+  ,{q:'磁铁为什么能吸住铁？',opts:['有磁性','带电','有胶','是热的'],ans:0,why:'磁铁周围有磁场，对铁等铁磁物质有吸引力。',g:3}
+  ,{q:'煮熟的鸡蛋为什么能立起来（春分立蛋）？',opts:['重心稳手又稳','有魔法','温度高','有磁性'],ans:0,why:'重心落在支撑面内就能立住，和节气本身无关。',g:4}
+  ,{q:'含羞草为什么一碰就合拢？',opts:['叶枕失水','怕痒','有电','枯萎了'],ans:0,why:'触碰使叶枕细胞失水，叶片就闭合起来。',g:3}
+  ,{q:'高山上为什么煮不熟饭？',opts:['气压低水不到100℃就沸','缺氧','风太大','锅太小'],ans:0,why:'海拔高气压低，水低于100℃就沸腾，温度不够。',g:5}
+  ,{q:'彩虹为什么总在雨后放晴时出现？',opts:['空中小水滴折射阳光','有风','云很厚','在打雷'],ans:0,why:'阳光经过空中水滴折射、反射，散成七种颜色。',g:3}
+  ,{q:'铁为什么会生锈？',opts:['与水和氧气反应','晒太阳','被虫咬','静电'],ans:0,why:'铁在潮湿空气中和氧气反应，生成橙红色的氧化铁。',g:4}
+  ,{q:'我们为什么能听见声音？',opts:['物体振动传声','空气发光','耳朵大','有风'],ans:0,why:'发声体振动，通过空气等介质把声音传到耳朵里。',g:2}
+  ,{q:'仙人掌的叶子为什么变成刺？',opts:['减少水分蒸发','为了防御','为了好看','为了吸热'],ans:0,why:'针刺叶面积小，能减少水分散失，适应干旱。',g:4}
+  ,{q:'一年为什么有春、夏、秋、冬四季？',opts:['地轴倾斜又公转','地球变大','月亮影响','太阳在移动'],ans:0,why:'地球公转时地轴倾斜，南北半球受光多少不同。',g:5}
+  ,{q:'海拔越高为什么越冷？',opts:['空气稀薄保温差','风大','离太阳远','没有云'],ans:0,why:'高空气压低、空气稀薄，保存热量的能力弱。',g:5}
+  ,{q:'为什么饭后要漱口？',opts:['保护牙齿','更好吃','好玩','省时间'],ans:0,why:'食物残渣会滋生细菌、腐蚀牙齿，漱口能冲走它们。',g:1}
+  ,{q:'小朋友为什么要多晒太阳？',opts:['帮身体制造维生素D','只是变黑','因为热','为了睡觉'],ans:0,why:'阳光照皮肤能合成维生素D，帮助钙吸收、骨骼结实。',g:1}
+  ,{q:'我们为什么每天都要睡觉？',opts:['让大脑和身体休息','因为天黑','太无聊','因为冷'],ans:0,why:'睡眠时身体修复组织、整理记忆，不睡第二天气力不足。',g:2}
+  ,{q:'肚子饿了为什么会咕咕叫？',opts:['胃在空转收缩','生气了','口渴','怕冷'],ans:0,why:'空腹时胃仍收缩，挤压里面少量空气和液体发出咕噜声。',g:2}
+  ,{q:'游泳久了手脚皮肤为什么发皱？',opts:['皮肤浸水膨胀','累了','受凉','缺氧'],ans:0,why:'手指脚趾皮肤浸水变软起皱，可能有助于湿滑时抓握。',g:3}
+  ,{q:'切洋葱为什么会流泪？',opts:['洋葱放出刺激气体','它很辣','切得太快','伤心'],ans:0,why:'洋葱破损释放酶，生成刺激物冲到眼睛，眼睛用泪冲走它。',g:3}
+  ,{q:'汽水瓶一打开为什么冒泡泡？',opts:['二氧化碳跑出来','被摇过','因为热','因为甜'],ans:0,why:'瓶中压入了二氧化碳，开盖减压后气体变成小泡逸出。',g:3}
+  ,{q:'遥控器为什么装电池就能用？',opts:['电池提供电能','它有光','线很长','按键神奇'],ans:0,why:'电池把化学能变成电能，驱动遥控器里的电路工作。',g:4}
+  ,{q:'保鲜膜为什么能让菜放久一点？',opts:['隔开空气和细菌','它透明','好看','凉快'],ans:0,why:'保鲜膜减少食物和空气接触，减慢氧化和细菌繁殖。',g:4}
+  ,{q:'灯塔的光为什么一闪一闪？',opts:['灯室在旋转','灯泡坏了','有风','云挡住'],ans:0,why:'灯塔里灯室转动，光只在转到你这侧时看得见，像在眨眼。',g:4}
+  ,{q:'盐碱地的庄稼为什么长不好？',opts:['土太咸伤根','太干','太热','风大'],ans:0,why:'土壤盐分过高，植物根难吸水，还会被盐伤害。',g:5}
+  ,{q:'天上的星星为什么有的亮有的暗？',opts:['远近和本身光度不同','年龄不同','颜色不同','季节不同'],ans:0,why:'离我们近、本身发光强的星看起来更亮。',g:5}
+  ,{q:'雨后空气为什么特别清新？',opts:['雨水除尘且负离子多','风大','更凉','云少'],ans:0,why:'雨水带走灰尘，闪电和植物还会产生让人清爽的负离子。',g:6}
+  ,{q:'赤道为什么比两极热？',opts:['阳光直射角度大','离太阳更近','海多','风大'],ans:0,why:'赤道太阳高度角大，单位面积接收的热量更多。',g:6}
+  ,{q:'月亮为什么总用同一面对着地球？',opts:['自转和公转同步','被吸住了','它不转','它很平'],ans:0,why:'潮汐锁定使月球自转周期正好等于绕地球公转周期。',g:6}
+  ,{q:'油锅着火为什么不能用水泼？',opts:['水沉底油浮起火更大','水太少','水太烫','水变黑'],ans:0,why:'水比油重会沉底，油浮在上面继续烧并四处飞溅。',g:6}
+  ,{q:'糖尿病人为什么不能吃太多糖？',opts:['血糖难控制','因为甜','会胖','会蛀牙'],ans:0,why:'胰岛素不足时，吃糖会让血糖升得过高、伤害身体。',g:6}
+  ,{q:'剧烈运动后肌肉为什么发酸？',opts:['产生乳酸堆积','太累','缺水','饿'],ans:0,why:'缺氧时肌肉做无氧运动产生乳酸，堆积就发酸。',g:6}
+  ,{q:'深海鱼捞上来为什么容易胀破？',opts:['水压突然变小','饿了','见光','怕冷'],ans:0,why:'深海压力大，上来后外界压力小，体内气体膨胀把身体撑大。',g:6}
+  ,{q:'山顶的风为什么比山脚大？',opts:['少了树木阻挡','更高','更冷','云多'],ans:0,why:'山顶没有建筑和树木挡风，气流集中所以风更大。',g:6}
+  ,{q:'冰箱门常开为什么会结冰？',opts:['潮气进去遇冷凝结','门坏了','电不够','太凉'],ans:0,why:'开门放进很多湿气，遇冷在内壁结成霜。',g:6}
+  ,{q:'猫的眼睛为什么夜里发亮？',opts:['眼底有反光层','它会发光','眼睛大','眼睛湿'],ans:0,why:'猫眼底有照膜，把光反射回来增强夜视，看起来亮晶晶。',g:6}
+  ,{q:'指南针为什么总指向北？',opts:['地球有磁场','有风','太阳','重力'],ans:0,why:'磁针受地球磁场作用，会自动转向磁北方向。',g:6}
+  ,{q:'泡沫塑料为什么能浮在水上？',opts:['里面充满空气很轻','它是白色','它柔软','它凉'],ans:0,why:'泡沫里有很多小气孔装空气，整体密度比水小就浮着。',g:6}
+  ,{q:'天空为什么是蓝色的？',opts:['空气散射蓝光','云是蓝的','海映上去','太阳是蓝的'],ans:0,why:'阳光里蓝光最容易被空气散射到四面八方，所以天空看起来蓝。',g:3}
+  ,{q:'为什么先看到闪电后听到雷声？',opts:['光比声快','雷声小','眼睛快','云挡声'],ans:0,why:'光速远快于声速，同一道闪电的光先到、声后到。',g:3}
+  ,{q:'饺子煮熟为什么会浮起来？',opts:['内部充满热气变轻','水变少','盐多','锅热'],ans:0,why:'加热产生水蒸气让饺子膨胀变轻，浮力大于重力就上浮。',g:4}
+  ,{q:'香皂久放为什么会变小？',opts:['慢慢变干挥发','被虫吃','融化','长毛'],ans:0,why:'香皂里的水分和香料会慢慢挥发，体积就变小。',g:3}
+  ,{q:'冬天脱毛衣为什么会有小火花？',opts:['摩擦起电','毛衣燃烧','静电放电','反光'],ans:0,why:'毛衣摩擦产生静电，放电时发出小火花和噼啪声。',g:5}
+  ,{q:'热水杯外壁为什么有小水珠？',opts:['空气里的水汽遇冷凝结','杯漏了','杯子出汗','糖析出'],ans:0,why:'热杯让附近空气变暖，遇冷杯壁水汽凝结成小水珠。',g:3}
+  ,{q:'向日葵为什么向着太阳转？',opts:['生长素怕光聚集背光侧','它喜欢热','风吹的','根朝太阳'],ans:0,why:'背光侧生长素多、长得快，花盘就转向有阳光的一边。',g:4}
+  ,{q:'虾和螃蟹煮熟后为什么变红？',opts:['虾青素遇热显色','煮熟了','加盐','变熟透'],ans:0,why:'活体时虾青素被蛋白质盖住，加热后蛋白变性，红色就显出来。',g:4}
+  ,{q:'面包放几天为什么会变硬？',opts:['水分流失淀粉老化','发霉','变干缩','糖结晶'],ans:0,why:'面包里的水分会慢慢蒸发，淀粉老化，口感就变硬。',g:4}
+  ,{q:'油为什么能浮在水面上？',opts:['油比水轻','油凉','油透明','油黏'],ans:0,why:'油的密度比水小，所以油会浮在水面上。',g:5}
+  ,{q:'星星为什么一闪一闪像眨眼？',opts:['大气抖动使星光折射','星星在动','云挡住','距离变'],ans:0,why:'星光穿过不安定的大气被折射，看起来就忽明忽暗。',g:4}
+  ,{q:'为什么下雪不冷、化雪冷？',opts:['化雪吸热降温','雪是温的','风停了','太阳弱'],ans:0,why:'雪融化时要吸收周围热量，所以化雪时反而更冷。',g:3}
+  ,{q:'植物为什么向有光的地方生长？',opts:['背光侧长得快','根找光','叶子重','茎怕光'],ans:0,why:'向光侧生长慢、背光侧生长快，植株就弯向光源。',g:4}
+  ,{q:'铅笔字为什么能用橡皮擦掉？',opts:['橡皮粘走石墨粉末','橡皮化水','铅笔浅','纸软'],ans:0,why:'橡皮摩擦把纸面的石墨粉末粘起来带走，字就擦掉。',g:3}
+  ,{q:'井水为什么冬暖夏凉？',opts:['地下温度稳定','井深','水流动','有温泉'],ans:0,why:'地下温度变化小，冬天比地面暖、夏天比地面凉。',g:4}
+  ,{q:'彩虹为什么是弯的？',opts:['是圆的一部分','云挡的','风刮的','光弯了'],ans:0,why:'彩虹其实是圆的，我们只看到地平线以上的圆弧。',g:5}
+  ,{q:'磁铁为什么能隔着纸吸铁？',opts:['磁场能穿过纸','纸薄','铁轻','有孔'],ans:0,why:'磁场可以穿过纸、木等非金属，所以隔纸也能吸铁。',g:3}
+  ,{q:'早晨草叶上的霜是怎么来的？',opts:['水蒸气遇冷凝华','下雨','雪化成','露水冻'],ans:0,why:'夜里气温降到冰点以下，水汽直接在草叶上凝成小冰晶。',g:3}
+  ,{q:'人有不同肤色是因为什么？',opts:['黑色素多少不同','吃的不同','晒太阳多少','血型'],ans:0,why:'皮肤里黑色素含量不同，决定了肤色深浅。',g:6}
+  ,{q:'海水为什么不容易结冰？',opts:['含盐降低冰点','太深','流动快','有鱼'],ans:0,why:'海水含盐，冰点比淡水低，所以更难结冰。',g:5}
+,
+  {
+  q: '铜器放久为什么会变绿？',
+  opts: ['生成碱式碳酸铜', '脏了', '受潮', '旧了'],
+  ans: 0,
+  why: '铜在潮湿空气中生成碱式碳酸铜，呈绿色。',
+  g: 5
+  },
+  {
+  q: '蜜蜂为什么会跳舞？',
+  opts: ['传递蜜源信息', '高兴', '冷', '饿'],
+  ans: 0,
+  why: '蜜蜂用舞蹈告诉同伴花的位置和距离。',
+  g: 4
+  },
+  {
+  q: '燕子低飞为什么常预示要下雨？',
+  opts: ['虫飞低它去捉', '累', '风大', '找窝'],
+  ans: 0,
+  why: '雨前湿度大，小虫飞得低，燕子低飞捉虫。',
+  g: 2
+  },
+  {
+  q: '雪为什么是白色的？',
+  opts: ['反射所有可见光', '干净', '冷', '是冰'],
+  ans: 0,
+  why: '雪晶面多，把可见光全反射，所以呈白色。',
+  g: 2
+  },
+  {
+  q: '月亮为什么有阴晴圆缺？',
+  opts: ['被照亮部分不同', '变样了', '云遮', '风'],
+  ans: 0,
+  why: '月球绕地球转，我们看到的被照亮部分不同，显出圆缺。',
+  g: 5
+  },
+  {
+  q: '植物的叶子为什么是绿色的？',
+  opts: ['含叶绿素反射绿光', '太阳光', '水', '土'],
+  ans: 0,
+  why: '叶含叶绿素吸收红光蓝光、反射绿光，所以看起来绿。',
+  g: 2
+  },
+  {
+  q: '天亮前为什么往往最黑？',
+  opts: ['还在地球影里', '没月亮', '有云', '风大'],
+  ans: 0,
+  why: '日出前我们所处的位置还在地球影子里，所以最暗。',
+  g: 3
+  },
+  {
+  q: '回声为什么会越来越弱？',
+  opts: ['声波能量被吸收', '远', '风', '小'],
+  ans: 0,
+  why: '声音碰到障碍反射，能量被吸收和分散，慢慢变弱。',
+  g: 4
+  },
+  {
+  q: '夏天穿浅色衣服为什么更凉快？',
+  opts: ['反射更多阳光', '轻', '薄', '贵'],
+  ans: 0,
+  why: '浅色反射更多阳光，吸热少，所以更凉快。',
+  g: 3
+  },
+  {
+  q: '盐为什么能融化路上的雪？',
+  opts: ['降低水的冰点', '白', '重', '湿'],
+  ans: 0,
+  why: '盐溶于水后让雪的冰点降低，加速融化。',
+  g: 4
+  },
+  {
+  q: '火山为什么会喷发？',
+  opts: ['地下岩浆受压喷出', '热', '地震', '雨'],
+  ans: 0,
+  why: '地下岩浆受压力，沿地壳裂缝喷出地表形成喷发。',
+  g: 5
+  },
+  {
+  q: '猫的眼睛晚上为什么发亮？',
+  opts: ['视网膜有反光层', '有电', '饿', '病'],
+  ans: 0,
+  why: '视网膜后有反光层，把光反射回来增强夜视，看起来发亮。',
+  g: 4
+  },
+  {
+  q: '馒头为什么越嚼越甜？',
+  opts: ['唾液把淀粉变糖', '饿', '软', '热'],
+  ans: 0,
+  why: '唾液里的酶把淀粉分解成糖，所以嚼着变甜。',
+  g: 3
+  },
+  {
+  q: '剥开的香蕉放久为什么变黑？',
+  opts: ['氧化变褐', '脏了', '虫咬', '冷了'],
+  ans: 0,
+  why: '香蕉皮里的多酚接触空气被氧化，逐渐变成褐色甚至黑色。',
+  g: 4
+  },
+  {
+  q: '橡皮泥为什么能捏成各种形状？',
+  opts: ['可塑性强', '软', '湿', '轻'],
+  ans: 0,
+  why: '橡皮泥受力容易变形又不易断开，可塑性很强，所以能捏成各种形状。',
+  g: 2
+  },
+  {q:'为什么天空是蓝色的？',opts:['蓝光易被散射','天本身就是蓝的','云是蓝的','太阳是蓝的'],ans:0,why:'太阳光中蓝光波长短，容易被空气分子散射到四面八方，所以天空看起来是蓝的。',g:3},
+  {q:'为什么海水是咸的？',opts:['河流把盐分带进海','鱼往海里撒盐','海天生是咸的','因为下雨少'],ans:0,why:'河水把陆地上的盐分冲进大海，水会蒸发但盐留下来，积少成多就变咸了。',g:3},
+  {q:'为什么冬天能看见呼出的白气？',opts:['水蒸气遇冷凝成小水珠','天冷让空气变白','嘴巴发热','眼睛花了'],ans:0,why:'呼出的热气里有很多水蒸气，遇到冷空气就凝结成许多小水珠，看起来像白气。',g:2},
+  {q:'为什么星星会眨眼睛？',opts:['大气抖动使星光忽明忽暗','星星真的在动','云挡住了','眼睛疲劳'],ans:0,why:'星光穿过厚薄不匀、流动的大气时，折射方向不断变化，看上去就一闪一闪像眨眼。',g:3},
+  {q:'为什么先看见闪电后听见雷声？',opts:['光的传播比声音快','雷声太小','闪电离得近','耳朵反应慢'],ans:0,why:'光速约每秒 30 万千米，声速约每秒 340 米，光比声音快得多，所以先见闪电后闻雷声。',g:2},
+  {q:'为什么植物的叶子大多是绿的？',opts:['含叶绿素反射绿光','叶子涂了绿漆','太阳是绿的','水分是绿的'],ans:0,why:'叶子里有叶绿素，它主要吸收红光和蓝光、反射绿光，所以叶子看起来是绿色的。',g:2},
+  {q:'为什么冰箱能保鲜食物？',opts:['低温抑制细菌繁殖','冰箱有魔法','因为黑暗','因为干燥'],ans:0,why:'低温让细菌和霉菌繁殖变慢，食物就不容易腐坏变质。',g:3},
+  {q:'为什么肥皂能洗掉油污？',opts:['把油分散成小滴随水冲走','因为水热','因为香味','因为泡沫多'],ans:0,why:'肥皂分子一头亲油一头亲水，能把油污包成小滴乳化，再随水冲走。',g:3},
+  {q:'为什么登山越往上越冷？',opts:['海拔越高气温越低','风更大','氧气更少','太阳更远'],ans:0,why:'对流层里海拔每升高约 1000 米，气温下降约 6℃，所以山上比山下冷。',g:4},
+  {q:'为什么铁会生锈？',opts:['铁与水和氧气反应','因为脏','因为旧','因为重'],ans:0,why:'铁在潮湿空气中和水、氧气发生化学反应，生成红棕色的铁锈（氧化铁）。',g:3},
+  {q:'为什么月亮有圆有缺？',opts:['月球绕地球转，被照亮的一面朝向我们多少在变','天狗吃月亮','云遮住','风刮的'],ans:0,why:'月球自己不发光，我们看到的亮面是它反射太阳光的部分，随位置变化而时圆时缺。',g:3},
+  {q:'为什么彩虹弯成一座桥？',opts:['阳光折射反射成圆弧形','有人画上去','云的形状','风吹的'],ans:0,why:'阳光在水珠里折射和反射，不同颜色偏折角度不同，排成一圈圆弧，地面只看到一半像桥。',g:2},
+  {q:'为什么蜜蜂飞时会嗡嗡响？',opts:['翅膀扇动很快带动空气振动','它会唱歌','它生气了','它吃饱了'],ans:0,why:'蜜蜂翅膀每秒扇动几百次，快速振动空气就发出嗡嗡声。',g:2},
+  {q:'为什么含羞草一碰就合拢？',opts:['叶枕里的水流走使叶片下垂','它怕痒','它在睡觉','风吹的'],ans:0,why:'含羞草叶柄基部有叶枕，受刺激时细胞里的水迅速流走，叶片就闭合下垂。',g:3},
+  {q:'为什么水烧开时会冒气泡？',opts:['溶解的空气跑出且水变成蒸汽','水脏了','水温太高','加了盐'],ans:0,why:'加热时水里的空气先逸出，继续升温水变成水蒸气形成气泡，就是沸腾。',g:3},
+  {q:'为什么北极星几乎不移动？',opts:['它几乎正对地球自转轴的延长线','它真的不动','它离得太远','它特别亮'],ans:0,why:'北极星位于北天极附近，地球自转时它几乎在正中心，所以整夜看起来基本不动。',g:5},
+  {q:'为什么沙漠里白天热、夜里冷？',opts:['沙子吸热快散热也快且少云','沙子是白的','风太大','雨太少'],ans:0,why:'沙石比热小，白天很快晒热、夜里很快散热；又少云少水汽保温，所以昼夜温差极大。',g:5},
+  {q:'为什么竹子长得特别快？',opts:['节间分生组织快速伸长','它喝得多','风大','土肥'],ans:0,why:'竹子靠茎节间的分生组织迅速伸长，有的品种一天能长几十厘米，所以长得飞快。',g:4},
+  {"q":"为什么树叶在秋天会变黄？","opts":["叶绿素减少","树缺水","太阳变弱","叶子老了"],"ans":0,"why":"秋天叶绿素分解减少，叶黄素显现，叶子变黄。","g":3},
+  {"q":"为什么海浪总往岸边打？","opts":["风推动海水","地球转动","月亮吸引","鱼在游"],"ans":0,"why":"风把表层海水推向岸边，形成海浪。","g":4},
+  {"q":"为什么冰箱能制冷？","opts":["制冷剂循环吸热","里面是冰","电变冷","门关着"],"ans":0,"why":"制冷剂在管道里循环，蒸发时吸收箱内热量，使温度降低。","g":5},
+  {"q":"为什么磁铁能吸铁？","opts":["铁被磁化","铁是金属","磁铁有电","铁重"],"ans":0,"why":"磁铁磁场使铁内部磁畴排列，产生吸引力。","g":5},
+  {"q":"为什么雨后会有彩虹？","opts":["水滴折射分光","天晴了","云散了","太阳近"],"ans":0,"why":"阳光穿过空气中的小水滴，折射和反射分成七色形成彩虹。","g":3},
+  {"q":"为什么肥皂能去污？","opts":["乳化油污","水变热","有香味","泡沫多"],"ans":0,"why":"肥皂分子一头亲油一头亲水，把油污乳化成小滴冲走。","g":4},
+  {"q":"为什么植物根向下长？","opts":["受重力影响","怕光","找水","土压的"],"ans":0,"why":"根有向地性，受地球重力影响向下生长。","g":4},
+  {"q":"为什么火山会喷发？","opts":["地下岩浆压力大","地震","下雨","山高"],"ans":0,"why":"地下岩浆受高压，沿薄弱处喷出地表形成火山喷发。","g":6},
+  {"q":"为什么飞机能在天上飞？","opts":["机翼产生升力","有翅膀","很轻","风托着"],"ans":0,"why":"机翼形状使上方气流快压强小，产生升力托起飞机。","g":5},
+  {"q":"为什么盐能融化冰雪？","opts":["降低冰点","盐发热","盐变水","盐白"],"ans":0,"why":"盐溶于水后使冰雪熔点降低，加速融化。","g":5},
+  {"q":"为什么猫走路没声音？","opts":["脚有肉垫","毛软","慢走","怕人"],"ans":0,"why":"猫脚掌有厚肉垫，落地缓冲，所以走路无声。","g":3},
+  {"q":"为什么我们看不到声音？","opts":["声音是波不是光","太快","太小","透明"],"ans":0,"why":"声音是物体振动产生的声波，不是光，所以肉眼看不见。","g":4}
+,
+  {"q":"为什么热水会冒白气？","opts":["水蒸气遇冷凝结","水在烧","有气泡","蒸汽有毒"],"ans":0,"why":"热水蒸发的蒸汽遇冷空气凝结成小水滴，看起来像白气。","g":4},
+  {"q":"为什么向日葵跟着太阳转？","opts":["生长素避光","太阳吸引","风太大","叶子重"],"ans":0,"why":"花盘下生长素怕光，背光侧长得快，使花盘转向太阳。","g":5},
+  {"q":"为什么大海看起来是蓝色的？","opts":["海水散射蓝光","海水是蓝色的","海底是蓝色的","海里有蓝鱼"],"ans":0,"why":"海水吸收阳光里的红光、把蓝光散射出来，所以远处看蓝蓝的。","g":4},
+  {"q":"为什么冰块放久了会变小？","opts":["升华和蒸发","被冻没了","化成水又蒸发","冰自己消失"],"ans":0,"why":"冰在空气里会慢慢升华成水蒸气，也会融化后蒸发，所以越来越小。","g":4},
+  {"q":"为什么站得高看得远？","opts":["地球是圆的","站高眼睛好","高处空气清","山挡视线"],"ans":0,"why":"地球是圆的，站得越高视线越过弧面的距离越远，就能看更远。","g":5},
+  {"q":"为什么夏天吃冰棍周围冒白气？","opts":["冷气让水汽凝结","冰棍在烧","冰会冒烟","里面有气"],"ans":0,"why":"冰棍周围热空气里的水蒸气遇冷凝结成小水滴，看起来像白气。","g":3},
+  {"q":"为什么气球吹太大会爆？","opts":["橡胶撑到极限","气太重","气太冷","颜色太多"],"ans":0,"why":"气球越吹越大，橡胶薄到撑不住时就会破掉。","g":3},
+  {"q":"为什么放大镜能把字放大？","opts":["透镜折射光线","镜子反光","玻璃厚","有颜色"],"ans":0,"why":"放大镜是凸透镜，光线穿过时折射，让字在眼里变大。","g":5},
+  {"q":"为什么会有回声？","opts":["声音被障碍物反射","墙会说话","声音变长","耳朵出错"],"ans":0,"why":"你喊出的声音碰到墙壁反射回来再被耳朵听到，就是回声。","g":4},
+  {"q":"为什么糖放水里看不见了？","opts":["溶解了","被水吃掉","蒸发了","沉底了"],"ans":0,"why":"糖在水里溶解，变成看不见的糖水，看不见但其实还在。","g":3},
+  {"q":"为什么爬楼梯比走路累？","opts":["要克服重力做功","楼梯太滑","腿太短","空气少"],"ans":0,"why":"爬楼梯时身体要向上克服重力，比平地走路花的力气大得多。","g":5},
+  {"q":"为什么肥皂泡是彩色的？","opts":["薄膜把光分开","泡里有颜料","会反光","太阳照的"],"ans":0,"why":"肥皂泡很薄的膜让光反射时互相影响，分出不同颜色。","g":5},
+  {"q":"为什么松鼠尾巴那么大？","opts":["保暖平衡转向","好看","吓敌人","当被子"],"ans":0,"why":"大尾巴能在跳跃时保持平衡、像被子一样保暖、还能帮助转向。","g":3},
+  {"q":"为什么会有春夏秋冬？","opts":["地球倾斜绕太阳转","太阳变大变小","离太阳远近","云变多了"],"ans":0,"why":"地球自转轴是倾斜的，绕太阳公转时各地受阳光多少变化，就有了四季。","g":5},
+  {"q":"为什么饿了肚子会咕咕叫？","opts":["胃肠空着蠕动","肚子里有水","气太多","饿出声了"],"ans":0,"why":"肚子空时胃肠还在蠕动，里面的气体和水被挤来挤去就咕咕响。","g":3},
+  {"q":"为什么植物朝有光的方向长？","opts":["向光性","怕黑","追太阳取暖","风吹的"],"ans":0,"why":"植物有向光性，茎会朝光多的方向生长，让叶子多晒太阳。","g":4},
+  {"q":"为什么铁块沉而铁船能浮？","opts":["船形排开水多","铁船更轻","船里有气","水太浅"],"ans":0,"why":"铁船做成空心排开很多水，浮力大过重力就浮；铁块排水少就沉。","g":5},
+  {"q":"为什么下雪后特别安静？","opts":["雪吸声音","雪太冷","没人出来","雪是白的"],"ans":0,"why":"雪花之间有很多小空隙，像吸音棉一样把声音吸进去，所以很静。","g":4},
+  {"q":"为什么白天看不见星星？","opts":["太阳光太亮","星星下班了","云遮住了","星星睡了"],"ans":0,"why":"白天太阳光把天空照得很亮，微弱的星光被盖住，所以看不见。","g":3}
+];/*opts-shuffle:QUIZ*/(function(){for(var i=0;i<QUIZ.length;i++){var it=QUIZ[i];if(!it||!it.opts||!it.opts.length)continue;var ok=it.opts[it.ans];for(var j=it.opts.length-1;j>0;j--){var r=Math.floor(Math.random()*(j+1));var t=it.opts[j];it.opts[j]=it.opts[r];it.opts[r]=t;}it.ans=it.opts.indexOf(ok);}})();
+;
+/* 给原有 12 题标注年级（按难度分布） */
+(function(){ var QG=[1,3,1,2,2,1,2,1,3,4,2,3]; QUIZ.forEach(function(q,i){ if(QG[i]!=null) q.g=QG[i]; }); })();
+var CHILD='user', store={};
+var gradeSel=0, VIEW=[];
+var TOTAL=0, score=0, answered=0, PASS_LINE=0.8;
+function bestKey(){ return 'science-quiz-'+CHILD+(gradeSel?('-g'+gradeSel):''); }
+function getView(){ return gradeSel? QUIZ.filter(function(x){return x.g===gradeSel;}) : QUIZ; }
+function getStore(){ try{ return JSON.parse(localStorage.getItem(bestKey()))||{}; }catch(e){ return {}; } }
+function setStore(o){ try{ localStorage.setItem(bestKey(), JSON.stringify(o)); }catch(e){} }
+function start(){ score=0; answered=0; VIEW=getView(); TOTAL=VIEW.length; setScreen('scrQuiz'); renderQuiz();
+  document.querySelector('#celeb p').textContent = VIEW.length+' 个为什么都搞懂啦，世界真奇妙！'; }
+function goMenu(){ setScreen('scrMenu'); }
+function setScreen(id){ ['scrMenu','scrQuiz','scrReport'].forEach(function(s){ document.getElementById(s).classList.toggle('on', s===id); }); }
+function renderQuiz(){
+  var html='';
+  VIEW.forEach(function(q,gi){
+    html+='<div class="q" id="q-'+gi+'">'+
+      '<div class="qt"><span class="qn">Q'+(gi+1)+'.</span>'+q.q+'</div><div class="opts">';
+    q.opts.forEach(function(o,oi){ html+='<button class="opt" id="opt-'+gi+'-'+oi+'" onclick="answer('+gi+','+oi+')">'+o+'</button>'; });
+    html+='</div><div class="why" id="why-'+gi+'"></div></div>';
+  });
+  document.getElementById('quizArea').innerHTML=html;
+  updateProg();
+  document.getElementById('finishBtn').style.display='none';
+}
+function answer(gi,oi){
+  var q=VIEW[gi];
+  var qEl=document.getElementById('q-'+gi);
+  if(qEl.classList.contains('done-ok')||qEl.classList.contains('done-no')) return;
+  answered++;
+  var ok=(oi===q.ans);
+  if(ok) score++;
+  q.opts.forEach(function(o,bi){
+    var b=document.getElementById('opt-'+gi+'-'+bi);
+    b.classList.add('dim');
+    if(bi===q.ans) b.classList.add('ok');
+    if(bi===oi && !ok) b.classList.add('no');
+  });
+  qEl.classList.add(ok?'done-ok':'done-no');
+  var w=document.getElementById('why-'+gi);
+  w.textContent='解析：'+q.why; w.classList.add('on');
+  updateProg();
+  if(answered>=TOTAL){ document.getElementById('finishBtn').style.display='block'; }
+}
+function updateProg(){
+  var pct=Math.round(answered/TOTAL*100);
+  document.getElementById('progBar').style.width=pct+'%';
+  document.getElementById('progTxt').textContent='已答 '+answered+' / '+TOTAL;
+}
+function finish(){
+  setScreen('scrReport');
+  var pct=TOTAL?Math.round(score/TOTAL*100):0;
+  var stars=pct>=90?3:pct>=PASS_LINE*100?2:pct>=60?1:0;
+  document.getElementById('rStars').textContent=stars>0?'⭐'.repeat(stars):'—';
+  document.getElementById('rScore').textContent=score+' / '+TOTAL;
+  document.getElementById('rPct').textContent='正确率 '+pct+'%';
+  var pass=pct>=PASS_LINE*100;
+  document.getElementById('rPass').innerHTML=pass?'<span class="pass">🎊 通关成功！达到 '+PASS_LINE*100+'% 过关线</span>':'<span class="fail">💪 还差一点，再练一遍就通关啦</span>';
+  store=getStore();
+  if(score>(store.best||0)){ store.best=score; setStore(store); }
+  document.getElementById('bestNum').textContent=store.best||0;
+  if(pass) celebrate();
+}
+function resetBest(){ if(confirm('确定清空最佳对题记录？')){ setStore({best:0}); document.getElementById('bestNum').textContent='0'; } }
+function celebrate(){
+  var emo=['🎉','✨','🔬','🌟','⭐','💡','🌈','🪐'];
+  for(var k=0;k<26;k++){ (function(){ var c=document.createElement('div'); c.className='confetti'; c.textContent=emo[Math.floor(Math.random()*emo.length)]; c.style.left=Math.random()*100+'vw'; c.style.animationDuration=(2+Math.random()*2)+'s'; document.body.appendChild(c); setTimeout(function(){ c.remove(); },4200); })(); }
+  document.getElementById('celeb').style.display='flex';
+}
+function closeCeleb(){ document.getElementById('celeb').style.display='none'; }
+function renderGrades(){
+  var n=getView().length;
+  var html='<button class="'+(gradeSel===0?'on':'')+'" onclick="setGrade(0)">全部</button>';
+  for(var g=1;g<=6;g++){ html+='<button class="'+(gradeSel===g?'on':'')+'" onclick="setGrade('+g+')">'+g+'年级</button>'; }
+  document.getElementById('grades').innerHTML=html;
+  document.getElementById('totalNum').textContent=n;
+  document.getElementById('menuTip').innerHTML='共 '+n+' 个有趣的小知识，选对 80% 就通关！做完看解析，长见识～'+(gradeSel?('（当前：'+gradeSel+'年级）'):'（全部年级）');
+}
+function setGrade(g){ gradeSel=g; renderGrades(); }
+(function(){
+  TOTAL=getView().length;
+  document.getElementById('totalNum').textContent=TOTAL;
+  var s=Portal.getSession();
+  CHILD=(s&&s.child)?s.child:'user';
+  store=getStore();
+  document.getElementById('bestNum').textContent=store.best||0;
+  renderGrades();
+  var d=new Date();
+  var wk=['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+  document.getElementById('dateStr').textContent=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+wk;
+})();
+</script>
+</body></html>

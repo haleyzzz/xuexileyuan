@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✍️ 作文起步</title>
+<style>
+  :root{ --c1:#9b5de5; --c2:#ff8fab; --green:#06d6a0; --ink:#3d2a4b; }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#f3edff,#fff0f6);color:var(--ink);padding:18px;max-width:560px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  .back{position:fixed;left:14px;top:14px;z-index:30;border:none;background:rgba(255,255,255,.85);border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink)}
+  header{background:linear-gradient(120deg,var(--c1),var(--c2));color:#fff;border-radius:24px;padding:20px;text-align:center;box-shadow:0 8px 22px rgba(155,93,229,.4)}
+  header h1{font-size:22px}
+  .date{font-size:14px;opacity:.95;margin-top:4px}
+  .stats{display:flex;gap:10px;margin:14px 0}
+  .stat{flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .stat .num{font-size:26px;font-weight:800;color:var(--c1)}
+  .stat .lbl{font-size:12px;color:#999;margin-top:2px}
+  .screen{display:none}
+  .screen.on{display:block}
+  .tabs{display:flex;gap:8px;margin:10px 0 6px}
+  .tabs .tab{flex:1;border:none;border-radius:14px;padding:10px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;background:#f3edff;color:var(--c1)}
+  .tabs .tab.on{background:var(--c1);color:#fff}
+  .btn{display:block;width:100%;border:none;border-radius:16px;padding:14px;font-size:16px;font-family:inherit;cursor:pointer;font-weight:800;color:#fff;background:var(--c1);margin-top:8px}
+  .btn.gh{background:var(--c2)}
+  .btn.sec{background:#f3edff;color:var(--c1)}
+  .tip{font-size:12px;color:#aaa;text-align:center;margin-top:10px;line-height:1.6}
+  .card{background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.06);padding:14px;margin-bottom:12px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:.15s}
+  .card:active{transform:scale(.98)}
+  .card .ce{font-size:30px}
+  .card .ct{font-size:16px;font-weight:800}
+  .card .cd{font-size:12px;color:#999;margin-top:2px}
+  .card .cdone{margin-left:auto;font-size:12px;color:var(--green);font-weight:700}
+  .detail{background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.06);padding:14px;margin-bottom:12px}
+  .detail h3{font-size:18px;margin-bottom:8px}
+  .scene{font-size:14px;line-height:1.8;background:#f7f2ff;border-radius:12px;padding:10px;color:#4a3a55}
+  .row{display:flex;gap:8px;align-items:center;margin:10px 0}
+  .row .spk{border:none;background:#f3edff;color:var(--c1);border-radius:10px;padding:6px 12px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:700}
+  .hintbox{background:#f6faff;border-radius:12px;padding:10px;font-size:13px;line-height:1.9;color:#445}
+  .hintbox b{color:var(--c1)}
+  .gw{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+  .gw span{background:#fff0f6;color:var(--c2);border-radius:999px;padding:3px 10px;font-size:13px;font-weight:700}
+  textarea{width:100%;min-height:120px;border:2px solid #ecdcff;border-radius:12px;padding:10px;font-size:15px;font-family:inherit;color:var(--ink);line-height:1.7;outline:none;resize:vertical}
+  textarea:focus{border-color:var(--c1)}
+  .model{background:#eafff6;border-radius:12px;padding:12px;font-size:14px;line-height:1.9;color:#2e5a48;display:none}
+  .model.on{display:block}
+  .celebrate{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:100}
+  .celebrate .box2{background:#fff;border-radius:24px;padding:28px 34px;text-align:center;animation:pop .4s;max-width:320px}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate h3{font-size:24px;margin-bottom:8px}
+  .celebrate p{color:#888;font-size:14px;line-height:1.6}
+  .celebrate button{margin-top:16px;border:none;background:var(--c2);color:#fff;padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+</style>
+<script>
+/* iOS 朗读稳定性补丁：保留 utterance 全局引用防 GC 静音 + 朗读前 resume()（与 speech.js 同逻辑，本页未引 speech.js 故内联） */
+(function(){ if(window.__ttsPatched) return; window.__ttsPatched=true;
+  if(!window.speechSynthesis) return;
+  var _sp=window.speechSynthesis.speak.bind(window.speechSynthesis);
+  window.speechSynthesis.speak=function(u){ try{window.speechSynthesis.resume();}catch(e){} window.__ttsUtt=u; return _sp(u); };
+})();
+</script>
+</head>
+<body>
+
+<header><h1>✍️ 作文起步</h1><div class="date" id="dateStr">今天</div></header>
+<div class="stats">
+  <div class="stat"><div class="num" id="doneNum">0</div><div class="lbl">✅ 已写篇数</div></div>
+  <div class="stat"><div class="num" id="totalNum">0</div><div class="lbl">📚 写话题目</div></div>
+</div>
+<div class="screen on" id="scrList">
+  <div class="tabs">
+    <button class="tab on" id="tabPic" onclick="setMode('pic')">🖼️ 看图写话</button>
+    <button class="tab" id="tabComp" onclick="setMode('comp')">📝 命题作文</button>
+  </div>
+  <h2 id="listTitle" style="font-size:17px;margin:10px 4px">🎯 看图写话·习作起步</h2>
+  <div class="tip" id="listTip" style="margin:0 0 12px">先读提示、用好词，再动笔写。写完点保存，还能看范文对照。</div>
+  <div id="listArea"></div>
+  <button class="btn sec" onclick="resetAll()">↺ 清空我的写话</button>
+</div>
+<div class="screen" id="scrWrite">
+  <div class="detail" id="detailBox"></div>
+  <button class="btn" onclick="saveWork()">💾 保存我的写话</button>
+  <button class="btn sec" onclick="goList()">🏠 回到题目</button>
+</div>
+<div class="tip">数据按小朋友分别保存，不会上传。</div>
+<div class="celebrate" id="celeb"><div class="box2"><h3>🎉 写作小能手！</h3><p>你的作文已经保存好啦，真棒！</p><button onclick="closeCeleb()">继续写 ✍️</button></div></div>
+<script>
+var CHILD='user', KEY='', store={};
+var ESSAYS=[
+  {"id":"e1","emoji":"🐱","title":"小猫钓鱼","scene":"小猫提着桶来到小河边，想钓一条大鱼。可是蝴蝶飞来飞去，小猫忍不住去追。结果太阳快落山了，桶里还是空的。","who":"小猫","where":"小河边","what":"钓鱼（要专心）","gw":["专心","耐心","空手而归","笑眯眯"],"model":"小猫来到小河边钓鱼，可是蝴蝶飞来它就去追。太阳落山了，桶里还是空的。我明白了：做事要专心，不能三心二意。"},
+  {"id":"e2","emoji":"🌧️","title":"下雨了","scene":"放学时忽然下起大雨。小明看见小红没带伞，就把伞往小红那边靠。两人合用一把伞，高高兴兴走回家。","who":"小明、小红","where":"放学路上","what":"一起打伞回家","gw":["热心","合用","高高兴兴","淋湿"],"model":"放学时下雨了，小红没带伞。小明把伞让给她一起打。虽然小明肩膀淋湿了，但两人都笑了。帮助别人真快乐。"},
+  {"id":"e3","emoji":"🧹","title":"大扫除","scene":"下午，班里大扫除。小刚擦窗户，小丽扫地，小华摆桌椅。大家分工合作，教室一会儿就干干净净。","who":"同学们","where":"教室","what":"分工打扫","gw":["分工","争先恐后","一尘不染","齐心协力"],"model":"大扫除开始了，同学们分工合作：小刚擦窗，小丽扫地，小华摆桌。不一会儿教室就亮堂堂的。劳动最光荣！"},
+  {"id":"e4","emoji":"🍎","title":"摘苹果","scene":"秋天，果园里苹果红了。爷爷搬来梯子，小强踮起脚摘下一个个大苹果，放进篮子里，脸上乐开了花。","who":"小强、爷爷","where":"果园","what":"摘苹果","gw":["丰收","红彤彤","乐开了花","香甜"],"model":"秋天到了，苹果红彤彤的。小强踮起脚，和爷爷一起摘苹果。篮子装满了，他心里甜滋滋的，这是丰收的喜悦。"},
+  {"id":"e5","emoji":"🐥","title":"小鸡和老鹰","scene":"一只小鹰俯冲下来，想抓小鸡。鸡妈妈张开翅膀，把小鸡护在身下，大声叫着赶走老鹰。","who":"鸡妈妈、小鸡","where":"院子里","what":"保护小鸡","gw":["勇敢","保护","张开翅膀","危险"],"model":"老鹰飞来想抓小鸡，鸡妈妈立刻张开翅膀护住孩子，勇敢地把老鹰赶走。母爱真伟大。"},
+  {"id":"e6","emoji":"🎂","title":"给妈妈过生日","scene":"今天是妈妈的生日。小兰画了一张贺卡，写上“妈妈辛苦了”，又帮妈妈端来一杯温水。妈妈感动地笑了。","who":"小兰、妈妈","where":"家里","what":"做贺卡祝妈妈生日快乐","gw":["惊喜","辛苦","感动","懂事"],"model":"妈妈生日这天，我画了一张贺卡送给她，还端来温水。妈妈笑着说我长大了。我要常帮妈妈做事。"},
+  {"id":"e7","emoji":"🌳","title":"植树","scene":"春天来了，小刚和小红扛着小树苗来到山坡上。他们挖坑、放苗、填土、浇水，小树在风里点点头。","who":"小刚、小红","where":"山坡","what":"种小树","gw":["亲手","挖坑","填土","茁壮成长"],"model":"春天，我们种下一棵小树。挖坑、放苗、填土、浇水，小树轻轻摇晃，好像在说谢谢。爱护树木，绿色更美。"},
+  {"id":"e8","emoji":"⚽","title":"踢足球","scene":"放学后，小明和伙伴们在操场上踢足球。小明一脚把球踢进网里，大家欢呼起来，满头大汗也不觉得累。","who":"小明和伙伴","where":"操场","what":"踢球进网","gw":["激烈","欢呼","满头大汗","团队合作"],"model":"放学后我们踢足球。小明带球绕过防守，一脚射门！进了！大家欢呼起来。运动让我更健康。"},
+  {"id":"e9","emoji":"🐠","title":"可爱的小金鱼","scene":"鱼缸里有两条小金鱼，一身红衣裳，尾巴像纱裙。它们吐着泡泡，看见人就游过来，可爱极了。","who":"“我”","where":"家里","what":"观察小金鱼","gw":["五颜六色","吐泡泡","活泼","小心翼翼"],"model":"我家鱼缸里有两条小金鱼，红红的尾巴像纱裙。它们吐着泡泡，活泼又可爱。我每天轻轻喂它们，可喜欢了。"},
+  {"id":"e10","emoji":"❄️","title":"堆雪人","scene":"下雪了，地上白茫茫一片。小刚滚了一个大雪球做身子，小雪球做脑袋，再插上胡萝卜鼻子，雪人笑眯眯的。","who":"小刚","where":"院子里","what":"堆雪人","gw":["白茫茫","滚雪球","胡萝卜","笑眯眯"],"model":"下雪啦！我滚出大雪球当身子，小雪球当脑袋，插上胡萝卜鼻子。雪人笑眯眯地看着我，冬天真有趣。"},
+  {"id":"e11","emoji":"📚","title":"借书","scene":"图书馆里静悄悄的。小丽挑了一本《十万个为什么》，轻轻走到柜台前办了借书手续，抱着书开心地回家。","who":"小丽","where":"图书馆","what":"借一本喜欢的书","gw":["静悄悄","挑选","知识的海洋","爱不释手"],"model":"周末我去了图书馆，借了一本《十万个为什么》。书里藏着好多秘密，我要天天读，做个爱读书的孩子。"},
+  {"id":"e12","emoji":"✉️","title":"给好朋友写一封信","scene":"小华搬走了，小方很想念他。小方拿出信纸，写下“我很好，你呢？欢迎回来看我”，装进信封寄了出去。","who":"小方","where":"家里","what":"给好朋友写信","gw":["想念","问候","一笔一画","期待"],"model":"我的好朋友搬走了，我很想念他。我写信说：我很好，你那边冷吗？欢迎回来看我。写信让我离朋友更近。"},
+  {"id":"e13","emoji":"🐶","title":"小狗学本领","scene":"小狗想学跳圈。它一次次摔倒又爬起来，最后终于跳了过去，尾巴摇得可欢了。","who":"小狗","where":"院子里","what":"学跳圈","gw":["努力","摔倒","爬起","成功"],"model":"小狗想学跳圈，摔了好几次也不放弃。终于它跳了过去！只要努力，就能成功。"},
+  {"id":"e14","emoji":"🌸","title":"春天来了","scene":"春天到了，柳树发芽，花儿开放。小红和妈妈去公园放风筝，风筝在春风里高高飞起。","who":"小红、妈妈","where":"公园","what":"放风筝","gw":["发芽","五颜六色","高高","春风"],"model":"春天来了，柳树发芽，花儿开了。我和妈妈去公园放风筝，风筝在春风里高高飞起，真开心。"},
+  {"id":"e15","emoji":"🍚","title":"帮妈妈做饭","scene":"妈妈在厨房忙，小明洗了青菜，又擦了桌子。妈妈夸他是个懂事的好孩子。","who":"小明、妈妈","where":"厨房","what":"帮忙做饭","gw":["懂事","帮忙","洗菜","夸奖"],"model":"妈妈做饭时，我帮她洗青菜、擦桌子。妈妈笑着说我真懂事。以后我要多帮家人做事。"},
+  {"id":"e16","emoji":"🚌","title":"让座","scene":"公交车上，一位老奶奶站着。小花立刻站起来，把座位让给她。全车人都朝她笑。","who":"小花、老奶奶","where":"公交车","what":"给老人让座","gw":["立刻","尊敬","站起来","表扬"],"model":"公交车上老奶奶站着，我马上起身让座。老奶奶连声谢谢，我心里甜甜的。尊敬老人是好事。"},
+  {"id":"e17","emoji":"🐰","title":"小白兔种萝卜","scene":"小白兔种下萝卜籽，天天浇水。秋天到了，它拔出又大又红的萝卜，高兴极了。","who":"小白兔","where":"菜园","what":"种萝卜","gw":["勤劳","浇水","收获","又大又红"],"model":"小白兔种下萝卜籽，每天浇水。秋天它拔出又大又红的萝卜，真高兴。勤劳才有好收成。"},
+  {"id":"e18","emoji":"🌙","title":"看星星","scene":"晚上，小刚和小伙伴躺在草地上看星星。星星一闪一闪，像在眨眼睛。","who":"小刚、小伙伴","where":"草地上","what":"看星星","gw":["一闪一闪","好奇","晴朗","眨眼睛"],"model":"晚上我和伙伴躺在草地看星星。星星一闪一闪，好像在眨眼。夜空真奇妙！"},
+  {"id":"e19","emoji":"✂️","title":"手工课","scene":"美术课上，小丽用彩纸折了一只小船。她把船放进水池，小船慢慢地漂走了。","who":"小丽","where":"美术教室","what":"折纸船","gw":["认真","彩纸","慢慢","漂走"],"model":"美术课我折了一只纸船，放进水池里。小船慢慢漂走，我好开心。动手做真有趣。"},
+  {"id":"e20","emoji":"🏊","title":"学游泳","scene":"第一次下水，小强很害怕。在教练鼓励下，他慢慢学会了憋气和划水。","who":"小强、教练","where":"游泳馆","what":"学游泳","gw":["害怕","鼓励","憋气","勇敢"],"model":"我第一次游泳很害怕，教练鼓励我。我学会了憋气和划水，真勇敢！"},
+  {"id":"e21","emoji":"📖","title":"早读","scene":"清晨，教室里书声琅琅。同学们大声朗读课文，个个精神饱满。","who":"同学们","where":"教室","what":"早读","gw":["书声琅琅","大声","精神饱满","认真"],"model":"清晨我们大声朗读，书声琅琅。认真早读让我记住更多课文，一天都精神。"},
+  {"id":"e22","emoji":"🐝","title":"小蜜蜂采蜜","scene":"花园里，小蜜蜂在花间飞来飞去，忙着采花蜜。它真是个勤劳的小工人。","who":"小蜜蜂","where":"花园","what":"采花蜜","gw":["飞来飞去","勤劳","花蜜","忙碌"],"model":"小蜜蜂在花间采蜜，飞来飞去真忙碌。它勤劳又团结，我们要向它学习。"},
+  {"id":"e23","emoji":"🎃","title":"讨糖","scene":"万圣节晚上，孩子们提着南瓜灯，挨家挨户说“不给糖就捣蛋”，口袋装满了糖。","who":"孩子们","where":"小区","what":"讨糖","gw":["南瓜灯","热闹","甜甜的","欢笑"],"model":"万圣节我们提着南瓜灯去讨糖，说了“不给糖就捣蛋”。口袋装满甜甜的糖，笑声不断。"},
+  {"id":"e24","emoji":"⛄","title":"冬天的游戏","scene":"冬天，小伙伴们堆雪人、打雪仗。小明被雪球打中，笑得直不起腰。","who":"小伙伴们","where":"雪地","what":"打雪仗","gw":["洁白","飞来","笑哈哈","热闹"],"model":"冬天我们打雪仗，雪球飞来飞去。小明被击中，笑得直不起腰。冬天真好玩！"},
+  {"id":"e25","emoji":"🌻","title":"向日葵","scene":"院子里种着向日葵，金黄花盘向着太阳。小美每天去看它，盼它结出黑籽。","who":"小美","where":"院子","what":"看向日葵","gw":["金黄金黄","向着","盼望","笑脸"],"model":"我家向日葵金黄金黄的，总向着太阳。我天天去看，盼它结出黑籽。植物真奇妙。"},
+  {"id":"e26","emoji":"🚲","title":"学骑车","scene":"爸爸扶着后座，小华慢慢蹬。摔了一跤又爬起，终于自己骑起来了。","who":"小华、爸爸","where":"小区道路","what":"学骑车","gw":["平衡","摔跤","坚持","自由"],"model":"爸爸扶着车，我慢慢骑。摔了也不怕，终于自己骑会了。坚持就有收获。"},
+  {"id":"e27","emoji":"🐢","title":"乌龟和兔子","scene":"兔子跑得快却中途睡觉，乌龟慢慢爬不停。最后乌龟先到了终点。","who":"乌龟、兔子","where":"山坡","what":"赛跑","gw":["骄傲","不停","坚持","谦虚"],"model":"兔子骄傲睡觉，乌龟一步一步不停爬，先到终点。慢也能赢，只要不放弃。"},
+  {"id":"e28","emoji":"🍂","title":"扫落叶","scene":"秋风起，树叶落满地。小刚拿着扫把，把院子扫得干干净净。","who":"小刚","where":"院子","what":"扫落叶","gw":["金黄","满地","扫把","整洁"],"model":"秋风把叶子吹满地，我拿起扫把扫干净。院子整洁了，我心里也舒坦。"},
+  {"id":"e29","emoji":"🎁","title":"圣诞礼物","scene":"圣诞夜，小方在床头挂好袜子。第二天醒来，里面装着巧克力和卡片。","who":"小方","where":"卧室","what":"等圣诞礼物","gw":["惊喜","期待","红红绿绿","温暖"],"model":"圣诞夜我挂好袜子。早上发现里面有巧克力和卡片，又惊又喜。节日真温暖。"},
+  {"id":"e30","emoji":"🐟","title":"海底世界","scene":"海洋馆里，五颜六色的小鱼游来游去，还有大海龟慢慢爬过。","who":"“我”","where":"海洋馆","what":"看鱼","gw":["五颜六色","游来游去","神奇","慢慢"],"model":"海洋馆里小鱼五颜六色，大海龟慢慢爬。海底世界真神奇，我想多了解它。"},
+  {"id":"e31","emoji":"✏️","title":"认真写作业","scene":"放学回家，小丽先写作业。她一笔一画写工整，写完才去玩。","who":"小丽","where":"书桌前","what":"写作业","gw":["先…后","工整","专心","自觉"],"model":"回家我先把作业写完，字写得工整。做完再玩，心里更轻松。自觉真好。"},
+  {"id":"e32","emoji":"🌈","title":"雨后的彩虹","scene":"一阵大雨过后，天上出现一道彩虹，红橙黄绿青蓝紫。孩子们欢呼起来。","who":"孩子们","where":"操场","what":"看彩虹","gw":["大雨","七彩","挂","欢呼"],"model":"大雨后天上挂出彩虹，七种颜色真好看。我们欢呼起来，大自然真美。"},
+  {"id":"e33","emoji":"🐘","title":"大象洗澡","scene":"大象用长鼻子吸满水，喷在自己背上洗澡，舒服极了。","who":"大象","where":"河边","what":"洗澡","gw":["长鼻子","喷","凉快","舒服"],"model":"大象用长鼻子吸水喷在背上洗澡，凉快又舒服。动物的本事真多。"},
+  {"id":"e34","emoji":"📝","title":"日记","scene":"晚上，小军写下今天的事：帮同学捡橡皮，老师表扬了他。","who":"小军","where":"家里","what":"写日记","gw":["记下","表扬","真实","好习惯"],"model":"晚上我写日记，记下帮同学捡橡皮被表扬。写日记让我记住每一天，是好习惯。"},
+  {"id":"e35","emoji":"🚒","title":"消防安全","scene":"消防员叔叔来学校，教大家用湿毛巾捂口鼻、弯腰逃生。","who":"消防员、同学们","where":"学校","what":"学消防","gw":["安全","湿毛巾","弯腰","重要"],"model":"消防员教我们逃生：湿毛巾捂口鼻、弯腰快走。安全最重要，我要记牢。"},
+  {"id":"e36","emoji":"🌟","title":"我的梦想","scene":"小兰说，她想当老师，把知识教给更多小朋友。她正努力学习呢。","who":"小兰","where":"教室","what":"说梦想","gw":["梦想","努力","知识","未来"],"model":"我的梦想是当老师，把知识教给小朋友。现在我要努力学习，为将来做准备。"},
+  {"id":"e37","emoji":"🌧️","title":"雨中送伞","scene":"放学下大雨，小刚看见一位一年级小同学没带伞，就撑伞送他回家，自己半边肩膀都湿了。","who":"小刚、小同学","where":"放学路上","what":"送小同学回家","gw":["大雨","毫不犹豫","肩膀湿了","助人为乐"],"model":"放学下起大雨，小同学没带伞。我毫不犹豫地送他回家，自己半边肩膀湿了也不在意。帮助别人，心里暖暖的。"},
+  {"id":"e38","emoji":"🌱","title":"种大蒜","scene":"科学课上老师布置种大蒜。小丽把蒜瓣放进水里，每天换水观察，几天后蒜瓣冒出了绿芽。","who":"小丽","where":"家里的窗台","what":"种大蒜、写观察日记","gw":["蒜瓣","换水","嫩芽","一天天"],"model":"我把蒜瓣放进水里，天天换水、观察。第三天它冒出了嫩嫩的绿芽！看着它一天天长高，我学会了耐心和坚持。"},
+  {"id":"e39","emoji":"🧺","title":"第一次洗衣服","scene":"妈妈不在家，小军试着自己洗手帕。他打上肥皂，搓出泡泡，冲干净晾在绳子上。","who":"小军","where":"家里","what":"学洗手帕","gw":["第一次","肥皂","泡泡","干净"],"model":"今天我第一次洗手帕：打上肥皂搓呀搓，泡泡飞起来，再冲干净晾好。看着手帕在风里飘，我学会了自己的事情自己做。"},
+  {"id":"e40","emoji":"🍁","title":"捡树叶做贴画","scene":"秋天，小红捡了各种形状的落叶，拼成一只小狐狸的贴画，还在班里展示。","who":"小红","where":"公园、教室","what":"树叶贴画","gw":["形状","五颜六色","拼成","巧手"],"model":"我在公园捡了许多落叶：红的、黄的、扇形的。我用它们拼成一只小狐狸，同学们都夸我心灵手巧。大自然是最好的画笔。"},
+  {"id":"e41","emoji":"🐢","title":"救助小乌龟","scene":"下雨后，小方在马路边发现一只迷路的小乌龟，把它送回池塘边。","who":"小方、小乌龟","where":"马路边、池塘","what":"送小乌龟回家","gw":["慢慢","小心","爱护","回家"],"model":"雨后我在路边发现一只小乌龟。我小心地捧起它，走到池塘边放下。它慢慢爬进水里，好像在跟我说谢谢。爱护小动物，人人有责。"},
+  {"id":"e42","emoji":"🏮","title":"过春节","scene":"春节到了，家里贴春联、挂灯笼。小军帮爸爸贴春联，一家人围在一起吃饺子、看烟花。","who":"小军一家","where":"家里","what":"贴春联、过年","gw":["红红火火","春联","团圆","欢声笑语"],"model":"春节到，我帮爸爸贴春联，家里红红火火。晚上一家人包饺子、看烟花，欢声笑语不断。团圆的日子真幸福！"}
+];
+var COMP=[
+  {"id":"c1","emoji":"👩","title":"我的妈妈","level":"三下","prompt":"妈妈是你最亲近的人。可以写妈妈的样子、妈妈为你做的事，或你和妈妈之间的一件温暖小事。","hint":["写一件妈妈关心你的事","写妈妈的一个温柔习惯","写你想对妈妈说的心里话"],"openings":["我的妈妈有一双温柔的眼睛，她每天为我忙个不停。","妈妈是世界上最爱我的人，今天我要夸夸她。"],"model":"我的妈妈有一双温柔的眼睛。有一次我发烧，妈妈整夜守着我，用湿毛巾一遍遍敷我的额头。我想说：妈妈，您辛苦了，我爱您！"},
+  {"id":"c2","emoji":"💡","title":"一件有意义的小事","level":"三下","prompt":"生活中总有一件小事让你觉得有意义，比如帮同学、做家务、学会新本领。把经过写清楚。","hint":["写清楚事情发生在什么时候","写你做了什么、怎么做的","写你心里的感受"],"openings":["上个周末，我做了一件让我骄傲的小事。","生活里的小事，也能藏着大道理。"],"model":"上周末，我帮邻居奶奶取了报纸。奶奶笑着摸我的头说真乖。虽然只是一件小事，但我心里甜甜的——帮助别人，自己也会快乐。"},
+  {"id":"c3","emoji":"🐱","title":"我喜欢的一种小动物","level":"三下","prompt":"选一种你喜欢的动物，写写它的样子、习性和你为什么喜欢它。","hint":["写它的外形特点","写它有趣的小动作","写你和它的故事"],"openings":["我家养了一只可爱的小猫，它是我的好朋友。","小动物真有趣，我最喜欢的是小兔子。"],"model":"我家有一只小白兔，红眼睛像宝石，三瓣嘴一动一动。它最爱吃青菜，一蹦一跳真可爱。每天喂它，我学会了照顾生命。"},
+  {"id":"c4","emoji":"🤝","title":"我的好朋友","level":"三下","prompt":"写写你的好朋友：他（她）长什么样、你们一起做过什么、为什么喜欢和TA做朋友。","hint":["写朋友的一个特点","写一件你们一起的事","写朋友带给你的快乐"],"openings":["我有一个好朋友，叫小明，我们形影不离。","真正的朋友，是遇到困难也会陪着你的人。"],"model":"我的好朋友小明，圆圆的脸上总挂着笑。我们一起踢球、一起读书。有一次我摔倒，他立刻扶我起来。有朋友真好！"},
+  {"id":"c5","emoji":"🍂","title":"美丽的秋天","level":"三上","prompt":"秋天来了，天气、树叶、果实都有哪些变化？用眼睛看、用鼻子闻，把秋天的美写下来。","hint":["写秋天的天气和颜色","写一种秋天的果实或庄稼","写出你心里的秋意"],"openings":["秋天是一位魔术师，把大地变了个样。","我爱秋天，爱它的凉爽和金黄。"],"model":"秋天到了，树叶变黄飘落，像一只只蝴蝶。果园里苹果红了，稻子弯下腰。秋风吹来，凉凉的，舒服极了。秋天真美！"},
+  {"id":"c6","emoji":"🔬","title":"一次有趣的实验","level":"四上","prompt":"你做过什么小实验？写清实验的名字、准备的材料、怎么做、发现了什么。","hint":["写实验名称和材料","写一步一步的做法","写你观察到的现象"],"openings":["科学课上的小实验，让我眼界大开。","动手做实验，才发现科学就在身边。"],"model":"我做了“盐水浮蛋”实验：把鸡蛋放进清水里，它沉了；加进盐搅拌，鸡蛋竟浮了起来！原来盐水密度大，能托起鸡蛋。科学真奇妙！"},
+  {"id":"c7","emoji":"🎨","title":"我的课余生活","level":"三下","prompt":"放学后或周末，你最喜欢做什么？画画、踢球、读书还是做家务？写出来和大家分享。","hint":["写你最爱的一项活动","写一次具体的经历","写它带给你的收获"],"openings":["我的课余生活丰富多彩，最爱的就是画画。","课余时间，是我最放松的时候。"],"model":"课余我最爱画画。上周我画了一幅全家福，爸爸看了直夸我。画画让我安静，也让我把心里的话画出来。我要一直画下去。"},
+  {"id":"c8","emoji":"🕊️","title":"假如我有一双翅膀","level":"三下","prompt":"展开想象：如果你长出翅膀，会飞到哪里、看到什么、做些什么？大胆写。","hint":["写你飞去了哪里","写你看到了什么景象","写你想做的事"],"openings":["假如我有一双翅膀，我要飞向蓝天。","翅膀带我越过山和海，去远方看看。"],"model":"假如我有一双翅膀，我要飞上天空，和白云做游戏，飞到山区给小朋友送去书本。翅膀让我明白：能帮助别人，才是最幸福的事。"},
+  {"id":"c9","emoji":"🌍","title":"我们身边的环保","level":"四上","prompt":"环保离我们很近：节约用水、垃圾分类、少用塑料袋……写一件你做过的环保小事。","hint":["写你做的环保行动","写为什么这样做","写你的倡议"],"openings":["环保不是大事，就在我们举手之间。","地球是我们共同的家，要好好爱护。"],"model":"我家学会了垃圾分类，我把废纸和塑料分开放。出门我带布袋子，不用塑料袋。小事做起，地球会更干净。大家一起行动吧！"},
+  {"id":"c10","emoji":"👩‍🏫","title":"我的老师","level":"四上","prompt":"写一位你喜欢的老师：他（她）怎样上课、怎样关心同学，或一件让你难忘的事。","hint":["写老师的一个特点","写课堂上或课后的小事","写你对老师的感谢"],"openings":["我的老师像一盏灯，照亮我们前行。","老师不仅教知识，更教我们做人。"],"model":"李老师讲课生动，下课还帮我们补错题。有一次我生病，她特意来问候。我想说：老师，谢谢您，您辛苦了！"},
+  {"id":"c11","emoji":"🚶","title":"放学路上","level":"三下","prompt":"放学回家的路上，你看到了什么、遇到了谁、发生了什么有趣的事？按顺序写下来。","hint":["写路上的风景或人物","写一件路上发生的事","写出你的心情"],"openings":["放学铃响，我背着书包走上回家的路。","每天的放学路，都有不一样的风景。"],"model":"放学路上，我看见环卫工人扫地，满头是汗。我轻声说了句“爷爷辛苦”。风吹在脸上，暖暖的。平凡的路上，也有温暖的人。"},
+  {"id":"c12","emoji":"🌠","title":"我的愿望","level":"四上","prompt":"你心里有什么愿望？当科学家、看大海、让家人健康……写写你的愿望和为什么。","hint":["写清楚你的愿望是什么","写为什么会有这个愿望","写你打算怎么努力"],"openings":["每个人心里都藏着一个小愿望。","我的愿望像星星，闪闪发光。"],"model":"我的愿望是当一名医生，帮病人赶走病痛。因为奶奶生病时，医生叔叔救了她。从现在起，我要好好读书，朝着愿望努力！"},
+  {"id":"c13","emoji":"🦾","title":"我学会了____","level":"四上","prompt":"这一年你学会了什么新本领？骑自行车、游泳、做饭、跳绳……把学习的过程写具体：遇到的困难和怎么克服的。","hint":["写你学的是什么本领","写遇到的困难和失败","写你怎么学会的、心情怎样"],"openings":["每学会一样本领，都要流下汗水。","从不会到会，中间藏着坚持。"],"model":"我学会了跳双摇。一开始绳子总绊脚，我摔了好多次。我每天练十分钟，一周后终于连跳了十个！我明白了：本领是练出来的，不怕失败就能学会。"},
+  {"id":"c14","emoji":"🍚","title":"一次家务劳动","level":"三下","prompt":"你帮家里做过什么家务？扫地、洗碗、择菜……把做的过程和感受写下来。","hint":["写你做的是哪件家务","写你怎么一步一步做的","写做完后的感受"],"openings":["别看我小，我也会帮家里干活。","劳动虽然累，心里却很甜。"],"model":"今天我帮妈妈洗碗。我先用洗洁精搓出泡泡，再用清水冲干净，一个个摆好。看着亮晶晶的碗，我累并快乐着。妈妈夸我长大了！"},
+  {"id":"c15","emoji":"📖","title":"我推荐一本书","level":"四上","prompt":"把你最喜欢的一本书推荐给大家：书名、主要讲了什么、哪里最吸引你、为什么值得读。","hint":["写清书名和主要内容","写最吸引你的情节或人物","写你的推荐理由"],"openings":["好书像朋友，我要把这位朋友介绍给你。","最近我读了一本书，越读越入迷。"],"model":"我推荐《夏洛的网》。它讲蜘蛛夏洛用网上的字救了小猪威尔伯。最打动我的是夏洛说的「我帮助你，让你的生命有价值」。读完我懂得了友谊的珍贵，你也来读读吧！"},
+  {"id":"c16","emoji":"🌞","title":"一个难忘的日子","level":"四上","prompt":"哪一天让你特别难忘？生日、比赛、旅行、第一次……把那天的经历和心情写下来。","hint":["写那天发生了什么事","写事情最精彩的瞬间","写为什么难忘"],"openings":["日子像流水，总有几天闪闪发光。","那一天，我一直记在心里。"],"model":"运动会上，我参加接力赛。轮到我时心跳得像打鼓，我紧紧握住棒拼命跑。我们班得了第一名，大家抱在一起欢呼。那一天我明白：团结的力量真大！"}
+];
+var curIdx=-1, curHW=null;
+var MODE='pic';
+var CUR=function(){ return MODE==='pic'?ESSAYS:COMP; };
+function setMode(m){ MODE=m; document.getElementById('tabPic').classList.toggle('on',m==='pic'); document.getElementById('tabComp').classList.toggle('on',m==='comp'); renderList(); }
+function speak(t){ try{ if(!('speechSynthesis'in window))return; window.speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance(t); u.lang='zh-CN'; u.rate=.9; window.speechSynthesis.speak(u); }catch(e){} }
+function getStore(){ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {works:{}}; } }
+function setStore(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
+function setScreen(id){ document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('on');}); document.getElementById(id).classList.add('on'); }
+function renderList(){
+  var arr=CUR();
+  var title= MODE==='pic'?'🎯 看图写话·习作起步':'📝 命题作文·我来写';
+  var tip = MODE==='pic'?'先读提示、用好词，再动笔写。写完点保存，还能看范文对照。':'看清题目和提示，用「好开头」引出，写完点保存对照范文。';
+  document.getElementById('listTitle').textContent=title;
+  document.getElementById('listTip').textContent=tip;
+  var html='';
+  arr.forEach(function(e,idx){
+    var done = store.works && store.works[e.id];
+    html+='<div class="card" onclick="openEssay('+idx+')"><div class="ce">'+e.emoji+'</div><div><div class="ct">'+e.title+'</div><div class="cd">点我开始写作</div></div>'+(done?'<div class="cdone">✓ 已写</div>':'')+'</div>';
+  });
+  document.getElementById('listArea').innerHTML=html;
+  var n=0; if(store.works){ arr.forEach(function(e){ if(store.works[e.id]) n++; }); }
+  document.getElementById('doneNum').textContent=n;
+  document.getElementById('totalNum').textContent=arr.length;
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function openEssay(idx){
+  curIdx=idx; var e=CUR()[idx];
+  var saved = (store.works&&store.works[e.id])?store.works[e.id]:'';
+  var html='<h3>'+e.emoji+' '+e.title+'</h3>';
+  if(MODE==='pic'){
+    html+='<div class="scene" id="sceneTxt">'+e.scene+'</div>';
+    html+='<div class="row"><button class="spk" onclick="speak(document.getElementById(\'sceneTxt\').innerText)">🔊 朗读情境</button></div>';
+    html+='<div class="hintbox"><b>谁：</b>'+e.who+'　<b>在哪里：</b>'+e.where+'　<b>做什么：</b>'+e.what+'</div>';
+    html+='<div style="font-size:13px;color:#999;margin:10px 0 2px;font-weight:700">🌟 好词好句</div><div class="gw">';
+    e.gw.forEach(function(w){ html+='<span>'+w+'</span>'; });
+    html+='</div>';
+  } else {
+    html+='<div class="scene" id="sceneTxt">'+e.prompt+'</div>';
+    html+='<div class="row"><button class="spk" onclick="speak(document.getElementById(\'sceneTxt\').innerText)">🔊 朗读题目要求</button></div>';
+    html+='<div class="hintbox"><b>📌 写作小锦囊：</b><br>'+e.hint.map(function(h){return '· '+h;}).join('<br>')+'</div>';
+    html+='<div style="font-size:13px;color:#999;margin:10px 0 2px;font-weight:700">🌟 好开头（参考）</div><div class="gw">';
+    e.openings.forEach(function(o){ html+='<span>'+o+'</span>'; });
+    html+='</div>';
+  }
+  html+='<div style="font-size:13px;color:#999;margin:8px 0 4px;font-weight:700">✍️ 我的作文（可打字，也可在下面手写）</div>';
+  html+='<textarea id="myText" placeholder="动笔写一写吧～">'+esc(saved)+'</textarea>';
+  html+='<div id="hwSlot"></div>';
+  html+='<button class="btn sec" style="margin-top:8px" onclick="showModel()">👀 看范文对照</button>';
+  html+='<div class="model" id="modelBox">'+e.model+'</div>';
+  document.getElementById('detailBox').innerHTML=html;
+  if(window.Handwrite){
+    curHW=Handwrite.create({placeholder:'✍️ 在这里用手写你的作文'});
+    var slot=document.getElementById('hwSlot'); if(slot) slot.appendChild(curHW.el);
+  } else { curHW=null; }
+  setScreen('scrWrite');
+}
+function showModel(){ document.getElementById('modelBox').classList.toggle('on'); }
+function saveWork(){
+  if(curIdx<0) return;
+  var e=CUR()[curIdx]; var txt=document.getElementById('myText').value;
+  if(!store.works) store.works={};
+  store.works[e.id]=txt;
+  if(window.Handwrite && curHW && !curHW.isEmpty()){
+    if(!store.imgs) store.imgs={};
+    store.imgs[e.id]=curHW.toDataURL();
+  }
+  setStore(store);
+  var n=0; CUR().forEach(function(x){ if(store.works[x.id]) n++; });
+  document.getElementById('doneNum').textContent=n;
+  var c=document.getElementById('celeb'); c.style.display='flex';
+}
+function closeCeleb(){ document.getElementById('celeb').style.display='none'; }
+function goList(){ renderList(); setScreen('scrList'); }
+function resetAll(){ if(confirm('确定清空所有写话？')){ store={works:{}}; setStore(store); renderList(); } }
+(function init(){
+  var s=Portal.getSession(); CHILD=(s&&s.child)?s.child:'user'; KEY='essay-'+CHILD; store=getStore();
+  if(!store.works) store.works={};
+  document.getElementById('dateStr').textContent=new Date().toLocaleDateString('zh-CN');
+  renderList();
+})();
+</script>
+<script src="handwrite.js"></script>
+</body>
+</html>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📏 单位换算</title>
+<style>
+  :root{ --c1:#3a86ff; --c2:#06d6a0; --green:#06d6a0; --ink:#3d3a4b; }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#eef5ff,#eafff7);color:var(--ink);padding:18px;max-width:560px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  .back{position:fixed;left:14px;top:14px;z-index:30;border:none;background:rgba(255,255,255,.85);border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink)}
+  header{background:linear-gradient(120deg,var(--c1),var(--c2));color:#fff;border-radius:24px;padding:20px;text-align:center;box-shadow:0 8px 22px rgba(58,134,255,.4)}
+  header h1{font-size:22px}
+  .date{font-size:14px;opacity:.95;margin-top:4px}
+  .stats{display:flex;gap:10px;margin:14px 0}
+  .stat{flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .stat .num{font-size:26px;font-weight:800;color:var(--c1)}
+  .stat .lbl{font-size:12px;color:#999;margin-top:2px}
+  .screen{display:none}
+  .screen.on{display:block}
+  .btn{display:block;width:100%;border:none;border-radius:16px;padding:14px;font-size:16px;font-family:inherit;cursor:pointer;font-weight:800;color:#fff;background:var(--c1);margin-top:8px}
+  .btn.gh{background:var(--c2)}
+  .btn.sec{background:#eef5ff;color:var(--c1)}
+  .prog-wrap{margin:6px 0 14px}
+  .progress{height:14px;background:#dbeafe;border-radius:10px;overflow:hidden}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--c1),var(--c2));border-radius:10px;transition:width .4s}
+  .prog-txt{font-size:13px;color:#888;text-align:center;margin-top:4px}
+  .q{background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.06);padding:14px;margin-bottom:12px;border:3px solid transparent;transition:border-color .2s}
+  .q.done-ok{border-color:var(--green)}
+  .q.done-no{border-color:#ff6b6b}
+  .q .qt{font-size:15px;font-weight:700;margin-bottom:10px;line-height:1.6}
+  .q .qt .qn{color:var(--c1);margin-right:6px}
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{border:none;border-radius:12px;padding:11px 14px;font-size:14px;text-align:left;font-family:inherit;cursor:pointer;background:#eef5ff;color:var(--ink);transition:.15s}
+  .opt:active{transform:scale(.98)}
+  .opt.ok{background:var(--green);color:#fff}
+  .opt.no{background:#ff6b6b;color:#fff}
+  .opt.dim{opacity:.45;pointer-events:none}
+  .why{font-size:13px;color:#888;margin-top:10px;background:#f6f8fb;border-radius:10px;padding:9px;line-height:1.6;display:none}
+  .why.on{display:block}
+  .report{background:#fff;border-radius:24px;box-shadow:0 8px 22px rgba(0,0,0,.08);padding:24px;text-align:center;margin-top:14px}
+  .report .stars{font-size:34px;letter-spacing:4px;margin:6px 0}
+  .report .score{font-size:30px;font-weight:800;color:var(--c1)}
+  .report .sub{font-size:14px;color:#888;margin-top:4px}
+  .report .line{font-size:15px;color:var(--ink);margin-top:10px}
+  .report .pass{color:var(--green);font-weight:800}
+  .report .fail{color:#ff6b6b;font-weight:800}
+  .reset{background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;text-decoration:underline;display:block;margin:10px auto 0;font-family:inherit}
+  .tip{font-size:12px;color:#aaa;text-align:center;margin-top:14px;line-height:1.6}
+  .confetti{position:fixed;top:-40px;font-size:24px;pointer-events:none;z-index:99;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:.2}}
+  .celebrate{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:100}
+  .celebrate .box2{background:#fff;border-radius:24px;padding:28px 34px;text-align:center;animation:pop .4s;max-width:320px}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate h3{font-size:24px;margin-bottom:8px}
+  .celebrate p{color:#888;font-size:14px;line-height:1.6}
+  .celebrate button{margin-top:16px;border:none;background:var(--c2);color:#fff;padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+</style>
+</head>
+<body>
+
+<header><h1>📏 单位换算</h1><div class="date" id="dateStr">今天</div></header>
+<div class="stats">
+  <div class="stat"><div class="num" id="bestNum">0</div><div class="lbl">🏆 最佳对题</div></div>
+  <div class="stat"><div class="num" id="totalNum">0</div><div class="lbl">📝 题目总数</div></div>
+  <div class="stat"><div class="num" id="passNum">80%</div><div class="lbl">✅ 通关线</div></div>
+</div>
+<div class="screen on" id="scrMenu">
+  <h2 style="font-size:17px;margin:6px 4px 10px">🎯 长度·质量·时间·人民币</h2>
+  <div class="tip" style="margin:0 0 12px">记住进率就会换算：1千米=1000米，1米=100厘米，1时=60分，1元=10角。选对 80% 通关！</div>
+  <button class="btn" onclick="start()">🚀 开始闯关</button>
+  <button class="btn sec" onclick="resetBest()">↺ 清空最佳记录</button>
+</div>
+<div class="screen" id="scrQuiz">
+  <div class="prog-wrap"><div class="progress"><i id="progBar"></i></div><div class="prog-txt" id="progTxt">已答 0 / 0</div></div>
+  <div id="quizArea"></div>
+  <button class="btn gh" id="finishBtn" onclick="finish()" style="display:none">🏁 查看战报</button>
+</div>
+<div class="screen" id="scrReport">
+  <div class="report">
+    <div class="stars" id="rStars">⭐⭐⭐</div>
+    <div class="score" id="rScore">0 / 0</div>
+    <div class="sub" id="rPct">正确率 0%</div>
+    <div class="line" id="rPass"></div>
+  </div>
+  <button class="btn" onclick="start()">🔄 再来一轮</button>
+  <button class="btn sec" onclick="goMenu()">🏠 回到首页</button>
+</div>
+<div class="tip">数据按小朋友分别保存，不会上传。</div>
+<div class="celebrate" id="celeb"><div class="box2"><h3>🎉 换算小能手！</h3><p>各种单位换算都难不倒你！</p><button onclick="closeCeleb()">继续闯关 💪</button></div></div>
+<script>
+var CHILD='user', KEY='', store={};
+var QUIZ=[
+  {q:'3 千米 = （ ）米',opts:['30','300','3000','30000'],ans:2,why:'1千米=1000米，3千米=3000米。'},
+  {q:'5 米 = （ ）厘米',opts:['50','500','5000','5'],ans:1,why:'1米=100厘米，5米=500厘米。'},
+  {q:'2 分米 = （ ）厘米',opts:['20','200','2','0.2'],ans:0,why:'1分米=10厘米，2分米=20厘米。'},
+  {q:'40 毫米 = （ ）厘米',opts:['4','40','0.4','400'],ans:0,why:'10毫米=1厘米，40毫米=4厘米。'},
+  {q:'7 米 = （ ）分米',opts:['70','700','7','0.7'],ans:0,why:'1米=10分米，7米=70分米。'},
+  {q:'1000 米 = （ ）千米',opts:['1','10','100','0.1'],ans:0,why:'1000米=1千米。'},
+  {q:'6 厘米 = （ ）毫米',opts:['60','600','6','0.6'],ans:0,why:'1厘米=10毫米，6厘米=60毫米。'},
+  {q:'9 千米 = （ ）米',opts:['9000','900','90','9'],ans:0,why:'9千米=9000米。'},
+  {q:'4 米 = （ ）毫米',opts:['4000','400','40','4'],ans:0,why:'1米=1000毫米，4米=4000毫米。'},
+  {q:'80 厘米 = （ ）分米',opts:['8','80','0.8','800'],ans:0,why:'10厘米=1分米，80厘米=8分米。'},
+  {q:'2 吨 = （ ）千克',opts:['2000','200','20','2'],ans:0,why:'1吨=1000千克，2吨=2000千克。'},
+  {q:'5000 克 = （ ）千克',opts:['5','50','500','0.5'],ans:0,why:'1000克=1千克，5000克=5千克。'},
+  {q:'3 千克 = （ ）克',opts:['3000','300','30','3'],ans:0,why:'1千克=1000克，3千克=3000克。'},
+  {q:'6 吨 = （ ）千克',opts:['6000','600','60','6'],ans:0,why:'6吨=6000千克。'},
+  {q:'4000 千克 = （ ）吨',opts:['4','40','400','0.4'],ans:0,why:'1000千克=1吨，4000千克=4吨。'},
+  {q:'8 千克 = （ ）克',opts:['8000','800','80','8'],ans:0,why:'8千克=8000克。'},
+  {q:'1 吨 500 千克 = （ ）千克',opts:['1500','1050','1005','150'],ans:0,why:'1吨=1000千克，1000+500=1500千克。'},
+  {q:'9 吨 = （ ）千克',opts:['9000','900','90','9'],ans:0,why:'9吨=9000千克。'},
+  {q:'2 时 = （ ）分',opts:['120','20','200','12'],ans:0,why:'1时=60分，2时=120分。'},
+  {q:'3 分 = （ ）秒',opts:['180','30','300','18'],ans:0,why:'1分=60秒，3分=180秒。'},
+  {q:'1 日 = （ ）时',opts:['24','12','48','60'],ans:0,why:'1日=24时。'},
+  {q:'120 分 = （ ）时',opts:['2','20','12','200'],ans:0,why:'60分=1时，120分=2时。'},
+  {q:'5 时 = （ ）分',opts:['300','50','500','30'],ans:0,why:'5时=300分。'},
+  {q:'180 秒 = （ ）分',opts:['3','30','18','300'],ans:0,why:'60秒=1分，180秒=3分。'},
+  {q:'4 分 = （ ）秒',opts:['240','40','400','24'],ans:0,why:'4分=240秒。'},
+  {q:'48 时 = （ ）日',opts:['2','20','48','4'],ans:0,why:'24时=1日，48时=2日。'},
+  {q:'60 秒 = （ ）分',opts:['1','10','60','6'],ans:0,why:'60秒=1分。'},
+  {q:'1 元 = （ ）角',opts:['10','100','1','0.1'],ans:0,why:'1元=10角。'},
+  {q:'5 角 = （ ）分',opts:['50','5','500','0.5'],ans:0,why:'1角=10分，5角=50分。'},
+  {q:'2 元 = （ ）分',opts:['200','20','2','2000'],ans:0,why:'1元=100分，2元=200分。'},
+  {q:'30 分 = （ ）角',opts:['3','30','0.3','300'],ans:0,why:'10分=1角，30分=3角。'},
+  {q:'10 角 = （ ）元',opts:['1','10','100','0.1'],ans:0,why:'10角=1元。'},
+  {q:'80 分 = （ ）角',opts:['8','80','0.8','800'],ans:0,why:'10分=1角，80分=8角。'},
+  {q:'6 元 = （ ）角',opts:['60','600','6','6000'],ans:0,why:'1元=10角，6元=60角。'},
+  {q:'100 分 = （ ）元',opts:['1','10','100','0.1'],ans:0,why:'100分=1元。'},
+  {q:'4 元 5 角 = （ ）角',opts:['45','405','450','9'],ans:0,why:'4元=40角，40+5=45角。'},
+  {q:'70 角 = （ ）元',opts:['7','70','700','0.7'],ans:0,why:'10角=1元，70角=7元。'},
+  {q:'3 平方米 = （ ）平方分米',opts:['300','30','3','3000'],ans:0,why:'1平方米=100平方分米，3平方米=300平方分米。'},
+  {q:'5 平方分米 = （ ）平方厘米',opts:['500','50','5','5000'],ans:0,why:'1平方分米=100平方厘米，5平方分米=500平方厘米。'},
+  {q:'200 平方厘米 = （ ）平方分米',opts:['2','20','200','0.2'],ans:0,why:'100平方厘米=1平方分米，200平方厘米=2平方分米。'},
+  {q:'700 平方分米 = （ ）平方米',opts:['7','70','700','0.7'],ans:0,why:'100平方分米=1平方米，700平方分米=7平方米。'},
+  {q:'9 平方米 = （ ）平方分米',opts:['900','90','9','9000'],ans:0,why:'9平方米=900平方分米。'},
+  {q:'600 平方厘米 = （ ）平方分米',opts:['6','60','600','0.6'],ans:0,why:'600平方厘米=6平方分米。'},
+  {q:'1 千米 - 300 米 = （ ）米',opts:['700','1300','300','1000'],ans:0,why:'1千米=1000米，1000-300=700米。'},
+  {q:'2 米 - 15 厘米 = （ ）厘米',opts:['185','215','200','35'],ans:0,why:'2米=200厘米，200-15=185厘米。'},
+  {q:'1 时 30 分 = （ ）分',opts:['90','130','60','150'],ans:0,why:'1时=60分，60+30=90分。'},
+  {q:'2 分 40 秒 = （ ）秒',opts:['160','140','200','100'],ans:0,why:'2分=120秒，120+40=160秒。'},
+  {q:'3 元 - 8 角 = （ ）角',opts:['22','38','30','14'],ans:0,why:'3元=30角，30-8=22角。'},
+  {q:'1 吨 - 200 千克 = （ ）千克',opts:['800','1200','200','1800'],ans:0,why:'1吨=1000千克，1000-200=800千克。'},
+  {q:'4 千米 500 米 = （ ）米',opts:['4500','4050','4005','450'],ans:0,why:'4千米=4000米，4000+500=4500米。'},
+  {q:'3 千米 ○ 3000 米（填 =、>、<）',opts:['=','>','<','≠'],ans:0,why:'3千米=3000米，所以相等。'},
+  {q:'5 吨 ○ 5000 克',opts:['>','<','=','≠'],ans:0,why:'5吨=5000千克，远大于5000克。'},
+  {q:'2 时 ○ 200 分',opts:['<','>','=','≠'],ans:0,why:'2时=120分，120<200。'},
+  {q:'1 米 ○ 100 厘米',opts:['=','>','<','≠'],ans:0,why:'1米=100厘米，相等。'},
+  {q:'4 千克 ○ 4000 克',opts:['=','>','<','≠'],ans:0,why:'4千克=4000克，相等。'}
+,
+  {q:'2 升 = （ ）毫升',opts:['2000','200','20','2'],ans:0,why:'1升=1000毫升，2升=2000毫升。'},
+  {q:'5000 毫升 = （ ）升',opts:['5','50','500','0.5'],ans:0,why:'1000毫升=1升，5000毫升=5升。'},
+  {q:'3 立方米 = （ ）立方分米',opts:['3000','300','30','3'],ans:0,why:'1立方米=1000立方分米，3立方米=3000立方分米。'},
+  {q:'8 立方分米 = （ ）立方厘米',opts:['8000','800','80','8'],ans:0,why:'1立方分米=1000立方厘米，8立方分米=8000立方厘米。'},
+  {q:'4000 立方厘米 = （ ）立方分米',opts:['4','40','400','0.4'],ans:0,why:'1000立方厘米=1立方分米，4000=4。'},
+  {q:'1 立方分米 = （ ）升',opts:['1','10','100','0.1'],ans:0,why:'1立方分米=1升。'},
+  {q:'1 立方厘米 = （ ）毫升',opts:['1','10','100','0.1'],ans:0,why:'1立方厘米=1毫升。'},
+  {q:'6 升 = （ ）立方分米',opts:['6','60','600','0.6'],ans:0,why:'1升=1立方分米，6升=6立方分米。'},
+  {q:'4 千米 300 米 = （ ）米',opts:['4300','4030','4003','430'],ans:0,why:'4千米=4000米，4000+300=4300米。'},
+  {q:'3 吨 50 千克 = （ ）千克',opts:['3050','3500','3005','350'],ans:0,why:'3吨=3000千克，3000+50=3050千克。'},
+  {q:'2 米 5 分米 = （ ）分米',opts:['25','205','250','20'],ans:0,why:'2米=20分米，20+5=25分米。'},
+  {q:'5 时 40 分 = （ ）分',opts:['340','540','300','94'],ans:0,why:'5时=300分，300+40=340分。'},
+  {q:'1 元 8 角 = （ ）角',opts:['18','108','180','28'],ans:0,why:'1元=10角，10+8=18角。'},
+  {q:'3 平方米 50 平方分米 = （ ）平方分米',opts:['350','305','3005','35'],ans:0,why:'3平方米=300平方分米，300+50=350平方分米。'},
+  {q:'5000 米 = （ ）千米',opts:['5','50','500','0.5'],ans:0,why:'1000米=1千米，5000米=5千米。'},
+  {q:'7000 千克 = （ ）吨',opts:['7','70','700','0.7'],ans:0,why:'1000千克=1吨，7000千克=7吨。'},
+  {q:'360 分 = （ ）时',opts:['6','60','36','3.6'],ans:0,why:'60分=1时，360分=6时。'},
+  {q:'9 升 ○ 9000 毫升',opts:['=','>','<','≠'],ans:0,why:'1升=1000毫升，9升=9000毫升，相等。'},
+  {q:'2 吨 ○ 2000 克',opts:['>','<','=','≠'],ans:0,why:'2吨=2000千克，远大于2000克。'},
+  {q:'500 厘米 ○ 5 米',opts:['=','>','<','≠'],ans:0,why:'100厘米=1米，500厘米=5米，相等。'},
+  {q:'3 平方米 ○ 300 平方厘米',opts:['>','<','=','≠'],ans:0,why:'3平方米=30000平方厘米，远大于300。'},
+  {q:'1 时 20 分 ○ 80 分',opts:['=','>','<','≠'],ans:0,why:'1时20分=80分，相等。'},
+  {q:'7 千克 30 克 = （ ）克',opts:['7030','7300','7003','730'],ans:0,why:'7千克=7000克，7000+30=7030克。'},
+  {q:'2 立方米 400 立方分米 = （ ）立方分米',opts:['2400','2040','2004','240'],ans:0,why:'2立方米=2000立方分米，2000+400=2400立方分米。'},
+  {q:'10 毫米 + 2 厘米 = （ ）毫米',opts:['30','12','3','21'],ans:0,why:'2厘米=20毫米，10+20=30毫米。'}
+,
+  {"q":"4 千米 = （ ）米","opts":["4000","400","40","40000"],"ans":0,"why":"1千米=1000米，4千米=4000米。"},
+  {"q":"3 吨 = （ ）千克","opts":["3000","300","30","30000"],"ans":0,"why":"1吨=1000千克，3吨=3000千克。"},
+  {"q":"2 千克 = （ ）克","opts":["2000","200","20","20000"],"ans":0,"why":"1千克=1000克，2千克=2000克。"},
+  {"q":"5 元 = （ ）角","opts":["50","500","5","0.5"],"ans":0,"why":"1元=10角，5元=50角。"},
+  {"q":"8 平方米 = （ ）平方分米","opts":["800","80","8000","8"],"ans":0,"why":"1平方米=100平方分米，8平方米=800平方分米。"},
+  {"q":"6 小时 = （ ）分钟","opts":["360","60","36","600"],"ans":0,"why":"1小时=60分钟，6小时=360分钟。"},
+  {"q":"1 立方米 = （ ）立方分米","opts":["1000","100","10","10000"],"ans":0,"why":"1立方米=1000立方分米。"},
+  {"q":"3 升 = （ ）毫升","opts":["3000","300","30","30000"],"ans":0,"why":"1升=1000毫升，3升=3000毫升。"},
+  {"q":"9 米 = （ ）分米","opts":["90","900","9","0.9"],"ans":0,"why":"1米=10分米，9米=90分米。"},
+  {"q":"200 厘米 = （ ）米","opts":["2","20","0.2","2000"],"ans":0,"why":"100厘米=1米，200厘米=2米。"}
+  ,{q:'7 千米 = （ ）米',opts:['7000','700','70','7'],ans:0,why:'1千米=1000米，7千米=7000米。'}
+  ,{q:'4 米 = （ ）厘米',opts:['400','40','4000','4'],ans:0,why:'1米=100厘米，4米=400厘米。'}
+  ,{q:'6 分米 = （ ）厘米',opts:['60','600','6','0.6'],ans:0,why:'1分米=10厘米，6分米=60厘米。'}
+  ,{q:'9 吨 = （ ）千克',opts:['9000','900','90','9'],ans:0,why:'1吨=1000千克，9吨=9000千克。'}
+  ,{q:'7 千克 = （ ）克',opts:['7000','700','70','7'],ans:0,why:'1千克=1000克，7千克=7000克。'}
+  ,{q:'6 时 = （ ）分',opts:['360','60','36','600'],ans:0,why:'1时=60分，6时=360分。'}
+  ,{q:'4 分 = （ ）秒',opts:['240','40','400','24'],ans:0,why:'1分=60秒，4分=240秒。'}
+  ,{q:'3 元 = （ ）分',opts:['300','30','3','3000'],ans:0,why:'1元=100分，3元=300分。'}
+  ,{q:'8 平方米 = （ ）平方分米',opts:['800','80','8000','8'],ans:0,why:'1平方米=100平方分米，8平方米=800平方分米。'}
+  ,{q:'3 平方分米 = （ ）平方厘米',opts:['300','30','3','3000'],ans:0,why:'1平方分米=100平方厘米，3平方分米=300平方厘米。'}
+  ,{q:'5 升 = （ ）毫升',opts:['5000','500','50','5'],ans:0,why:'1升=1000毫升，5升=5000毫升。'}
+  ,{q:'2 立方米 = （ ）立方分米',opts:['2000','200','20','2'],ans:0,why:'1立方米=1000立方分米，2立方米=2000立方分米。'}
+  ,{q:'1 千米 200 米 = （ ）米',opts:['1200','1002','1020','120'],ans:0,why:'1千米=1000米，1000+200=1200米。'}
+  ,{q:'3 米 4 分米 = （ ）分米',opts:['34','304','340','30'],ans:0,why:'3米=30分米，30+4=34分米。'}
+  ,{q:'4 吨 80 千克 = （ ）千克',opts:['4080','4800','4008','480'],ans:0,why:'4吨=4000千克，4000+80=4080千克。'}
+  ,{q:'2 时 15 分 = （ ）分',opts:['135','215','120','95'],ans:0,why:'2时=120分，120+15=135分。'}
+  ,{q:'5 元 6 角 = （ ）角',opts:['56','506','560','50'],ans:0,why:'5元=50角，50+6=56角。'}
+  ,{q:'2000 克 = （ ）千克',opts:['2','20','200','0.2'],ans:0,why:'1000克=1千克，2000克=2千克。'}
+  ,{q:'9 平方米 20 平方分米 = （ ）平方分米',opts:['920','902','9002','92'],ans:0,why:'9平方米=900平方分米，900+20=920平方分米。'}
+  ,{q:'5 千米 ○ 5000 米',opts:['=','>','<','≠'],ans:0,why:'5千米=5000米，相等。'}
+  ,{q:'4 千克 ○ 400 克',opts:['>','<','=','≠'],ans:0,why:'4千克=4000克，大于400克。'}
+  ,{q:'3 时 ○ 180 分',opts:['=','>','<','≠'],ans:0,why:'3时=180分，相等。'}
+  ,{q:'6 平方米 ○ 60 平方分米',opts:['>','<','=','≠'],ans:0,why:'6平方米=600平方分米，大于60。'}
+  ,{q:'10 分米 + 30 厘米 = （ ）分米',opts:['13','40','4','10'],ans:0,why:'30厘米=3分米，10+3=13分米。'}
+  ,{q:'1 千克 − 200 克 = （ ）克',opts:['800','1200','200','1800'],ans:0,why:'1千克=1000克，1000−200=800克。'}
+];/*opts-shuffle:QUIZ*/(function(){for(var i=0;i<QUIZ.length;i++){var it=QUIZ[i];if(!it||!it.opts||!it.opts.length)continue;var ok=it.opts[it.ans];for(var j=it.opts.length-1;j>0;j--){var r=Math.floor(Math.random()*(j+1));var t=it.opts[j];it.opts[j]=it.opts[r];it.opts[r]=t;}it.ans=it.opts.indexOf(ok);}})();
+;
+function getStore(){ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; } }
+function setStore(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
+function setScreen(id){ document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('on');}); document.getElementById(id).classList.add('on'); }
+var score=0, answered=0;
+function start(){ score=0; answered=0; setScreen('scrQuiz'); renderQuiz(); }
+function renderQuiz(){
+  var html='';
+  QUIZ.forEach(function(it,idx){
+    html+='<div class="q" id="q'+idx+'"><div class="qt"><span class="qn">'+(idx+1)+'.</span>'+it.q+'</div><div class="opts">';
+    it.opts.forEach(function(op,oi){ html+='<button class="opt" onclick="choose('+idx+','+oi+')" id="o'+idx+'_'+oi+'">'+op+'</button>'; });
+    html+='</div><div class="why" id="w'+idx+'"></div><div class="hw-slot" id="hw-'+idx+'"></div></div>';
+  });
+  document.getElementById('quizArea').innerHTML=html;
+  if(window.Handwrite){
+    QUIZ.forEach(function(it,idx){
+      var slot=document.getElementById('hw-'+idx);
+      var hw=Handwrite.create({revealText:String(it.opts[it.ans]), placeholder:'✍️ 用手写答案（如 '+it.opts[it.ans]+'）', onReveal:function(){ markHW(idx, QUIZ.length); }});
+      slot.appendChild(hw.el);
+    });
+  }
+  document.getElementById('finishBtn').style.display='none';
+  updateProg();
+}
+function markHW(idx, total){
+  var q=document.getElementById('q'+idx);
+  if(!q || q.dataset.hw || q.classList.contains('done-ok') || q.classList.contains('done-no')) return;
+  q.dataset.hw='1';
+  answered++;
+  var w=document.getElementById('w'+idx); if(w){ w.textContent='💡 '+QUIZ[idx].why; w.classList.add('on'); }
+  updateProg();
+  if(answered>=total) document.getElementById('finishBtn').style.display='block';
+}
+function choose(idx,oi){
+  var it=QUIZ[idx]; var q=document.getElementById('q'+idx);
+  if(q.dataset.hw) return;
+  if(q.classList.contains('done-ok')||q.classList.contains('done-no')) return;
+  answered++;
+  var ok = (oi===it.ans);
+  var opts=q.querySelectorAll('.opt');
+  opts.forEach(function(b,i){ b.classList.add('dim'); if(i===it.ans) b.classList.add('ok'); });
+  if(ok){ q.classList.add('done-ok'); score++; } else { q.classList.add('done-no'); opts[oi].classList.add('no'); }
+  var w=document.getElementById('w'+idx); w.textContent='💡 '+it.why; w.classList.add('on');
+  updateProg();
+  if(answered>=QUIZ.length) document.getElementById('finishBtn').style.display='block';
+}
+function updateProg(){
+  document.getElementById('progBar').style.width=(answered/QUIZ.length*100)+'%';
+  document.getElementById('progTxt').textContent='已答 '+answered+' / '+QUIZ.length;
+}
+function finish(){
+  var pct=Math.round(score/QUIZ.length*100);
+  document.getElementById('rScore').textContent=score+' / '+QUIZ.length;
+  document.getElementById('rPct').textContent='正确率 '+pct+'%';
+  var stars = pct>=90?'⭐⭐⭐':pct>=70?'⭐⭐':'⭐';
+  document.getElementById('rStars').textContent=stars;
+  var pass = score/QUIZ.length>=0.8;
+  document.getElementById('rPass').innerHTML = pass?'<span class="pass">🎊 通关！换算小能手</span>':'<span class="fail">再练练，争取通关 80%</span>';
+  if(score>(store.best||0)){ store.best=score; setStore(store); }
+  if(pass) showCeleb();
+  setScreen('scrReport');
+}
+function resetBest(){ if(confirm('确定清空最佳对题记录？')){ setStore({best:0}); store={best:0}; document.getElementById('bestNum').textContent='0'; } }
+function goMenu(){ setScreen('scrMenu'); }
+function showCeleb(){ var c=document.getElementById('celeb'); c.style.display='flex'; }
+function closeCeleb(){ document.getElementById('celeb').style.display='none'; }
+(function init(){
+  var s=Portal.getSession(); CHILD=(s&&s.child)?s.child:'user'; KEY='units-'+CHILD; store=getStore();
+  document.getElementById('dateStr').textContent=new Date().toLocaleDateString('zh-CN');
+  document.getElementById('totalNum').textContent=QUIZ.length;
+  document.getElementById('bestNum').textContent=store.best||0;
+})();
+</script>
+<script src="handwrite.js"></script>
+</body>
+</html>

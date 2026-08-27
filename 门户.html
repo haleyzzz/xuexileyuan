@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<meta charset="utf-8">
+<title>备战清华 · 学习门户</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script src="portal-common.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  [hidden]{display:none !important}
+  :root{
+    --bg:#f4f7fb; --card:#ffffff; --ink:#1f2a44; --sub:#7b87a3;
+    --line:#e6ecf5; --blue:#4cc9f0; --pink:#f72585; --gold:#ffd166;
+    --green:#06d6a0; --purple:#b292ff; --radius:18px;
+    --shadow:0 8px 24px rgba(31,42,68,.08);
+  }
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(160deg,#eaf2ff 0%,#f6f1ff 50%,#fff6ec 100%);
+    color:var(--ink);min-height:100%;
+    -webkit-tap-highlight-color:transparent;
+  }
+  /* ---------- 顶栏 ---------- */
+  .top{
+    position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;
+    gap:12px;padding:12px 16px;background:rgba(255,255,255,.82);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--line);
+  }
+  .brand{font-size:18px;font-weight:800;letter-spacing:.5px;display:flex;align-items:center;gap:8px}
+  .brand .logo{font-size:22px}
+  .user{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--sub)}
+  .badge{background:var(--blue);color:#fff;border-radius:999px;padding:3px 10px;font-weight:700;font-size:12px}
+  .badge.parent{background:var(--purple)}
+  .btn{border:none;border-radius:12px;padding:9px 14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+  .btn.ghost{background:#eef2f9;color:var(--ink)}
+  .btn.primary{background:var(--blue);color:#fff}
+  .btn:active{transform:scale(.96)}
+
+  /* ---------- 学科切换栏 ---------- */
+  .subjects{
+    position:sticky;top:62px;z-index:15;display:flex;gap:8px;padding:10px 16px;
+    background:rgba(255,255,255,.82);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);overflow-x:auto;-webkit-overflow-scrolling:touch;
+  }
+  .subjects .sub{
+    flex:0 0 auto;border:none;background:#eef2f9;color:var(--sub);
+    border-radius:999px;padding:8px 16px;font-size:14px;font-weight:800;cursor:pointer;
+    font-family:inherit;white-space:nowrap;display:flex;align-items:center;gap:6px;transition:.15s;
+  }
+  .subjects .sub:active{transform:scale(.96)}
+  .subjects .sub.on{background:var(--blue);color:#fff}
+
+  main{max-width:1080px;margin:0 auto;padding:18px 16px 60px}
+
+  /* ---------- 登录 ---------- */
+  .login{display:flex;align-items:center;justify-content:center;min-height:72vh;padding:20px}
+  .login-card{
+    background:var(--card);border-radius:24px;box-shadow:var(--shadow);
+    padding:34px 28px;max-width:420px;width:100%;text-align:center;
+  }
+  .login-card h1{font-size:24px;margin-bottom:8px}
+  .login-card p{color:var(--sub);font-size:14px;line-height:1.6}
+  .role-btn{
+    display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
+    margin-top:16px;padding:16px;border:none;border-radius:16px;cursor:pointer;
+    font-size:17px;font-weight:800;font-family:inherit;color:#fff;transition:.15s;
+  }
+  .role-btn:active{transform:scale(.97)}
+  .role-btn.student{background:linear-gradient(120deg,#4cc9f0,#06d6a0)}
+  .role-btn.parent{background:linear-gradient(120deg,#b292ff,#f72585)}
+  .login-card .hint{margin-top:18px;font-size:12px;color:var(--sub)}
+
+  /* PIN 弹窗 */
+  .modal{position:fixed;inset:0;background:rgba(20,28,48,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .modal .box{background:#fff;border-radius:20px;padding:26px 22px;width:100%;max-width:340px;text-align:center;box-shadow:var(--shadow)}
+  .modal input{width:100%;padding:13px 14px;border:1.5px solid var(--line);border-radius:12px;font-size:18px;text-align:center;letter-spacing:6px;font-family:inherit;margin-top:14px}
+  .modal input:focus{outline:none;border-color:var(--purple)}
+  .modal .err{color:#e5484d;font-size:13px;min-height:18px;margin-top:8px}
+  .modal .row{display:flex;gap:10px;margin-top:16px}
+  .modal .row .btn{flex:1}
+
+  /* ---------- 工具栏 ---------- */
+  .toolbar{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+  .chip{flex:0 0 auto;border:1px solid var(--line);background:#fff;color:var(--sub);
+    border-radius:999px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .chip.tag{background:#f1f5fb}
+  .chip.tag.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .sortbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .sortbar label{font-size:13px;color:var(--sub);display:flex;align-items:center;gap:6px}
+  .sortbar select{border:1px solid var(--line);border-radius:10px;padding:7px 10px;font-family:inherit;background:#fff;color:var(--ink)}
+  .count{font-size:13px;color:var(--sub);margin-left:auto}
+
+  .sec-title{font-size:15px;font-weight:800;margin:18px 4px 10px;display:flex;align-items:center;gap:6px}
+  .sec-title .em{font-size:18px}
+
+  /* ---------- 分组收纳 ---------- */
+  .grp{margin:0 0 14px}
+  .grp-h{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:var(--ink);
+    background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;cursor:pointer;user-select:none;
+    transition:border-color .12s ease}
+  .grp-h:hover{border-color:var(--blue)}
+  .grp-h .tri{font-size:11px;color:var(--sub);transition:transform .15s;display:inline-block}
+  .grp-h .tri.open{transform:rotate(90deg)}
+  .grp-h .grp-n{margin-left:auto;font-size:12px;color:var(--sub);font-weight:700;background:#eef2f9;border-radius:999px;padding:2px 10px}
+  .grp-body{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-top:10px}
+  @media (max-width:480px){
+    .grp-body{grid-template-columns:repeat(auto-fill,minmax(46%,1fr));gap:10px}
+  }
+
+  /* ---------- 应用网格 ---------- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+  .card{
+    position:relative;background:var(--card);border-radius:var(--radius);padding:16px 14px 14px;
+    box-shadow:var(--shadow);cursor:pointer;overflow:hidden;border:1px solid var(--line);
+    transition:transform .12s ease,box-shadow .12s ease;
+  }
+  .card:active{transform:translateY(2px) scale(.99)}
+  .card::before{content:"";position:absolute;left:0;top:0;width:100%;height:4px;background:var(--c,var(--blue))}
+  .card .ico{font-size:34px;line-height:1;margin:6px 0 10px}
+  .card .nm{font-size:15px;font-weight:800;line-height:1.3}
+  .card .ds{font-size:12px;color:var(--sub);margin-top:5px;line-height:1.5;min-height:34px}
+  .card .meta{display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .card .cat{font-size:11px;background:#eef2f9;color:var(--sub);border-radius:999px;padding:2px 9px;font-weight:700}
+  .card .use{font-size:11px;color:var(--pink);font-weight:700;margin-left:auto}
+  .card .star{position:absolute;top:8px;right:8px;width:30px;height:30px;border:none;background:transparent;
+    font-size:18px;color:#d6deea;cursor:pointer;line-height:1}
+  .card .star.on{color:var(--gold)}
+  .card .ord{position:absolute;top:8px;left:8px;display:none;flex-direction:column;gap:2px}
+  .card.editing .ord{display:flex}
+  .card .ord button{width:26px;height:22px;border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer;font-size:12px;color:var(--ink)}
+  .empty{text-align:center;color:var(--sub);padding:40px 10px;font-size:14px}
+  .foot{text-align:center;color:var(--sub);font-size:12px;margin-top:30px;line-height:1.7}
+  @media (max-width:480px){
+    .grid{grid-template-columns:repeat(auto-fill,minmax(46%,1fr));gap:10px}
+    .brand{font-size:16px}
+    main{padding:14px 12px 50px}
+  }
+  .banner{margin:0 0 12px;padding:10px 14px;border-radius:14px;
+    background:linear-gradient(120deg,#e8f4ff,#eafaf1);color:#2b4a6f;font-size:13px;font-weight:700;
+    box-shadow:0 2px 8px rgba(0,0,0,.05);line-height:1.5}
+  /* ===== 总打卡入口（学科栏最前） ===== */
+  .sub.daily-sub{background:linear-gradient(120deg,#ffd43b,#ff9f1c);color:#fff;font-weight:900;
+    box-shadow:0 3px 8px rgba(255,159,28,.35)}
+  .sub.daily-sub i{font-style:normal;font-size:.78em;background:rgba(255,255,255,.28);
+    border-radius:999px;padding:1px 7px;margin-left:2px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><span class="logo">📚</span> 备战清华</div>
+  <div class="user" id="userBox" hidden>
+    <span class="badge" id="roleBadge"></span>
+    <span id="userName"></span>
+    <button id="switchChildBtn" class="btn ghost" style="display:none" onclick="switchChild()">切换小朋友</button>
+    <button class="btn ghost" onclick="doLogout()">退出</button>
+  </div>
+</header>
+
+<nav class="subjects" id="subjects" hidden></nav>
+
+<div class="banner" id="stageBanner" hidden></div>
+
+<main>
+  <!-- 登录 -->
+  <section class="login" id="login">
+    <div class="login-card">
+      <h1>🎒 欢迎进入备战清华</h1>
+      <p>门户只负责「身份 / 家长校验」这一件事 —— 登录一次即可进入工作台。<br>顶部可切换 <b>英语 / 语文 / 数学 / 科学</b> 不同学科，每科应用各自独立。<br>而每个应用打开后，都有自己的 Zachary（哥哥🦊）/ Zoran（弟弟🐰）登录入口，兄弟俩的数据各自独立、互不打扰 ✌️<br>弟弟(Zoran)目前为<b>学前 / 中班</b>阶段，门户只给他看适龄基础内容；升入小学后自动开放全部科目 🎒</p>
+      <button class="role-btn student" onclick="studentLogin()">🧒 我是学生</button>
+      <button class="role-btn parent" onclick="askPin()">👨‍👩‍👧 我是家长</button>
+      <p class="hint">学生一键进入；家长请输入 PIN（默认 1234，可在 portal-common.js 上方代码中修改）。</p>
+    </div>
+  </section>
+
+  <!-- 应用工作台 -->
+  <section id="apps" hidden>
+    <div class="toolbar">
+      <div class="chips" id="cats"></div>
+      <div class="chips" id="tags"></div>
+      <div class="sortbar">
+        <label>排序
+          <select id="sortSel" onchange="state.sort=this.value;render()">
+            <option value="freq">使用频率</option>
+            <option value="name">名称</option>
+            <option value="custom">自定义</option>
+          </select>
+        </label>
+        <button class="btn ghost" id="editBtn" onclick="toggleEdit()">✏️ 自定义排序</button>
+        <span class="count" id="count"></span>
+      </div>
+    </div>
+
+    <div id="favWrap" hidden>
+      <div class="sec-title"><span class="em">⭐</span> 我的收藏</div>
+      <div class="grid" id="favGrid"></div>
+    </div>
+
+    <div class="sec-title"><span class="em">🧩</span> <span id="listTitle">全部应用</span></div>
+    <div class="grid" id="appGrid"></div>
+    <div class="empty" id="empty" hidden>该学科下暂无应用。</div>
+
+    <div class="foot">
+      单点登录(SSO) 基于本地会话，适合家庭 / 个人离线使用。<br>
+      顶部学科栏切换英语 / 语文 / 数学 / 科学，每个学科都是一组风格一致的应用。<br>
+      新增应用只需在门户注册表中追加一项 —— 标准化接入，即插即用。
+    </div>
+  </section>
+</main>
+
+<!-- PIN 弹窗 -->
+<div class="modal" id="pinModal" hidden>
+  <div class="box">
+    <h3>🔐 家长验证</h3>
+    <p style="color:var(--sub);font-size:13px;margin-top:6px">请输入家长 PIN</p>
+    <input id="pinInput" type="password" inputmode="numeric" maxlength="12" placeholder="••••" onkeydown="if(event.key==='Enter')submitPin()">
+    <div class="err" id="pinErr"></div>
+    <div class="row">
+      <button class="btn ghost" onclick="closePin()">取消</button>
+      <button class="btn primary" onclick="submitPin()">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- 选娃（幼儿模式入口） -->
+<div class="modal" id="childPick" hidden>
+  <div class="box">
+    <h3>👶 你是哪位小朋友？</h3>
+    <p style="color:var(--sub);font-size:13px;margin-top:6px">选一选，门户会按你的年龄显示应用～</p>
+    <div style="display:flex;gap:12px;margin-top:16px;justify-content:center;flex-wrap:wrap">
+      <button class="role-btn student" style="width:auto;margin:0;padding:16px 20px" onclick="chooseChild('zachary')">🦊 Zachary</button>
+      <button class="role-btn parent" style="width:auto;margin:0;padding:16px 20px;background:linear-gradient(120deg,#4cc9f0,#06d6a0)" onclick="chooseChild('zoran')">🐰 Zoran</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ 配置 ============ */
+var PARENT_PIN = '1234';   // 家长 PIN，按需修改
+
+/* ============ 学科定义 ============ */
+var SUBJECTS = [
+  {key:'英语', icon:'📘'},
+  {key:'语文', icon:'📖'},
+  {key:'数学', icon:'➗'},
+  {key:'科学', icon:'🔬'},
+  {key:'更多', icon:'🧩'}       // 「更多」映射到 subject:'通用'（打卡中心 / 跳绳等跨学科技能）
+];
+function subjectOf(a){ return a.subject || '通用'; }
+
+/* ============ 分组收纳（仅视觉分组折叠，不改动任何应用与数据） ============ */
+var GROUP_ORDER = {
+  '英语': ['单词词汇','拼读与语法','听说训练','阅读拓展'],
+  '语文': ['字词与成语','背诵积累','阅读与写作'],
+  '数学': ['计算基本功','应用题','几何图形'],
+  '科学': ['观察与问答','动手探究']
+};
+var GROUP_OF = {
+  /* 英语（每日打卡已并入「总打卡」，不在学科区展示） */
+  wordtrain:'单词词汇', 'pep-sprint':'单词词汇', 'en-dictation':'单词词汇',
+  phonics:'拼读与语法', grammar:'拼读与语法',
+  oral:'听说训练', 'english-listen':'听说训练', 'song-sing':'听说训练',
+  read:'阅读拓展', 'english-read':'阅读拓展', companion:'阅读拓展',
+  /* 语文 */
+  'chinese-dictation':'字词与成语', 'chinese-dict':'字词与成语', idiom:'字词与成语', synant:'字词与成语',
+  'chinese-poem':'背诵积累', 'chinese-text':'背诵积累',
+  cnread:'阅读与写作', 'sentence-fix':'阅读与写作', essay:'阅读与写作',
+  /* 数学（每日打卡已并入「总打卡」） */
+  'math-mental':'计算基本功', vert:'计算基本功', units:'计算基本功',
+  'math-apply':'应用题', 'math-apply2':'应用题', 'solveguide':'应用题',
+  geom:'几何图形',
+  /* 科学（每日打卡已并入「总打卡」） */
+  'science-observe':'观察与问答', 'science-quiz':'观察与问答',
+  'science-exp':'动手探究', 'science-inquiry':'动手探究'
+};
+function toggleGrp(g){
+  prefs.grp = prefs.grp || [];
+  var i = prefs.grp.indexOf(g);
+  if (i >= 0) prefs.grp.splice(i,1); else prefs.grp.push(g);
+  Portal.setPrefs(role, prefs);
+  render();
+}
+
+/* ============ 应用注册表（标准集成接口）============
+ * 每个应用带 subject 字段，决定它归在哪个学科标签下。
+ * 新增应用：复制下面任意一项改一改即可（或调用 Portal.register({...})）。 */
+Portal.register({ id:'wordtrain', name:'单词训练', desc:'认读·拼写·听写·拼读 四合一', icon:'🔤', color:'#4cc9f0', url:'单词训练.html', subject:'英语', category:'单词', tags:['单词','音标','拼写','拼读'], roles:['student','parent'] });
+Portal.register({ id:'read',   name:'英语阅读',      desc:'短文+分级阅读·7级·双账户',   icon:'📚', color:'#3a86ff', url:'英语阅读.html',       subject:'英语', category:'阅读', tags:['阅读','分级阅读','双账户'], roles:['student','parent'] });
+Portal.register({ id:'companion', name:'家长陪读',  desc:'亲子共读·分级阅读+听音识图', icon:'🤝', color:'#ff8fab', url:'家长陪读.html', subject:'英语', category:'陪读', tags:['陪读','亲子'], roles:['student'], toddlerOnly:true });
+Portal.register({ id:'song-sing', name:'英语儿歌听唱', desc:'点歌词听标准发音，跟唱+做动作', icon:'🎵', color:'#06d6a0', url:'英语儿歌听唱.html', subject:'英语', category:'儿歌', tags:['儿歌','听唱','语感'], roles:['student'], toddlerOnly:true });
+Portal.register({ id:'grammar', name:'英语语法学习卡', desc:'讲解·例句·随堂练习', icon:'📘', color:'#7c5cff', url:'英语语法学习卡.html', subject:'英语', category:'语法', tags:['语法'], roles:['student','parent'] });
+Portal.register({ id:'pep-sprint', name:'PEP 冲刺计划', desc:'排期闯关·番茄钟陪练', icon:'🍅', color:'#e8590c', url:'PEP冲刺计划.html', subject:'英语', category:'冲刺', tags:['PEP','冲刺','番茄钟'], roles:['student','parent'] });
+Portal.register({ id:'english-listen', name:'听力填空', desc:'听句子·选单词·即时判定', icon:'🎧', color:'#4895ef', url:'英语-听力填空.html', subject:'英语', category:'听力', tags:['英语','听力','填空'], roles:['student','parent'] });
+Portal.register({ id:'english-read', name:'阅读理解', desc:'读短文·选择题·闯关结算', icon:'📖', color:'#3a86ff', url:'英语-阅读理解.html', subject:'英语', category:'阅读', tags:['英语','阅读','闯关'], roles:['student','parent'] });
+Portal.register({ id:'phonics', name:'自然拼读', desc:'字母组合·串记卡·跟读', icon:'🔤', color:'#7c5cff', url:'自然拼读串记卡.html', subject:'英语', category:'拼读', tags:['phonics','拼读','发音'], roles:['student','parent'] });
+Portal.register({ id:'oral', name:'口语跟读', desc:'听示范·开口读·智能评分', icon:'🎤', color:'#4895ef', url:'英语-口语跟读.html', subject:'英语', category:'口语', tags:['英语','口语','跟读','评测'], roles:['student','parent'] });
+/* 每日打卡（英语/数学/科学/跳绳）已并入「🌞 总打卡」统一入口，不在学科区单独展示 */
+Portal.register({ id:'en-dictation', name:'听写默写', desc:'听音写词·看中文写词 闯关', icon:'✍️', color:'#3b82f6', url:'英语-听写默写.html', subject:'英语', category:'听写', tags:['英语','听写','默写','拼写'], roles:['student','parent'] });
+/* 跨学科技能（习惯 / 运动）归入「更多」 */
+Portal.register({ id:'unified-checkin', name:'统一打卡中心', desc:'今日任务·周计划打卡', icon:'🌞', color:'#ff9f1c', url:'统一打卡中心.html', subject:'通用', category:'习惯', tags:['打卡','进度','汇总'], roles:['student','parent'] });
+Portal.register({ id:'rewards', name:'积分商城', desc:'学习赚积分·积分换奖励', icon:'🎁', color:'#ff9f1c', url:'积分商城.html', subject:'通用', category:'奖励', tags:['积分','奖励','兑换'], roles:['student','parent'] });
+/* 新增学科模块：语文 / 数学 / 科学 */
+Portal.register({ id:'chinese-dictation', name:'字词听写', desc:'报听写·翻卡核对·易错字', icon:'✍️', color:'#ff8fab', url:'语文-字词听写.html', subject:'语文', category:'听写', tags:['语文','听写','字词'], roles:['student','parent'] });
+Portal.register({ id:'chinese-poem', name:'古诗词诵读', desc:'1-6年级·百首必背·可筛选', icon:'📜', color:'#ff8fab', url:'语文-古诗词.html', subject:'语文', category:'古诗词', tags:['语文','古诗词','诵读'], roles:['student','parent'] });
+Portal.register({ id:'chinese-text', name:'课文背诵', desc:'1-6年级·现代文+文言文', icon:'📝', color:'#ff8fab', url:'语文-课文背诵.html', subject:'语文', category:'背诵', tags:['语文','课文','背诵','文言文'], roles:['student','parent'] });
+Portal.register({ id:'chinese-dict', name:'查字典练习', desc:'部首查字法·4选1闯关', icon:'📕', color:'#ff8fab', url:'语文-查字典.html', subject:'语文', category:'查字典', tags:['语文','部首','查字典'], roles:['student','parent'] });
+Portal.register({ id:'idiom', name:'成语闯关', desc:'释义·填空·辨析 趣味闯关', icon:'🀄', color:'#9b5de5', url:'语文-成语闯关.html', subject:'语文', category:'成语', tags:['成语','近义','反义','填空'], roles:['student','parent'] });
+Portal.register({ id:'synant', name:'近反义词', desc:'近义词·反义词 辨析训练', icon:'🔗', color:'#f15bb5', url:'语文-近反义词.html', subject:'语文', category:'词语', tags:['近义词','反义词','词语'], roles:['student','parent'] });
+Portal.register({ id:'essay', name:'作文起步', desc:'看图写话·命题作文·好词好句·范文', icon:'✍️', color:'#9b5de5', url:'语文-作文起步.html', subject:'语文', category:'作文', tags:['作文','写话','习作'], roles:['student','parent'] });
+Portal.register({ id:'cnread', name:'阅读理解', desc:'现代文短文·选择题·解析', icon:'📖', color:'#f15bb5', url:'语文-阅读理解.html', subject:'语文', category:'阅读', tags:['阅读','理解','现代文'], roles:['student','parent'] });
+Portal.register({ id:'sentence-fix', name:'语句诊治', desc:'修改病句·加标点 闯关', icon:'🩺', color:'#e07a5f', url:'语文-语句诊治.html', subject:'语文', category:'语句', tags:['病句','标点','语句'], roles:['student','parent'] });
+Portal.register({ id:'math-apply', name:'应用题闯关', desc:'读题列式·闯关结算', icon:'🎯', color:'#4cc9f0', url:'数学-应用题闯关.html', subject:'数学', category:'闯关', tags:['数学','应用题','闯关'], roles:['student','parent'] });
+Portal.register({ id:'math-mental', name:'口算挑战', desc:'60秒限时·连击计分', icon:'🧮', color:'#4cc9f0', url:'数学-口算挑战.html', subject:'数学', category:'口算', tags:['数学','口算','挑战'], roles:['student','parent'] });
+Portal.register({ id:'math-apply2', name:'应用题进阶', desc:'两步三步·解析闯关', icon:'🧠', color:'#4cc9f0', url:'数学-应用题进阶.html', subject:'数学', category:'进阶', tags:['数学','应用题','进阶'], roles:['student','parent'] });
+Portal.register({ id:'units', name:'单位换算', desc:'长度·质量·时间·人民币 换算', icon:'📏', color:'#3a86ff', url:'数学-单位换算.html', subject:'数学', category:'换算', tags:['单位','换算','长度','质量','时间','人民币'], roles:['student','parent'] });
+Portal.register({ id:'vert', name:'竖式计算', desc:'加减乘除·笔算练习', icon:'✏️', color:'#4361ee', url:'数学-竖式计算.html', subject:'数学', category:'笔算', tags:['竖式','笔算','计算'], roles:['student','parent'] });
+Portal.register({ id:'geom', name:'几何图形', desc:'图形·周长·面积·对称·角', icon:'📐', color:'#4cc9f0', url:'数学-几何图形.html', subject:'数学', category:'几何', tags:['几何','图形','周长','面积'], roles:['student','parent'] });
+Portal.register({ id:'solveguide', name:'解题引导', desc:'读题·分析·列式·验算 四步', icon:'🧩', color:'#b292ff', url:'数学-解题引导.html', subject:'数学', category:'引导', tags:['解题','思路','步骤'], roles:['student','parent'] });
+Portal.register({ id:'science-exp', name:'科学小实验', desc:'12个家庭实验·原理讲解', icon:'🧪', color:'#b292ff', url:'科学-小实验.html', subject:'科学', category:'实验', tags:['科学','实验','动手'], roles:['student','parent'] });
+Portal.register({ id:'science-observe', name:'自然观察', desc:'12个观察任务·记录发现', icon:'🔭', color:'#06d6a0', url:'科学-自然观察记录.html', subject:'科学', category:'观察', tags:['科学','观察','记录'], roles:['student','parent'] });
+Portal.register({ id:'science-quiz', name:'科学小问答', desc:'12个为什么·科普闯关', icon:'🔬', color:'#b292ff', url:'科学-科学问答.html', subject:'科学', category:'问答', tags:['科学','科普','问答'], roles:['student','parent'] });
+Portal.register({ id:'science-inquiry', name:'探究记录', desc:'10个实验·猜想·结论·日记', icon:'🔍', color:'#ff9f1c', url:'科学-探究记录.html', subject:'科学', category:'探究', tags:['科学','实验','记录','日记'], roles:['student','parent'] });
+
+/* ============ 状态 ============ */
+var state = { subject:'英语', cat:'全部', tag:'', sort:'freq', edit:false };
+var prefs = { fav:[], order:[] };
+var role  = 'student';
+
+/* ============ 初始化 ============ */
+(function init(){
+  var s = Portal.getSession();
+  if (s){
+    role = s.role;
+    prefs = Portal.getPrefs(role);
+    var red = new URLSearchParams(location.search).get('redirect');
+    if (red){ location.href = red; return; }
+    showApps();
+  } else {
+    showLogin();
+  }
+})();
+
+function showLogin(){
+  document.getElementById('login').hidden = false;
+  document.getElementById('apps').hidden  = true;
+  document.getElementById('userBox').hidden = true;
+  document.getElementById('subjects').hidden = true;
+}
+function showApps(){
+  var s = Portal.getSession();
+  document.getElementById('login').hidden = true;
+  document.getElementById('apps').hidden  = false;
+  document.getElementById('userBox').hidden = false;
+  document.getElementById('subjects').hidden = false;
+  var badge = document.getElementById('roleBadge');
+  badge.textContent = (s.role === 'parent') ? '家长' : '学生';
+  badge.className = 'badge' + (s.role === 'parent' ? ' parent' : '');
+  var nm = (s.child && window.Accounts && Accounts.byId(s.child)) ? (Accounts.byId(s.child).emoji + ' ' + Accounts.byId(s.child).name) : s.user;
+  document.getElementById('userName').textContent = nm;
+  var scb = document.getElementById('switchChildBtn');
+  if (scb) scb.hidden = !(s.role === 'student' && s.child);
+  renderStageBanner();
+  render();
+}
+/* 学生视图顶部阶段提示：弟弟显示当前阶段与开放数量；升小学后提示全部开放 */
+function renderStageBanner(){
+  var el = document.getElementById('stageBanner');
+  if (!el) return;
+  var s = Portal.getSession();
+  if (!(s && s.role === 'student' && s.child && window.Accounts)) { el.hidden = true; return; }
+  var u = window.Accounts.byId(s.child); if (!u) { el.hidden = true; return; }
+  var ph = window.Accounts.phaseLabel(s.child);
+  var txt;
+  if (window.Accounts.isPrimary(s.child)) {
+    txt = u.emoji + ' ' + u.name + ' · ' + ph + ' · 全部科目已开放 🎉';
+  } else {
+    var allow = window.Accounts.curriculumFor(s.child) || [];
+    txt = u.emoji + ' ' + u.name + ' · ' + ph + '阶段 · 当前开放 ' + allow.length +
+          ' 个基础应用（覆盖英语/语文/数学/科学），升入小学后自动开放全部科目';
+  }
+  el.textContent = txt;
+  el.hidden = false;
+}
+
+/* ============ 登录 ============ */
+function studentLogin(){
+  var s = Portal.getSession();
+  if (s && s.child) { enter(); return; }
+  var last = null;
+  try { last = localStorage.getItem('last_child'); } catch(e){}
+  if (last && window.Accounts && Accounts.byId(last)) { Portal.login('学生','student',7,last); enter(); return; }
+  document.getElementById('childPick').hidden = false;
+}
+function chooseChild(id){
+  document.getElementById('childPick').hidden = true;
+  try { localStorage.setItem('last_child', id); } catch(e){}
+  var s = Portal.getSession();
+  if (s && s.role){ s.child = id; Portal.setSession(s); }
+  else { Portal.login('学生','student',7,id); }
+  enter();
+}
+function switchChild(){
+  document.getElementById('childPick').hidden = false;
+}
+function askPin(){
+  document.getElementById('pinModal').hidden = false;
+  var i = document.getElementById('pinInput'); i.value=''; document.getElementById('pinErr').textContent='';
+  setTimeout(function(){ i.focus(); }, 50);
+}
+function closePin(){ document.getElementById('pinModal').hidden = true; }
+function submitPin(){
+  var v = document.getElementById('pinInput').value;
+  if (v === PARENT_PIN){ closePin(); Portal.login('家长','parent'); enter(); }
+  else { document.getElementById('pinErr').textContent = 'PIN 错误，请重试'; }
+}
+function enter(){
+  var red = new URLSearchParams(location.search).get('redirect');
+  if (red){ location.href = red; return; }
+  role = Portal.getSession().role;
+  prefs = Portal.getPrefs(role);
+  showApps();
+}
+function doLogout(){ Portal.logout(); location.reload(); }
+
+/* ============ 数据 ============ */
+function visibleApps(){
+  var s = Portal.getSession();
+  var apps = (Portal.APPS||[]).filter(function(a){ return a.roles && a.roles.indexOf(s.role) >= 0; });
+  if (s.role === 'student' && s.child && window.Accounts){
+    var allow = window.Accounts.curriculumFor(s.child); // null = 全部应用（小学阶段）
+    if (allow) apps = apps.filter(function(a){ return allow.indexOf(a.id) >= 0; });
+  }
+  apps = apps.filter(function(a){ return !(a.toddlerOnly && !(s.role==='student' && s.child && (window.Accounts && Accounts.isToddler(s.child)))); });
+  return apps;
+}
+function orderedIds(){
+  var vis = visibleApps().map(function(a){ return a.id; });
+  var o = (prefs.order||[]).filter(function(id){ return vis.indexOf(id) >= 0; });
+  vis.forEach(function(id){ if (o.indexOf(id) < 0) o.push(id); });
+  return o;
+}
+
+/* ============ 渲染 ============ */
+function setSubject(k){ state.subject = k; state.cat='全部'; state.tag=''; render(); }
+
+/* ===== 总打卡入口（学科栏最前） ===== */
+function dailyBtn(){
+  return '<button class="sub daily-sub" onclick="location.href=\'统一打卡中心.html\'">🌞 总打卡</button>';
+}
+
+function render(){
+  var apps = visibleApps();
+
+  // 学科切换栏（总打卡在最前）
+  document.getElementById('subjects').innerHTML = dailyBtn() + SUBJECTS.map(function(s){
+    return '<button class="sub'+(s.key===state.subject?' on':'')+'" onclick="setSubject(\''+s.key+'\')">'+s.icon+' '+s.key+'</button>';
+  }).join('');
+
+  // 按当前学科过滤
+  var subj = state.subject;
+  apps = apps.filter(function(a){ return (subj==='更多') ? (subjectOf(a)==='通用') : (subjectOf(a)===subj); });
+
+  // 分类 chips
+  var cats = ['全部'].concat(uniq(apps.map(function(a){ return a.category; })));
+  if (cats.indexOf(state.cat) < 0) state.cat = '全部';
+  document.getElementById('cats').innerHTML = cats.map(function(c){
+    return '<button class="chip'+(c===state.cat?' on':'')+'" onclick="state.cat=\''+c+'\';render()">'+c+'</button>';
+  }).join('');
+
+  // 标签 chips
+  var tags = [''].concat(uniq(apps.reduce(function(a,b){ return a.concat(b.tags||[]); },[])));
+  document.getElementById('tags').innerHTML = tags.map(function(t){
+    var lab = t || '全部标签';
+    return '<button class="chip tag'+(t===state.tag?' on':'')+'" onclick="state.tag=\''+t+'\';render()">'+lab+'</button>';
+  }).join('');
+
+  // 过滤
+  var f = apps.filter(function(a){
+    return (state.cat==='全部' || a.category===state.cat) &&
+           (!state.tag || (a.tags||[]).indexOf(state.tag) >= 0);
+  });
+
+  // 排序
+  var uses = Portal.getUses();
+  if (state.sort === 'name'){
+    f.sort(function(x,y){ return x.name.localeCompare(y.name,'zh'); });
+  } else if (state.sort === 'custom'){
+    var o = orderedIds();
+    f.sort(function(x,y){ return o.indexOf(x.id) - o.indexOf(y.id); });
+  } else {
+    f.sort(function(x,y){ return (uses[y.id]||0) - (uses[x.id]||0); });
+  }
+
+  // 收藏区
+  var favWrap = document.getElementById('favWrap');
+  var favIds = (prefs.fav||[]).filter(function(id){ return f.some(function(a){ return a.id===id; }); });
+  if (favIds.length){
+    favWrap.hidden = false;
+    document.getElementById('favGrid').innerHTML = favIds.map(function(id){
+      return cardHTML(apps.find(function(a){ return a.id===id; }), uses);
+    }).join('');
+  } else { favWrap.hidden = true; }
+
+  // 主列表
+  var baseTitle = (state.subject==='更多') ? '更多应用' : state.subject + ' · 应用';
+  document.getElementById('listTitle').textContent = (state.cat==='全部' ? baseTitle : baseTitle + ' · ' + state.cat);
+  document.getElementById('count').textContent = '共 ' + f.length + ' 个应用';
+  var grid = document.getElementById('appGrid');
+  // 分组收纳：仅在「全部 + 无标签 + 非编辑」时按组折叠展示；筛选/排序编辑时退回平铺
+  var canGroup = (state.cat==='全部' && !state.tag && !state.edit) && GROUP_ORDER[subj];
+  if (canGroup){
+    prefs.grp = prefs.grp || [];
+    var buckets = {}, rest = [];
+    f.forEach(function(a){
+      var g = GROUP_OF[a.id];
+      if (g) (buckets[g] = buckets[g] || []).push(a); else rest.push(a);
+    });
+    var html = '';
+    var grpBlock = function(g, arr){
+      var col = prefs.grp.indexOf(g) >= 0;
+      return '<div class="grp">'
+        + '<div class="grp-h" onclick="toggleGrp(\''+g+'\')">'
+        + '<span class="tri'+(col?'':' open')+'">▶</span>'
+        + '<span>'+g+'</span>'
+        + '<span class="grp-n">'+arr.length+' 个</span></div>'
+        + '<div class="grp-body"'+(col?' hidden':'')+'>'
+        + arr.map(function(a){ return cardHTML(a, uses); }).join('')
+        + '</div></div>';
+    };
+    GROUP_ORDER[subj].forEach(function(g){
+      if (buckets[g] && buckets[g].length) html += grpBlock(g, buckets[g]);
+    });
+    if (rest.length) html += grpBlock('其他', rest);
+    grid.innerHTML = html;
+  } else {
+    grid.innerHTML = f.map(function(a){ return cardHTML(a, uses); }).join('');
+  }
+  document.getElementById('empty').hidden = f.length > 0;
+
+  // 自定义排序按钮态
+  document.getElementById('editBtn').textContent = state.edit ? '✅ 完成排序' : '✏️ 自定义排序';
+  document.querySelectorAll('.card').forEach(function(c){ c.classList.toggle('editing', state.edit); });
+}
+
+function cardHTML(a, uses){
+  var fav = (prefs.fav||[]).indexOf(a.id) >= 0;
+  var useBadge = (state.sort==='freq' && uses[a.id]) ? '<span class="use">🔥'+uses[a.id]+'</span>' : '';
+  var ord = state.edit
+    ? '<div class="ord"><button onclick="event.stopPropagation();move(\''+a.id+'\',-1)">↑</button><button onclick="event.stopPropagation();move(\''+a.id+'\',1)">↓</button></div>'
+    : '';
+  return '<div class="card" style="--c:'+a.color+'" onclick="openApp(\''+a.id+'\')">'
+    + ord
+    + '<button class="star'+(fav?' on':'')+'" onclick="event.stopPropagation();toggleFav(\''+a.id+'\')">'+(fav?'★':'☆')+'</button>'
+    + '<div class="ico">'+a.icon+'</div>'
+    + '<div class="nm">'+a.name+'</div>'
+    + '<div class="ds">'+a.desc+'</div>'
+    + '<div class="meta"><span class="cat">'+a.category+'</span>'+useBadge+'</div>'
+    + '</div>';
+}
+
+function uniq(arr){ return arr.filter(function(v,i){ return arr.indexOf(v)===i; }); }
+
+/* ============ 交互 ============ */
+function openApp(id){
+  Portal.bumpUse(id);
+  var a = (Portal.APPS||[]).find(function(x){ return x.id===id; });
+  if (a) location.href = a.url;
+}
+function toggleFav(id){
+  var i = prefs.fav.indexOf(id);
+  if (i >= 0) prefs.fav.splice(i,1); else prefs.fav.push(id);
+  Portal.setPrefs(role, prefs);
+  render();
+}
+function toggleEdit(){
+  state.edit = !state.edit;
+  if (state.edit) state.sort = 'custom', document.getElementById('sortSel').value = 'custom';
+  render();
+}
+function move(id, dir){
+  var o = orderedIds();
+  var i = o.indexOf(id), j = i + dir;
+  if (j < 0 || j >= o.length) return;
+  var t = o[i]; o[i] = o[j]; o[j] = t;
+  prefs.order = o; Portal.setPrefs(role, prefs);
+  render();
+}
+</script>
+</body>
+</html>

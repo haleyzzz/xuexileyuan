@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✍️ 语文字词听写</title>
+<style>
+  :root{
+    --pink:#ff8fab; --yellow:#ffd166; --green:#06d6a0; --blue:#4cc9f0;
+    --purple:#b292ff; --orange:#ff9f1c; --cream:#fff8ef; --ink:#3d3a4b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(135deg,#fff8ef,#fdeff4);color:var(--ink);
+    padding:18px;max-width:560px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  header{background:linear-gradient(120deg,var(--pink),var(--orange));color:#fff;
+    border-radius:24px;padding:20px;text-align:center;box-shadow:0 8px 22px rgba(255,143,171,.4)}
+  header h1{font-size:22px}
+  .date{font-size:14px;opacity:.95;margin-top:4px}
+  .stats{display:flex;gap:10px;margin:14px 0}
+  .stat{flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center;
+    box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .stat .num{font-size:26px;font-weight:800;color:var(--orange)}
+  .stat .lbl{font-size:12px;color:#999;margin-top:2px}
+
+  h2{font-size:17px;margin:18px 4px 10px;display:flex;align-items:center;gap:8px}
+
+  /* 模式条 */
+  .mode{display:flex;gap:8px;margin:6px 0 4px}
+  .mode button{flex:1;border:2px solid #ffd1dc;background:#fff;color:var(--ink);
+    border-radius:14px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+  .mode button.on{background:linear-gradient(120deg,var(--pink),var(--orange));color:#fff;border-color:transparent}
+
+  /* 主卡 */
+  .card{background:#fff;border-radius:24px;padding:22px 18px;text-align:center;
+    box-shadow:0 8px 22px rgba(255,143,171,.25);margin:6px 0;min-height:300px;
+    display:flex;flex-direction:column;justify-content:center;align-items:center}
+  .big{font-size:96px;font-weight:800;line-height:1.1;color:var(--ink);user-select:none;transition:.2s}
+  .big.hide{color:#f0d7df;filter:blur(6px)}
+  .hint{font-size:14px;color:#aaa;margin:10px 0 4px}
+  .py{font-size:26px;font-weight:800;color:var(--purple);margin:6px 0;letter-spacing:1px}
+  .meta{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:8px 0}
+  .tag{background:#fef0f5;border-radius:12px;padding:6px 12px;font-size:13px;color:#c25573}
+  .tag b{color:var(--orange)}
+  .mean{font-size:14px;color:#777;margin-top:6px;line-height:1.6;max-width:380px}
+
+  /* 控制 */
+  .ctrls{display:flex;gap:10px;margin-top:14px}
+  .ctrls button{flex:1;border:none;border-radius:16px;padding:14px;font-size:15px;
+    font-family:inherit;cursor:pointer;color:#fff;font-weight:800;transition:transform .12s}
+  .ctrls button:active{transform:scale(.96)}
+  .c-speak{background:var(--purple)}
+  .c-flip{background:var(--pink)}
+  .c-next{background:var(--orange)}
+  .c-know{background:var(--green)}
+
+  .progress{height:14px;background:#ffe3ec;border-radius:10px;overflow:hidden;margin:14px 0 4px}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--pink));
+    border-radius:10px;transition:width .4s}
+  .prog-txt{font-size:13px;color:#888;text-align:center}
+
+  .tip{font-size:12px;color:#aaa;text-align:center;margin-top:14px;line-height:1.6}
+  .confetti{position:fixed;top:-40px;font-size:24px;pointer-events:none;z-index:99;
+    animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:.2}}
+  .celebrate{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;
+    align-items:center;justify-content:center;z-index:100}
+  .celebrate .box2{background:#fff;border-radius:24px;padding:28px 34px;text-align:center;animation:pop .4s;max-width:320px}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate h3{font-size:24px;margin-bottom:8px}
+  .celebrate p{color:#888;font-size:14px;line-height:1.6}
+  .celebrate button{margin-top:16px;border:none;background:var(--orange);color:#fff;
+    padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+  .back{position:fixed;left:14px;top:14px;z-index:30;border:none;background:rgba(255,255,255,.85);
+    border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink)}
+</style>
+<script>
+/* iOS 朗读稳定性补丁：保留 utterance 全局引用防 GC 静音 + 朗读前 resume()（与 speech.js 同逻辑，本页未引 speech.js 故内联） */
+(function(){ if(window.__ttsPatched) return; window.__ttsPatched=true;
+  if(!window.speechSynthesis) return;
+  var _sp=window.speechSynthesis.speak.bind(window.speechSynthesis);
+  window.speechSynthesis.speak=function(u){ try{window.speechSynthesis.resume();}catch(e){} window.__ttsUtt=u; return _sp(u); };
+})();
+</script>
+</head>
+<body>
+
+
+
+<header>
+  <h1>✍️ 语文字词听写</h1>
+  <div class="date" id="dateStr">今天</div>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="num" id="idxNum">1</div><div class="lbl">📍 第几个</div></div>
+  <div class="stat"><div class="num" id="totalNum">0</div><div class="lbl">📚 总字数</div></div>
+  <div class="stat"><div class="num" id="knowNum">0</div><div class="lbl">✅ 已会</div></div>
+</div>
+
+<h2>🎧 听写方式</h2>
+<div class="mode">
+  <button id="mListen" class="on" onclick="setMode('listen')">报听写（先听后写）</button>
+  <button id="mCard" onclick="setMode('card')">认字卡（直接看）</button>
+</div>
+
+<div class="card">
+  <div class="big" id="big">字</div>
+  <div class="hint" id="hint">点「朗读」听报字，写完再点「看答案」核对 ✍️</div>
+  <div class="py" id="py" hidden></div>
+  <div class="meta" id="meta" hidden></div>
+  <div class="mean" id="mean" hidden></div>
+</div>
+
+<div id="hwSlot"></div>
+
+<div class="ctrls">
+  <button class="c-speak" onclick="speakWord()">🔊 朗读</button>
+  <button class="c-flip" onclick="flip()">👀 看答案</button>
+  <button class="c-know" onclick="markKnow()">✅ 已会</button>
+  <button class="c-next" onclick="next()">➡️ 下一个</button>
+</div>
+
+<div class="progress"><i id="progBar"></i></div>
+<div class="prog-txt" id="progTxt">进度 0%</div>
+
+<div class="tip">点「朗读」会读出这个字，先在本子上写一写，再点「看答案」核对拼音、部首和组词。<br>数据按小朋友分别保存，不会上传。</div>
+
+<div class="celebrate" id="celeb">
+  <div class="box2">
+    <h3>🎉 这一轮完成啦！</h3>
+    <p id="celebMsg">你已会了不少字，真棒！</p>
+    <button onclick="closeCeleb()">继续加油 💪</button>
+  </div>
+</div>
+
+<script>
+/* ============ 门禁 + 双账户隔离 ============ */
+(function(){
+  try{
+    var s = Portal.getSession();
+    var child = (s && s.child) ? s.child : 'user';
+    window.__CHILD = child;
+  }catch(e){ window.__CHILD='user'; }
+})();
+var KEY = 'chineseDictation_' + (window.__CHILD || 'user');
+
+/* ============ 字词数据（三年级上册常用 + 易错字）============ */
+var WORDS = [
+  {zi:'晨',py:'chén',bs:'日',bh:11,zc:'早晨·清晨',sy:'日出前后的时间，早上'},
+  {zi:'绒',py:'róng',bs:'纟',bh:9,zc:'绒毛·绒球',sy:'柔软细小的毛'},
+  {zi:'球',py:'qiú',bs:'王',bh:11,zc:'足球·皮球',sy:'圆形的体育用品'},
+  {zi:'汉',py:'hàn',bs:'氵',bh:5,zc:'汉字·汉族',sy:'汉族；男子'},
+  {zi:'艳',py:'yàn',bs:'色',bh:10,zc:'鲜艳·艳丽',sy:'色彩鲜明好看'},
+  {zi:'服',py:'fú',bs:'月',bh:8,zc:'衣服·服从',sy:'穿在身上的衣物'},
+  {zi:'装',py:'zhuāng',bs:'衣',bh:12,zc:'服装·假装',sy:'衣服；打扮'},
+  {zi:'扮',py:'bàn',bs:'扌',bh:7,zc:'打扮·扮演',sy:'化装、装饰'},
+  {zi:'读',py:'dú',bs:'讠',bh:10,zc:'读书·朗读',sy:'看着文字念出来'},
+  {zi:'静',py:'jìng',bs:'青',bh:14,zc:'安静·静止',sy:'没有声音；不动'},
+  {zi:'停',py:'tíng',bs:'亻',bh:11,zc:'停止·停下',sy:'不再进行、留下'},
+  {zi:'影',py:'yǐng',bs:'彡',bh:15,zc:'影子·电影',sy:'物体挡光形成的暗像'},
+  {zi:'落',py:'luò',bs:'艹',bh:12,zc:'落下·落叶',sy:'掉下来；下降'},
+  {zi:'荒',py:'huāng',bs:'艹',bh:9,zc:'荒野·荒凉',sy:'偏僻、没人耕种'},
+  {zi:'笛',py:'dí',bs:'竹',bh:11,zc:'笛子·长笛',sy:'一种管乐器'},
+  {zi:'舞',py:'wǔ',bs:'夕',bh:14,zc:'跳舞·舞蹈',sy:'身体随音乐摆动'},
+  {zi:'狂',py:'kuáng',bs:'犭',bh:7,zc:'狂欢·疯狂',sy:'猛烈、放纵'},
+  {zi:'罚',py:'fá',bs:'罒',bh:9,zc:'惩罚·罚款',sy:'处分、责罚'},
+  {zi:'假',py:'jià',bs:'亻',bh:11,zc:'放假·假期',sy:'休息的日子'},
+  {zi:'互',py:'hù',bs:'二',bh:4,zc:'互相·互动',sy:'彼此、交替'},
+  {zi:'所',py:'suǒ',bs:'户',bh:8,zc:'所以·场所',sy:'地方；表示原因'},
+  {zi:'够',py:'gòu',bs:'夕',bh:11,zc:'足够·够用',sy:'满足需要、充足'},
+  {zi:'猜',py:'cāi',bs:'犭',bh:11,zc:'猜测·猜想',sy:'推测、估计'},
+  {zi:'扬',py:'yáng',bs:'扌',bh:6,zc:'飘扬·表扬',sy:'高举、宣扬'},
+  {zi:'臂',py:'bì',bs:'月',bh:17,zc:'手臂·臂膀',sy:'胳膊，从肩到腕的部分'},
+
+  /* ===== 一年级常用字 ===== */
+  {zi:'天',py:'tiān',bs:'大',bh:4,zc:'天空·天气',sy:'日月星辰所在的高空'},
+  {zi:'地',py:'dì',bs:'土',bh:6,zc:'土地·地方',sy:'地面、大地'},
+  {zi:'人',py:'rén',bs:'人',bh:2,zc:'人们·人口',sy:'人类'},
+  {zi:'口',py:'kǒu',bs:'口',bh:3,zc:'口水·门口',sy:'嘴；出入口'},
+  {zi:'手',py:'shǒu',bs:'手',bh:4,zc:'双手·手心',sy:'人体上肢前端'},
+  {zi:'水',py:'shuǐ',bs:'水',bh:4,zc:'喝水·水果',sy:'无色无味的液体'},
+  {zi:'火',py:'huǒ',bs:'火',bh:4,zc:'火山·火车',sy:'燃烧发光发热的现象'},
+  {zi:'木',py:'mù',bs:'木',bh:4,zc:'树木·木头',sy:'树'},
+  {zi:'山',py:'shān',bs:'山',bh:3,zc:'高山·上山',sy:'地面高起的部分'},
+  {zi:'石',py:'shí',bs:'石',bh:5,zc:'石头·石子',sy:'坚硬的矿物'},
+  {zi:'田',py:'tián',bs:'田',bh:5,zc:'田地·农田',sy:'种庄稼的地'},
+  {zi:'土',py:'tǔ',bs:'土',bh:3,zc:'土地·泥土',sy:'泥土'},
+  {zi:'上',py:'shàng',bs:'一',bh:3,zc:'上学·上面',sy:'位置高'},
+  {zi:'下',py:'xià',bs:'一',bh:3,zc:'下课·下面',sy:'位置低'},
+  {zi:'大',py:'dà',bs:'大',bh:3,zc:'大家·大小',sy:'体积、面积大'},
+  {zi:'小',py:'xiǎo',bs:'小',bh:3,zc:'小孩·小刀',sy:'体积、面积小'},
+  {zi:'多',py:'duō',bs:'夕',bh:6,zc:'多少·很多',sy:'数量大'},
+  {zi:'少',py:'shǎo',bs:'小',bh:4,zc:'很少·少年',sy:'数量小'},
+  {zi:'日',py:'rì',bs:'日',bh:4,zc:'日出·日子',sy:'太阳'},
+  {zi:'月',py:'yuè',bs:'月',bh:4,zc:'月亮·月儿',sy:'月亮'},
+  {zi:'目',py:'mù',bs:'目',bh:5,zc:'目光·耳目',sy:'眼睛'},
+  {zi:'耳',py:'ěr',bs:'耳',bh:6,zc:'耳朵·耳机',sy:'听觉器官'},
+  {zi:'头',py:'tóu',bs:'大',bh:5,zc:'头发·头脑',sy:'脑袋'},
+  {zi:'牙',py:'yá',bs:'牙',bh:4,zc:'牙齿·牙刷',sy:'牙齿'},
+  {zi:'心',py:'xīn',bs:'心',bh:4,zc:'心情·开心',sy:'心脏；内心'},
+  {zi:'门',py:'mén',bs:'门',bh:3,zc:'大门·门口',sy:'出入口'},
+  {zi:'马',py:'mǎ',bs:'马',bh:3,zc:'马车·马上',sy:'马'},
+  {zi:'牛',py:'niú',bs:'牛',bh:4,zc:'牛奶·水牛',sy:'牛'},
+  {zi:'羊',py:'yáng',bs:'羊',bh:6,zc:'山羊·羊毛',sy:'羊'},
+  {zi:'鸟',py:'niǎo',bs:'鸟',bh:5,zc:'小鸟·飞鸟',sy:'鸟'},
+  {zi:'虫',py:'chóng',bs:'虫',bh:6,zc:'虫子·昆虫',sy:'昆虫'},
+  {zi:'云',py:'yún',bs:'二',bh:4,zc:'云朵·白云',sy:'天空中的云'},
+  {zi:'雨',py:'yǔ',bs:'雨',bh:8,zc:'雨天·下雨',sy:'从云落下的水'},
+  {zi:'风',py:'fēng',bs:'风',bh:4,zc:'大风·风车',sy:'空气流动形成的风'},
+  {zi:'花',py:'huā',bs:'艹',bh:7,zc:'花朵·红花',sy:'花'},
+  {zi:'草',py:'cǎo',bs:'艹',bh:9,zc:'草地·小草',sy:'草'},
+  {zi:'树',py:'shù',bs:'木',bh:9,zc:'大树·树叶',sy:'树'},
+  {zi:'米',py:'mǐ',bs:'米',bh:6,zc:'大米·米饭',sy:'米'},
+  {zi:'书',py:'shū',bs:'乙',bh:4,zc:'书包·看书',sy:'书本'},
+  {zi:'刀',py:'dāo',bs:'刀',bh:2,zc:'小刀·刀子',sy:'刀'},
+  {zi:'尺',py:'chǐ',bs:'尸',bh:4,zc:'尺子·直尺',sy:'尺子'},
+  {zi:'车',py:'chē',bs:'车',bh:4,zc:'火车·汽车',sy:'车'},
+  /* ===== 二三年级常用字 ===== */
+  {zi:'温',py:'wēn',bs:'氵',bh:12,zc:'温暖·温水',sy:'不冷不热'},
+  {zi:'暖',py:'nuǎn',bs:'日',bh:13,zc:'暖和·温暖',sy:'温暖'},
+  {zi:'勇',py:'yǒng',bs:'力',bh:9,zc:'勇敢·勇气',sy:'有胆量'},
+  {zi:'敢',py:'gǎn',bs:'攵',bh:11,zc:'勇敢·敢做',sy:'有胆量去做'},
+  {zi:'思',py:'sī',bs:'心',bh:9,zc:'思考·思想',sy:'想'},
+  {zi:'想',py:'xiǎng',bs:'心',bh:13,zc:'想法·想象',sy:'思索；希望'},
+  {zi:'美',py:'měi',bs:'大',bh:9,zc:'美丽·美好',sy:'好看'},
+  {zi:'丽',py:'lì',bs:'一',bh:7,zc:'美丽·秀丽',sy:'好看'},
+  {zi:'清',py:'qīng',bs:'氵',bh:11,zc:'清楚·清水',sy:'纯净透明'},
+  {zi:'楚',py:'chǔ',bs:'木',bh:13,zc:'清楚·楚国',sy:'清晰'},
+  {zi:'观',py:'guān',bs:'又',bh:6,zc:'观察·观众',sy:'看'},
+  {zi:'察',py:'chá',bs:'宀',bh:14,zc:'观察·考察',sy:'仔细看'},
+  {zi:'计',py:'jì',bs:'讠',bh:4,zc:'计算·计划',sy:'算'},
+  {zi:'算',py:'suàn',bs:'竹',bh:14,zc:'计算·算数',sy:'计算'},
+  {zi:'旅',py:'lǚ',bs:'方',bh:10,zc:'旅行·旅游',sy:'出行'},
+  {zi:'行',py:'xíng',bs:'行',bh:6,zc:'行走·行动',sy:'走'},
+  {zi:'朋',py:'péng',bs:'月',bh:8,zc:'朋友·朋辈',sy:'朋友'},
+  {zi:'友',py:'yǒu',bs:'又',bh:4,zc:'朋友·友好',sy:'朋友'}
+  ,{zi:'鱼',py:'yú',bs:'鱼',bh:8,zc:'小鱼·金鱼',sy:'生活在水里的脊椎动物'}
+  ,{zi:'猫',py:'māo',bs:'犭',bh:11,zc:'小猫·花猫',sy:'常见的家养宠物'}
+  ,{zi:'狗',py:'gǒu',bs:'犭',bh:8,zc:'小狗·狗狗',sy:'看家护院的好伙伴'}
+  ,{zi:'鸡',py:'jī',bs:'鸟',bh:7,zc:'小鸡·公鸡',sy:'会下蛋的家禽'}
+  ,{zi:'鸭',py:'yā',bs:'鸟',bh:10,zc:'鸭子·鸭蛋',sy:'会游泳的家禽'}
+  ,{zi:'鹅',py:'é',bs:'鸟',bh:12,zc:'白鹅·天鹅',sy:'叫声嘎嘎的家禽'}
+  ,{zi:'虎',py:'hǔ',bs:'虍',bh:8,zc:'老虎·虎山',sy:'大型猫科猛兽'}
+  ,{zi:'熊',py:'xióng',bs:'灬',bh:14,zc:'熊猫·狗熊',sy:'胖胖的哺乳动物'}
+  ,{zi:'鹿',py:'lù',bs:'鹿',bh:11,zc:'小鹿·梅花鹿',sy:'头上长角的动物'}
+  ,{zi:'象',py:'xiàng',bs:'豕',bh:11,zc:'大象·气象',sy:'鼻子很长的动物'}
+  ,{zi:'猴',py:'hóu',bs:'犭',bh:12,zc:'猴子·猴山',sy:'爱模仿人的小动物'}
+  ,{zi:'龟',py:'guī',bs:'刀',bh:7,zc:'乌龟·海龟',sy:'背上有硬壳'}
+  ,{zi:'兔',py:'tù',bs:'刀',bh:8,zc:'兔子·白兔',sy:'长耳朵的小宠物'}
+  ,{zi:'猪',py:'zhū',bs:'犭',bh:11,zc:'小猪·猪肉',sy:'圆滚滚的家畜'}
+  ,{zi:'蚁',py:'yǐ',bs:'虫',bh:9,zc:'蚂蚁·白蚁',sy:'小小的昆虫'}
+  ,{zi:'雪',py:'xuě',bs:'雨',bh:11,zc:'雪花·下雪',sy:'空中飘落的冰晶'}
+  ,{zi:'光',py:'guāng',bs:'儿',bh:6,zc:'阳光·灯光',sy:'能照亮四周的东西'}
+  ,{zi:'电',py:'diàn',bs:'田',bh:5,zc:'电话·电视',sy:'一种常用能源'}
+  ,{zi:'雷',py:'léi',bs:'雨',bh:13,zc:'打雷·雷声',sy:'云里发出的巨响'}
+  ,{zi:'河',py:'hé',bs:'氵',bh:8,zc:'小河·河水',sy:'流动的水道'}
+  ,{zi:'海',py:'hǎi',bs:'氵',bh:10,zc:'大海·海水',sy:'很大的咸水'}
+  ,{zi:'湖',py:'hú',bs:'氵',bh:12,zc:'湖水·湖泊',sy:'大片静静的水'}
+  ,{zi:'岩',py:'yán',bs:'山',bh:8,zc:'岩石·岩洞',sy:'坚硬的石头'}
+  ,{zi:'舌',py:'shé',bs:'舌',bh:6,zc:'舌头·舌尖',sy:'嘴里辨味的器官'}
+  ,{zi:'脸',py:'liǎn',bs:'月',bh:11,zc:'脸蛋·笑脸',sy:'头的前面部分'}
+  ,{zi:'腿',py:'tuǐ',bs:'月',bh:13,zc:'大腿·小腿',sy:'脚和身子连接的部位'}
+  ,{zi:'指',py:'zhǐ',bs:'扌',bh:9,zc:'手指·指甲',sy:'手上的指头'}
+  ,{zi:'汗',py:'hàn',bs:'氵',bh:6,zc:'汗水·出汗',sy:'运动时皮肤出的水'}
+  ,{zi:'桌',py:'zhuō',bs:'木',bh:10,zc:'桌子·书桌',sy:'放东西的家具'}
+  ,{zi:'窗',py:'chuāng',bs:'穴',bh:12,zc:'窗户·窗口',sy:'墙上透光的开口'}
+  ,{zi:'灯',py:'dēng',bs:'火',bh:6,zc:'台灯·路灯',sy:'会发光的器具'}
+  ,{zi:'钟',py:'zhōng',bs:'钅',bh:9,zc:'时钟·钟表',sy:'计时的东西'}
+  ,{zi:'镜',py:'jìng',bs:'钅',bh:16,zc:'镜子·眼镜',sy:'能照出影像'}
+  ,{zi:'伞',py:'sǎn',bs:'人',bh:6,zc:'雨伞·打伞',sy:'挡雨的工具'}
+  ,{zi:'鞋',py:'xié',bs:'革',bh:15,zc:'鞋子·皮鞋',sy:'穿在脚上走路'}
+  ,{zi:'饭',py:'fàn',bs:'饣',bh:7,zc:'米饭·吃饭',sy:'煮熟的粮食'}
+  ,{zi:'面',py:'miàn',bs:'面',bh:9,zc:'面条·面粉',sy:'用麦做的面食'}
+  ,{zi:'肉',py:'ròu',bs:'肉',bh:6,zc:'肉肉·牛肉',sy:'动物的肌肉'}
+  ,{zi:'蛋',py:'dàn',bs:'虫',bh:11,zc:'鸡蛋·蛋糕',sy:'禽类下的卵'}
+  ,{zi:'茶',py:'chá',bs:'艹',bh:9,zc:'喝茶·茶叶',sy:'一种清香饮品'}
+  ,{zi:'春',py:'chūn',bs:'日',bh:9,zc:'春天·春风',sy:'一年的第一季'}
+  ,{zi:'夏',py:'xià',bs:'夂',bh:10,zc:'夏天·夏日',sy:'炎热的季节'}
+  ,{zi:'秋',py:'qiū',bs:'禾',bh:9,zc:'秋天·秋风',sy:'丰收的季节'}
+  ,{zi:'冬',py:'dōng',bs:'夂',bh:5,zc:'冬天·冬日',sy:'寒冷的季节'}
+  ,{zi:'红',py:'hóng',bs:'纟',bh:6,zc:'红色·红花',sy:'像火一样的颜色'}
+  ,{zi:'黄',py:'huáng',bs:'黄',bh:11,zc:'黄色·黄河',sy:'像金子的颜色'}
+  ,{zi:'绿',py:'lǜ',bs:'纟',bh:11,zc:'绿色·绿叶',sy:'草和树的颜色'}
+  ,{zi:'蓝',py:'lán',bs:'艹',bh:13,zc:'蓝色·蓝天',sy:'天空的颜色'}
+  ,{zi:'黑',py:'hēi',bs:'黑',bh:12,zc:'黑色·黑夜',sy:'没有光的颜色'}
+  ,{zi:'白',py:'bái',bs:'白',bh:5,zc:'白色·白天',sy:'雪一样的颜色'}
+  ,{zi:'笑',py:'xiào',bs:'竹',bh:10,zc:'笑声·微笑',sy:'高兴时的表情'}
+  ,{zi:'走',py:'zǒu',bs:'走',bh:7,zc:'走路·行走',sy:'用脚移动'}
+  ,{zi:'跑',py:'pǎo',bs:'足',bh:12,zc:'跑步·奔跑',sy:'快快地走'}
+  ,{zi:'飞',py:'fēi',bs:'飞',bh:3,zc:'飞机·飞翔',sy:'在空中移动'}
+  ,{zi:'坐',py:'zuò',bs:'土',bh:7,zc:'坐下·坐车',sy:'把身子放在椅子上'}
+  ,{zi:'站',py:'zhàn',bs:'立',bh:10,zc:'站立·车站',sy:'直着身子不动'}
+  ,{zi:'看',py:'kàn',bs:'目',bh:9,zc:'看见·看书',sy:'用眼睛瞧'}
+  ,{zi:'听',py:'tīng',bs:'口',bh:7,zc:'听见·听话',sy:'用耳朵接收声音'}
+  ,{zi:'说',py:'shuō',bs:'讠',bh:9,zc:'说话·小说',sy:'用嘴表达'}
+  ,{zi:'唱',py:'chàng',bs:'口',bh:11,zc:'唱歌·合唱',sy:'把歌发出声'}
+  ,{zi:'写',py:'xiě',bs:'冖',bh:5,zc:'写字·写作',sy:'用笔在纸上画'}
+  ,{zi:'画',py:'huà',bs:'田',bh:8,zc:'画画·图画',sy:'用笔描出形象'}
+  ,{zi:'玩',py:'wán',bs:'王',bh:8,zc:'玩耍·玩具',sy:'做高兴的事'}
+  ,{zi:'乐',py:'lè',bs:'丿',bh:5,zc:'快乐·乐园',sy:'高兴、欢喜'}
+  ,{zi:'高',py:'gāo',bs:'高',bh:10,zc:'高大·高兴',sy:'从下到上距离大'}
+  ,{zi:'低',py:'dī',bs:'亻',bh:7,zc:'低头·高低',sy:'离地面近'}
+  ,{zi:'长',py:'cháng',bs:'长',bh:4,zc:'长江·长处',sy:'两端距离大'}
+  ,{zi:'短',py:'duǎn',bs:'矢',bh:12,zc:'短处·短暂',sy:'两端距离小'}
+  ,{zi:'快',py:'kuài',bs:'忄',bh:7,zc:'快乐·快车',sy:'速度高'}
+  ,{zi:'慢',py:'màn',bs:'忄',bh:14,zc:'慢车·慢跑',sy:'速度低'}
+,
+  {
+  zi: '爷',
+  py: 'yé',
+  bs: '父',
+  bh: 6,
+  zc: '爷爷·老爷',
+  sy: '父亲的父亲'
+  },
+  {
+  zi: '奶',
+  py: 'nǎi',
+  bs: '女',
+  bh: 5,
+  zc: '奶奶·牛奶',
+  sy: '祖母；也指乳汁'
+  },
+  {
+  zi: '爸',
+  py: 'bà',
+  bs: '父',
+  bh: 8,
+  zc: '爸爸·老爸',
+  sy: '口语称父亲'
+  },
+  {
+  zi: '妈',
+  py: 'mā',
+  bs: '女',
+  bh: 6,
+  zc: '妈妈·姑妈',
+  sy: '口语称母亲'
+  },
+  {
+  zi: '哥',
+  py: 'gē',
+  bs: '口',
+  bh: 10,
+  zc: '哥哥·大哥',
+  sy: '兄长'
+  },
+  {
+  zi: '姐',
+  py: 'jiě',
+  bs: '女',
+  bh: 8,
+  zc: '姐姐·姐妹',
+  sy: '同父母年长的女性'
+  },
+  {
+  zi: '弟',
+  py: 'dì',
+  bs: '丷',
+  bh: 7,
+  zc: '弟弟·兄弟',
+  sy: '同父母年幼的男性'
+  },
+  {
+  zi: '妹',
+  py: 'mèi',
+  bs: '女',
+  bh: 8,
+  zc: '妹妹·姐妹',
+  sy: '同父母年幼的女性'
+  },
+  {
+  zi: '甜',
+  py: 'tián',
+  bs: '甘',
+  bh: 11,
+  zc: '甜蜜·甜美',
+  sy: '像糖一样的味道'
+  },
+  {
+  zi: '苦',
+  py: 'kǔ',
+  bs: '艹',
+  bh: 8,
+  zc: '苦瓜·辛苦',
+  sy: '像胆汁的味道，难受'
+  },
+  {
+  zi: '酸',
+  py: 'suān',
+  bs: '酉',
+  bh: 14,
+  zc: '酸奶·酸味',
+  sy: '像醋的味道'
+  },
+  {
+  zi: '辣',
+  py: 'là',
+  bs: '辛',
+  bh: 14,
+  zc: '辣椒·辛辣',
+  sy: '一种刺激舌头的味道'
+  },
+  {
+  zi: '咸',
+  py: 'xián',
+  bs: '戈',
+  bh: 9,
+  zc: '咸菜·咸淡',
+  sy: '像盐的味道'
+  },
+  {
+  zi: '轻',
+  py: 'qīng',
+  bs: '车',
+  bh: 9,
+  zc: '轻松·轻重',
+  sy: '重量小'
+  },
+  {
+  zi: '重',
+  py: 'zhòng',
+  bs: '里',
+  bh: 9,
+  zc: '重要·重大',
+  sy: '重量大；也读 chóng 重复'
+  },
+  {
+  zi: '厚',
+  py: 'hòu',
+  bs: '厂',
+  bh: 9,
+  zc: '厚实·深厚',
+  sy: '扁平物上下距离大'
+  },
+  {
+  zi: '薄',
+  py: 'báo',
+  bs: '艹',
+  bh: 16,
+  zc: '薄纸·薄弱',
+  sy: '扁平物上下距离小'
+  },
+  {
+  zi: '方',
+  py: 'fāng',
+  bs: '方',
+  bh: 4,
+  zc: '方向·方块',
+  sy: '四个角都是直角的形'
+  },
+  {
+  zi: '圆',
+  py: 'yuán',
+  bs: '囗',
+  bh: 10,
+  zc: '圆形·团圆',
+  sy: '从中心到边上距离相等的形'
+  },
+  {
+  zi: '尖',
+  py: 'jiān',
+  bs: '小',
+  bh: 6,
+  zc: '笔尖·尖锐',
+  sy: '末端细小'
+  },
+  {zi:'勤',py:'qín',bs:'力',bh:13,zc:'勤奋·勤劳',sy:'努力工作，不懈怠'},
+  {zi:'奋',py:'fèn',bs:'大',bh:8,zc:'奋斗·奋发',sy:'鼓劲、振作精神'},
+  {zi:'诚',py:'chéng',bs:'讠',bh:8,zc:'诚实·真诚',sy:'真实不虚假'},
+  {zi:'实',py:'shí',bs:'宀',bh:8,zc:'实在·果实',sy:'真实、不虚'},
+  {zi:'净',py:'jìng',bs:'冫',bh:8,zc:'干净·洁净',sy:'清洁，没有杂质'},
+  {zi:'整',py:'zhěng',bs:'攵',bh:16,zc:'整齐·整理',sy:'有秩序，不乱'},
+  {zi:'齐',py:'qí',bs:'齐',bh:6,zc:'整齐·齐心',sy:'一致、共同'},
+  {zi:'凉',py:'liáng',bs:'冫',bh:10,zc:'凉快·凉爽',sy:'温度较低'},
+  {zi:'晴',py:'qíng',bs:'日',bh:12,zc:'晴朗·晴空',sy:'天好无云'},
+  {zi:'阴',py:'yīn',bs:'阝',bh:6,zc:'阴天·阴暗',sy:'云多，光线不足'},
+  {zi:'冰',py:'bīng',bs:'冫',bh:6,zc:'冰冷·结冰',sy:'水受冷凝结'},
+  {zi:'霜',py:'shuāng',bs:'雨',bh:17,zc:'霜冻·冰霜',sy:'地面水汽凝华成白霜'},
+  {zi:'雾',py:'wù',bs:'雨',bh:13,zc:'雾气·大雾',sy:'近地面的云雾'},
+  {zi:'霞',py:'xiá',bs:'雨',bh:17,zc:'朝霞·晚霞',sy:'日出日落时的彩云'},
+  {zi:'虹',py:'hóng',bs:'虫',bh:8,zc:'彩虹·霓虹',sy:'雨后空中的彩桥'},
+  {zi:'洋',py:'yáng',bs:'氵',bh:9,zc:'海洋·洋气',sy:'地球表面广大的水域'},
+  {"zi":"寒","py":"hán","bs":"宀","bh":12,"zc":"寒冷·寒风","sy":"冷；冬天"},
+  {"zi":"智","py":"zhì","bs":"日","bh":12,"zc":"智慧·智力","sy":"聪明；见识"},
+  {"zi":"慧","py":"huì","bs":"心","bh":15,"zc":"聪慧·慧眼","sy":"聪明；有才智"},
+  {"zi":"劳","py":"láo","bs":"力","bh":7,"zc":"劳动·辛苦","sy":"工作；疲乏"},
+  {"zi":"谦","py":"qiān","bs":"讠","bh":12,"zc":"谦虚·谦让","sy":"不自满"},
+  {"zi":"虚","py":"xū","bs":"虍","bh":11,"zc":"虚心·空虚","sy":"空；不真实"},
+  {"zi":"信","py":"xìn","bs":"亻","bh":9,"zc":"信心·信任","sy":"诚实；相信"}
+,
+  {"zi":"善","py":"shàn","bs":"口","bh":12,"zc":"善良·友善","sy":"好；慈善"},
+  {"zi":"恶","py":"è","bs":"心","bh":10,"zc":"凶恶·恶意","sy":"坏；不好"},
+  {"zi":"强","py":"qiáng","bs":"弓","bh":12,"zc":"强大·坚强","sy":"有力；健壮"},
+  {"zi":"弱","py":"ruò","bs":"弓","bh":10,"zc":"弱小·软弱","sy":"力气小；不强"},
+  {"zi":"明","py":"míng","bs":"日","bh":8,"zc":"明亮·明白","sy":"亮；清楚"},
+  {"zi":"暗","py":"àn","bs":"日","bh":13,"zc":"黑暗·暗淡","sy":"不明亮"},
+  {"zi":"真","py":"zhēn","bs":"十","bh":10,"zc":"真实·认真","sy":"不假；确实"},
+
+  /* ===== 三四年级常用字（补充）===== */
+  {"zi":"候","py":"hòu","bs":"亻","bh":10,"zc":"时候·等候","sy":"等待；时节"},
+  {"zi":"准","py":"zhǔn","bs":"冫","bh":10,"zc":"准备·准确","sy":"预先安排；没有偏差"},
+  {"zi":"备","py":"bèi","bs":"夂","bh":8,"zc":"准备·设备","sy":"事先安排好；具有"},
+  {"zi":"蜜","py":"mì","bs":"虫","bh":14,"zc":"蜜蜂·蜂蜜","sy":"蜜蜂采花做成的甜汁"},
+  {"zi":"蜂","py":"fēng","bs":"虫","bh":13,"zc":"蜜蜂·马蜂","sy":"会采蜜、能蜇人的昆虫"},
+  {"zi":"翅","py":"chì","bs":"羽","bh":10,"zc":"翅膀·展翅","sy":"鸟和虫飞行的器官"},
+  {"zi":"膀","py":"bǎng","bs":"月","bh":14,"zc":"翅膀·肩膀","sy":"胳膊上部；鸟的翅"},
+  {"zi":"辨","py":"biàn","bs":"辛","bh":16,"zc":"辨别·分辨","sy":"分清、区别开"},
+  {"zi":"测","py":"cè","bs":"氵","bh":9,"zc":"测量·观测","sy":"用工具量；推想"},
+  {"zi":"量","py":"liàng","bs":"里","bh":12,"zc":"数量·重量","sy":"多少的程度"},
+  {"zi":"陆","py":"lù","bs":"阝","bh":7,"zc":"陆地·陆续","sy":"高出水面的土地"},
+  {"zi":"续","py":"xù","bs":"纟","bh":11,"zc":"继续·陆续","sy":"接着、连下去"},
+  {"zi":"批","py":"pī","bs":"扌","bh":7,"zc":"批改·批评","sy":"指出对错；一群"},
+  {"zi":"评","py":"píng","bs":"讠","bh":7,"zc":"评价·评比","sy":"议论、判断好坏"},
+  {"zi":"贵","py":"guì","bs":"贝","bh":9,"zc":"宝贵·昂贵","sy":"价钱高；值得珍惜"},
+  {"zi":"宝","py":"bǎo","bs":"宀","bh":8,"zc":"宝贝·宝贵","sy":"珍贵的东西"},
+  {"zi":"剩","py":"shèng","bs":"刂","bh":12,"zc":"剩下·剩余","sy":"多出来、没用完"},
+  {"zi":"余","py":"yú","bs":"人","bh":7,"zc":"剩余·业余","sy":"多下来的部分"},
+  {"zi":"拾","py":"shí","bs":"扌","bh":9,"zc":"拾起·拾金不昧","sy":"把地上的东西捡起来"},
+  {"zi":"碎","py":"suì","bs":"石","bh":13,"zc":"破碎·碎片","sy":"完整的东西成小块"},
+  {"zi":"破","py":"pò","bs":"石","bh":10,"zc":"破碎·打破","sy":"损坏；冲开"},
+  {"zi":"裂","py":"liè","bs":"衣","bh":12,"zc":"裂开·分裂","sy":"东西出现缝隙、分开"},
+  {"zi":"胜","py":"shèng","bs":"月","bh":9,"zc":"胜利·取胜","sy":"赢；超过别人"},
+  {"zi":"利","py":"lì","bs":"刂","bh":7,"zc":"胜利·锋利","sy":"好处；刀口快"},
+  {"zi":"败","py":"bài","bs":"贝","bh":8,"zc":"失败·打败","sy":"输了；使对方输"},
+  {"zi":"获","py":"huò","bs":"艹","bh":10,"zc":"收获·获得","sy":"得到、取得"},
+  {"zi":"搭","py":"dā","bs":"扌","bh":12,"zc":"搭桥·搭配","sy":"架起来；配合"},
+  {"zi":"桥","py":"qiáo","bs":"木","bh":10,"zc":"石桥·过桥","sy":"跨过水面供人通行的建筑"},
+  {"zi":"害","py":"hài","bs":"宀","bh":10,"zc":"害虫·危害","sy":"使受损伤；有坏处的"},
+  {"zi":"考","py":"kǎo","bs":"老","bh":6,"zc":"考试·思考","sy":"检查学习成绩；仔细想"},
+  {"zi":"试","py":"shì","bs":"讠","bh":8,"zc":"考试·尝试","sy":"试着做；检验"},
+  {"zi":"验","py":"yàn","bs":"马","bh":10,"zc":"实验·经验","sy":"检查、证实"},
+  {"zi":"究","py":"jiū","bs":"穴","bh":7,"zc":"研究·究竟","sy":"仔细追问、探求"},
+  {"zi":"研","py":"yán","bs":"石","bh":9,"zc":"研究·研讨","sy":"深入探讨"},
+  {"zi":"盼","py":"pàn","bs":"目","bh":9,"zc":"盼望·期盼","sy":"急切地希望"},
+  {"zi":"望","py":"wàng","bs":"月","bh":11,"zc":"希望·远望","sy":"向远处看；盼着"},
+  {"zi":"希","py":"xī","bs":"巾","bh":7,"zc":"希望·希奇","sy":"盼着；少有"},
+  {"zi":"愿","py":"yuàn","bs":"心","bh":14,"zc":"愿望·心愿","sy":"心里想达到的目标"},
+  {"zi":"仿","py":"fǎng","bs":"亻","bh":6,"zc":"仿佛·模仿","sy":"照样子做；好像"},
+  {"zi":"佛","py":"fó","bs":"亻","bh":7,"zc":"仿佛·佛像","sy":"「仿佛」中读fú，意思是好像"},
+  {"zi":"瓣","py":"bàn","bs":"辛","bh":19,"zc":"花瓣·蒜瓣","sy":"花朵上的片状部分"},
+  {"zi":"胀","py":"zhàng","bs":"月","bh":8,"zc":"饱胀·膨胀","sy":"体积变大、鼓起来"},
+  {"zi":"饱","py":"bǎo","bs":"饣","bh":8,"zc":"饱满·吃饱","sy":"吃足了；充实"},
+  {"zi":"熟","py":"shú","bs":"灬","bh":15,"zc":"成熟·熟练","sy":"长成了；做得很顺"},
+  {"zi":"邮","py":"yóu","bs":"阝","bh":7,"zc":"邮票·邮寄","sy":"传递信件的事务"},
+  {"zi":"票","py":"piào","bs":"示","bh":11,"zc":"邮票·车票","sy":"作凭证用的小纸片"},
+  {"zi":"扇","py":"shàn","bs":"户","bh":10,"zc":"扇子·电扇","sy":"摇动生风的用具"},
+  {"zi":"缤","py":"bīn","bs":"纟","bh":13,"zc":"五彩缤纷","sy":"繁多而杂乱的样子"},
+  {"zi":"纷","py":"fēn","bs":"纟","bh":7,"zc":"纷纷·缤纷","sy":"多而杂；一个接一个"},
+  {"zi":"彤","py":"tóng","bs":"彡","bh":7,"zc":"红彤彤","sy":"红色的样子"},
+  {"zi":"灿","py":"càn","bs":"火","bh":7,"zc":"灿烂·金灿灿","sy":"光彩鲜明"},
+  {"zi":"烂","py":"làn","bs":"火","bh":9,"zc":"灿烂·烂漫","sy":"光彩耀眼；过熟发软"},
+  {"zi":"壮","py":"zhuàng","bs":"士","bh":6,"zc":"壮丽·强壮","sy":"大而有力；雄伟"},
+  {"zi":"潮","py":"cháo","bs":"氵","bh":15,"zc":"潮水·观潮","sy":"海水定时涨落的现象"},
+  {"zi":"浪","py":"làng","bs":"氵","bh":10,"zc":"波浪·浪花","sy":"水面起伏的波"},
+  {"zi":"波","py":"bō","bs":"氵","bh":8,"zc":"波浪·水波","sy":"水面涌起的起伏"},
+  {"zi":"沸","py":"fèi","bs":"氵","bh":8,"zc":"沸腾·沸水","sy":"液体烧到滚开"},
+  {"zi":"腾","py":"téng","bs":"月","bh":13,"zc":"沸腾·奔腾","sy":"上升；跳跃奔跑"},
+  {"zi":"奔","py":"bēn","bs":"大","bh":8,"zc":"奔跑·奔腾","sy":"快跑、急走"},
+  {"zi":"猛","py":"měng","bs":"犭","bh":11,"zc":"猛烈·勇猛","sy":"气势大；忽然而急"},
+  {"zi":"烈","py":"liè","bs":"灬","bh":10,"zc":"猛烈·激烈","sy":"厉害、强盛"},
+  {"zi":"激","py":"jī","bs":"氵","bh":16,"zc":"激动·激励","sy":"感情强烈；水受阻涌起"},
+  {"zi":"抖","py":"dǒu","bs":"扌","bh":7,"zc":"发抖·抖动","sy":"颤动、甩动"},
+  {"zi":"恐","py":"kǒng","bs":"心","bh":10,"zc":"恐怕·惊恐","sy":"害怕；也许"}
+];
+
+/* ============ 状态 ============ */
+var idx = 0;            // 当前字索引
+var mode = 'listen';    // listen / card
+var known = loadKnown();// 已会集合 {zi:true}
+
+/* ============ 断点续学（记住学到第几个字）============ */
+function loadIdx(){
+  try{ var v=parseInt(localStorage.getItem(KEY+'_idx'),10); if(!isNaN(v)&&v>=0&&v<WORDS.length) idx=v; }catch(e){}
+}
+function saveIdx(){ try{ localStorage.setItem(KEY+'_idx', String(idx)); }catch(e){} }
+function resetIdx(){ idx=0; saveIdx(); render(); var t=document.getElementById('resumeTip'); if(t) t.remove(); }
+function mountResumeBanner(){
+  if(idx<=0) return;
+  var h=document.querySelector('header'); if(!h) return;
+  var tip=document.createElement('div'); tip.id='resumeTip';
+  tip.style.cssText='margin:10px 16px 0;background:#eef9ff;border:1px solid #b9e3ff;color:#247;font-size:13px;border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:10px';
+  tip.innerHTML='📍 上次学到第 '+(idx+1)+' 个字（共 '+WORDS.length+'）';
+  var btn=document.createElement('button'); btn.type='button'; btn.textContent='↺ 从第1个开始';
+  btn.style.cssText='border:none;background:#4cc9f0;color:#fff;border-radius:10px;padding:6px 12px;font-size:13px;font-family:inherit;cursor:pointer;font-weight:700';
+  btn.onclick=resetIdx;
+  tip.appendChild(btn);
+  h.insertAdjacentElement('afterend', tip);
+}
+
+/* ============ 朗读（中文 TTS）============ */
+function speakWord(){
+  var w = WORDS[idx];
+  try{
+    var u = new SpeechSynthesisUtterance(w.zi);
+    u.lang = 'zh-CN'; u.rate = 0.9; u.pitch = 1;
+    var voices = window.speechSynthesis.getVoices();
+    var zh = voices.filter(function(v){ return /zh|Chinese/i.test(v.lang); })[0];
+    if (zh) u.voice = zh;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+/* ============ 渲染 ============ */
+function render(){
+  var w = WORDS[idx];
+  document.getElementById('idxNum').textContent = idx + 1;
+  document.getElementById('totalNum').textContent = WORDS.length;
+  document.getElementById('knowNum').textContent = Object.keys(known).length;
+  document.getElementById('big').textContent = w.zi;
+  // 听写模式：默认遮住答案；认字卡模式：直接显示
+  var showAns = (mode === 'card');
+  document.getElementById('big').classList.toggle('hide', !showAns && mode==='listen' ? false : false);
+  document.getElementById('py').hidden = !showAns;
+  document.getElementById('meta').hidden = !showAns;
+  document.getElementById('mean').hidden = !showAns;
+  if (showAns){
+    document.getElementById('py').textContent = w.py;
+    document.getElementById('meta').innerHTML =
+      '<span class="tag">部首 <b>'+w.bs+'</b></span>' +
+      '<span class="tag">笔画 <b>'+w.bh+'</b></span>' +
+      '<span class="tag">组词 <b>'+w.zc+'</b></span>';
+    document.getElementById('mean').textContent = '释义：' + w.sy;
+  }
+  document.getElementById('hint').textContent = (mode==='card')
+    ? '这是认字卡，点「朗读」听读音，点「看答案」再核对'
+    : '点「朗读」听报字，写完再点「看答案」核对 ✍️';
+  // 进度
+  var pct = Math.round((idx) / WORDS.length * 100);
+  document.getElementById('progBar').style.width = (pct) + '%';
+  document.getElementById('progTxt').textContent = '进度 ' + pct + '%';
+  renderHW();
+}
+
+/* ============ 手写（Apple Pencil / 手指）============ */
+var curHW=null;
+function renderHW(){
+  var slot=document.getElementById('hwSlot'); if(!slot) return;
+  slot.innerHTML='';
+  if(!window.Handwrite) return;
+  var w=WORDS[idx];
+  curHW=Handwrite.create({revealText: w.zi, placeholder:'✍️ 用手写「'+w.zi+'」　('+(w.py||'')+')'});
+  slot.appendChild(curHW.el);
+}
+
+/* ============ 交互 ============ */
+function setMode(m){
+  mode = m;
+  document.getElementById('mListen').classList.toggle('on', m==='listen');
+  document.getElementById('mCard').classList.toggle('on', m==='card');
+  render();
+}
+function flip(){
+  var w = WORDS[idx];
+  if(curHW) curHW.reveal();
+  document.getElementById('py').hidden = false;
+  document.getElementById('meta').hidden = false;
+  document.getElementById('mean').hidden = false;
+  document.getElementById('py').textContent = w.py;
+  document.getElementById('meta').innerHTML =
+    '<span class="tag">部首 <b>'+w.bs+'</b></span>' +
+    '<span class="tag">笔画 <b>'+w.bh+'</b></span>' +
+    '<span class="tag">组词 <b>'+w.zc+'</b></span>';
+  document.getElementById('mean').textContent = '释义：' + w.sy;
+}
+function markKnow(){
+  var w = WORDS[idx];
+  known[w.zi] = true;
+  saveKnown();
+  document.getElementById('knowNum').textContent = Object.keys(known).length;
+  confettiBurst();
+  next();
+}
+function next(){
+  if (idx >= WORDS.length - 1){
+    // 一轮结束
+    document.getElementById('big').textContent = '🎉';
+    document.getElementById('py').hidden = true;
+    document.getElementById('meta').hidden = true;
+    document.getElementById('mean').hidden = true;
+    document.getElementById('hint').textContent = '这一轮全部过完啦！点「下一个」可重新开始';
+    document.getElementById('progBar').style.width = '100%';
+    document.getElementById('progTxt').textContent = '进度 100%';
+    showCeleb();
+    idx = 0; // 复位，方便再来一轮
+    saveIdx();
+    return;
+  }
+  idx++;
+  saveIdx();
+  render();
+}
+
+/* ============ 庆祝 ============ */
+function confettiBurst(){
+  var emo = ['🌸','⭐','🌟','💖','🎉'];
+  for (var i=0;i<18;i++){
+    var s = document.createElement('div');
+    s.className='confetti'; s.textContent = emo[i%emo.length];
+    s.style.left = Math.random()*100 + 'vw';
+    s.style.animationDuration = (1.6 + Math.random()*1.4) + 's';
+    document.body.appendChild(s);
+    (function(el){ setTimeout(function(){ el.remove(); }, 3200); })(s);
+  }
+}
+function showCeleb(){
+  var n = Object.keys(known).length;
+  document.getElementById('celebMsg').textContent =
+    '本轮 '+WORDS.length+' 个字听完啦！累计已会 '+n+' 个字，真棒 👍';
+  document.getElementById('celeb').style.display='flex';
+}
+function closeCeleb(){ document.getElementById('celeb').style.display='none'; }
+
+/* ============ 存储 ============ */
+function loadKnown(){
+  try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; }
+}
+function saveKnown(){
+  try{ localStorage.setItem(KEY, JSON.stringify(known)); }catch(e){}
+}
+
+/* ============ 启动 ============ */
+(function(){
+  try{ document.getElementById('dateStr').textContent =
+    new Date().toLocaleDateString('zh-CN',{month:'long',day:'numeric',weekday:'long'}); }catch(e){}
+  loadIdx();
+  render();
+  mountResumeBanner();
+})();
+</script>
+<script src="handwrite.js"></script>
+</body>
+</html>

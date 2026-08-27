@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔭 科学自然观察</title>
+<style>
+  :root{
+    --green:#06d6a0; --purple:#b292ff; --blue:#4cc9f0; --orange:#ff9f1c;
+    --pink:#f72585; --ink:#2b3a4a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(135deg,#eafff7,#f3ecff);color:var(--ink);
+    padding:18px;max-width:560px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  .back{position:fixed;left:14px;top:14px;z-index:30;border:none;background:rgba(255,255,255,.85);
+    border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink)}
+  header{background:linear-gradient(120deg,var(--green),var(--purple));color:#fff;
+    border-radius:24px;padding:20px;text-align:center;box-shadow:0 8px 22px rgba(6,214,160,.35)}
+  header h1{font-size:22px}
+  .date{font-size:14px;opacity:.95;margin-top:4px}
+  .stats{display:flex;gap:10px;margin:14px 0}
+  .stat{flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center;
+    box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .stat .num{font-size:24px;font-weight:800;color:var(--green)}
+  .stat .lbl{font-size:12px;color:#999;margin-top:2px}
+  h2{font-size:17px;margin:18px 4px 10px;display:flex;align-items:center;gap:8px}
+
+  .items{display:flex;flex-direction:column;gap:12px}
+  .item{background:#fff;border-radius:20px;box-shadow:0 4px 12px rgba(0,0,0,.06);
+    overflow:hidden;border:3px solid transparent;transition:border-color .2s}
+  .item.done{border-color:var(--green)}
+  .ifront{padding:15px 16px;display:flex;align-items:center;gap:14px;cursor:pointer}
+  .ifront .iemoji{font-size:32px;flex-shrink:0}
+  .ifront .itxt{flex:1}
+  .ifront .iname{font-size:16px;font-weight:800}
+  .ifront .ihint{font-size:12px;color:#aaa;margin-top:3px}
+  .ifront .iarrow{font-size:20px;color:var(--green);flex-shrink:0}
+  .iback{padding:4px 16px 14px}
+  .iback .guide{font-size:13px;color:#666;line-height:1.7;background:#f1fbf8;
+    border-radius:12px;padding:10px;margin-bottom:10px}
+  .iback textarea{width:100%;border:1.5px solid #e6eef0;border-radius:12px;padding:10px;
+    font-size:14px;font-family:inherit;resize:vertical;min-height:62px;color:var(--ink)}
+  .iback textarea:focus{outline:none;border-color:var(--green)}
+  .iback .irow{display:flex;gap:10px;margin-top:10px}
+  .iback .irow button{flex:1;border:none;border-radius:14px;padding:10px;font-size:14px;
+    font-family:inherit;cursor:pointer;font-weight:700;color:#fff}
+  .b-save{background:var(--blue)}
+  .b-mark{background:var(--green)}
+  .imark{width:100%;border:none;border-top:1px solid #f0f0f0;background:#fff;
+    padding:11px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;color:#bbb}
+  .item.done .imark{color:var(--green);background:#edfff8}
+  .mark-ic{display:inline-block;width:20px}
+  .recnote{font-size:12px;color:#999;margin-top:6px;padding:0 4px;line-height:1.5}
+
+  .progress{height:14px;background:#d8f5ec;border-radius:10px;overflow:hidden;margin:14px 0 4px}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--purple));
+    border-radius:10px;transition:width .4s}
+  .prog-txt{font-size:13px;color:#888;text-align:center}
+  .reset{background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;
+    text-decoration:underline;display:block;margin:10px auto 0;font-family:inherit}
+  .tip{font-size:12px;color:#aaa;text-align:center;margin-top:14px;line-height:1.6}
+  .confetti{position:fixed;top:-40px;font-size:24px;pointer-events:none;z-index:99;
+    animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:.2}}
+  .celebrate{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;
+    align-items:center;justify-content:center;z-index:100}
+  .celebrate .box2{background:#fff;border-radius:24px;padding:28px 34px;text-align:center;animation:pop .4s;max-width:320px}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate h3{font-size:24px;margin-bottom:8px}
+  .celebrate p{color:#888;font-size:14px;line-height:1.6}
+  .celebrate button{margin-top:16px;border:none;background:var(--green);color:#fff;
+    padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+</style>
+</head>
+<body>
+
+
+
+<header>
+  <h1>🔭 科学自然观察</h1>
+  <div class="date" id="dateStr">今天</div>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="num" id="doneNum">0</div><div class="lbl">🔍 已观察</div></div>
+  <div class="stat"><div class="num" id="totalNum">0</div><div class="lbl">🌿 任务总数</div></div>
+  <div class="stat"><div class="num" id="pctNum">0%</div><div class="lbl">📈 完成度</div></div>
+</div>
+
+<h2>🌱 去大自然里看一看</h2>
+<div class="items" id="items"></div>
+
+<div class="progress"><i id="progBar"></i></div>
+<div class="prog-txt" id="progTxt">完成 0 / 0 项</div>
+
+<button class="reset" onclick="resetAll()">↺ 重置所有记录</button>
+<div class="tip">点任务卡看「观察指南」，用文字记下你的发现，做完点「已观察」🌿<br>数据按小朋友分别保存，不会上传。</div>
+
+<div class="celebrate" id="celeb">
+  <div class="box2">
+    <h3>🎉 小自然学家！</h3>
+    <p>所有观察任务都完成啦，你有一双会发现美的眼睛！</p>
+    <button onclick="closeCeleb()">继续探索 💪</button>
+  </div>
+</div>
+
+<script>
+var TASKS=[
+  {id:'cloud',emoji:'☁️',name:'看云',hint:'抬头找一找云',guide:'抬头看天空，云像什么？棉花糖、小怪兽、还是山？看看它有没有在慢慢飘动。'},
+  {id:'leaf',emoji:'🍃',name:'看树叶',hint:'捡一片叶子',guide:'捡一片掉落的叶子，摸摸它的纹路，对着光看叶脉，数数有几条主脉。'},
+  {id:'bug',emoji:'🐞',name:'找小虫',hint:'草丛里的小邻居',guide:'在草丛或墙角找一只小昆虫，远远观察它在做什么，别用手去碰它。'},
+  {id:'bird',emoji:'🐦',name:'听鸟叫',hint:'闭上眼睛听',guide:'安静站一会儿，听听有几只鸟在叫？它们的声音一样吗？学一学它的叫声。'},
+  {id:'star',emoji:'⭐',name:'数星星',hint:'晚上看夜空',guide:'晚上和爸爸妈妈看星星，数数能看到几颗，找找有没有最亮的那一颗。'},
+  {id:'stone',emoji:'🪨',name:'摸石头',hint:'捡一块石头',guide:'捡一块小石头，摸摸是光滑还是粗糙？什么颜色？掂掂是轻还是重？'},
+  {id:'flower',emoji:'🌸',name:'闻花香',hint:'蹲下闻一闻',guide:'找到一朵花，轻轻闻一闻有什么味道？看看它有几种颜色的花瓣？'},
+  {id:'ant',emoji:'🐜',name:'看蚂蚁',hint:'地上的小队伍',guide:'找到蚂蚁洞，撒一小粒面包屑，看它们怎么排队把食物搬回家。'},
+  {id:'water',emoji:'💧',name:'玩水',hint:'水的样子',guide:'接一杯水，看看它是什么形状？倒出来会变成什么形状？用手扇一扇，凉凉的吗？'},
+  {id:'shadow',emoji:'🌗',name:'追影子',hint:'太阳下的游戏',guide:'晴天到太阳下，看看自己的影子朝哪边？走一走，影子跟着你变长还是变短？'},
+  {id:'rainbow',emoji:'🌈',name:'找彩虹',hint:'雨后看天',guide:'下过雨后看天空，能不能找到彩虹？它有几道颜色？顺序是怎样的？'},
+  {id:'moon',emoji:'🌙',name:'看月亮',hint:'夜里看月相',guide:'晚上看看月亮，今天是圆圆还是弯弯？过几天再看，它变样了吗？'},
+
+  /* ===== 补充观察任务 ===== */
+  {id:'antmove',emoji:'🐜',name:'看蚂蚁搬家',hint:'雨前的小队伍',guide:'下雨前找一找蚂蚁，看它们是不是排着队往高处搬食物？'},
+  {id:'butterfly',emoji:'🦋',name:'追蝴蝶',hint:'花丛里的舞者',guide:'看到蝴蝶停在花上，数数它的翅膀有几种颜色？它吸的是什么花？'},
+  {id:'snail',emoji:'🐌',name:'看蜗牛爬行',hint:'慢吞吞的小家伙',guide:'雨后找一只蜗牛，看它爬过留下亮亮的线没有？它头上几对触角？'},
+  {id:'sunrise',emoji:'🌅',name:'观日出',hint:'清晨看天边',guide:'早起看太阳从哪边升起来？天空的颜色是怎么变化的？'},
+  {id:'leaf2',emoji:'🍂',name:'捡落叶',hint:'秋天的信',guide:'捡几片不同形状的落叶，比一比颜色、大小和边缘，它们来自什么树？'},
+  {id:'rain',emoji:'🌧️',name:'听雨声',hint:'关窗静静听',guide:'下雨时闭上眼睛听，雨打在树叶上和打在玻璃上声音一样吗？'},
+  {id:'snow',emoji:'❄️',name:'看雪花',hint:'冬天才有的礼物',guide:'下雪天接一片雪花在手套上看，能用放大镜看到六角形吗？'},
+  {id:'tide',emoji:'🌊',name:'观潮水',hint:'海边或大河边',guide:'在有潮水的地方，隔几小时看一次水位，水是涨高了还是退下去了？'},
+  {id:'spider',emoji:'🕸️',name:'看蜘蛛结网',hint:'角落里的工程师',guide:'找一个蜘蛛网，看它是圆的还是别的形状？有没有蜘蛛在中间守着？'},
+  {id:'earth',emoji:'🌍',name:'闻泥土香',hint:'雨后去户外',guide:'下过雨后蹲下闻一闻泥土，是不是有特别的清香？这叫“泥土味”。'},
+  {id:'firefly',emoji:'✨',name:'找萤火虫',hint:'夏夜的小灯',guide:'夏天夜晚到草丛边，看有没有一闪一闪的小绿灯？它们为什么发光？'},
+  {id:'star2',emoji:'🔭',name:'认星座',hint:'晴朗无月的夜',guide:'用星图APP找北斗七星，连起来像不像一把勺子？勺柄指向哪边？'}
+  ,{id:'worm',emoji:'🪱',name:'观察蚯蚓',hint:'潮湿泥土',guide:'翻开湿土找蚯蚓，它怎么蠕动？对光和震动有什么反应？'}
+  ,{id:'frog',emoji:'🐸',name:'蝌蚪变青蛙',hint:'小水塘',guide:'找一团黑黑的蝌蚪，过几天看它是不是长出腿、尾巴变短？'}
+  ,{id:'seed',emoji:'🌰',name:'种一颗种子',hint:'花盆或纸杯',guide:'种下一颗豆子，每天浇水，几天冒出小芽？记下天数。'}
+  ,{id:'planet',emoji:'🪐',name:'找亮星',hint:'晴朗夜',guide:'夜空最亮的那颗可能是行星（如金星），它会不会眨眼？和星星有什么不同？'}
+  ,{id:'wind',emoji:'🍃',name:'观察风',hint:'户外',guide:'举一根手指感受风从哪边来？看树梢往哪边摆？今天风大还是小？'}
+  ,{id:'thunder',emoji:'⛈️',name:'听雷声',hint:'雷雨天（室内）',guide:'听到雷声数到看到闪电用了几秒？声和光谁先到？'}
+  ,{id:'fog',emoji:'🌫️',name:'看雾',hint:'清晨',guide:'有雾的早晨，远处的楼和山是不是被遮住了？雾散后看到了什么？'}
+  ,{id:'dew',emoji:'💧',name:'找露珠',hint:'清晨草叶',guide:'清晨看草叶上有没有小水珠？太阳出来后它们去哪了？'}
+  ,{id:'river',emoji:'🏞️',name:'看小河流水',hint:'溪边',guide:'看水往哪边流？水面有漩涡或泡泡吗？扔片叶子看它漂多快？'}
+  ,{id:'bee',emoji:'🐝',name:'观察蜜蜂',hint:'花丛',guide:'蜜蜂怎么落在花上？它的腿上是不是沾着花粉？它飞回去做什么？'}
+  ,{id:'beetle',emoji:'🪲',name:'找甲虫',hint:'树干或叶片',guide:'翻开树皮或叶子找甲虫，它有几对脚？遇到危险会装死吗？'}
+  ,{id:'fish',emoji:'🐟',name:'观察金鱼',hint:'鱼缸',guide:'金鱼怎么用鳃呼吸？它的鳍怎么摆动？睡觉眼睛睁着吗？'}
+  ,{id:'pet',emoji:'🐾',name:'观察宠物',hint:'家里',guide:'看看小猫小狗怎么喝水、怎么睡觉？它高兴和害怕时有什么不同？'}
+  ,{id:'tree',emoji:'🌳',name:'数树年轮',hint:'锯断的木桩',guide:'数数一圈圈的年轮，能知道树几岁吗？疏密代表什么？'}
+  ,{id:'mushroom',emoji:'🍄',name:'找蘑菇',hint:'雨后阴湿处',guide:'雨后草丛或树下有没有小蘑菇？它们长在什么地方？颜色形状一样吗？'}
+  ,{id:'bloom',emoji:'🌸',name:'观察花开',hint:'花盆或路边',guide:'选一朵花苞每天看，它什么时候张开？花瓣颜色会变吗？'}
+  ,{id:'spiderweb',emoji:'🕸️',name:'看蜘蛛结网',hint:'清晨草丛或角落',guide:'找一张蜘蛛网，露珠挂在网上像水晶。蜘蛛在哪？网是什么形状？'}
+  ,{id:'cloudspot',emoji:'☁️',name:'看云朵',hint:'晴朗白天',guide:'抬头看云，像棉花糖还是像羽毛？风吹过云会变形吗？'}
+  ,{id:'rainbowwatch',emoji:'🌈',name:'雨后找彩虹',hint:'大雨刚停出太阳',guide:'背对太阳看天空，有没有一道彩虹？红橙黄绿青蓝紫顺序是怎样的？'}
+  ,{id:'dewdrop',emoji:'💧',name:'草叶露珠',hint:'清晨草地',guide:'早晨草叶上有一颗颗小水珠，它们从哪来？太阳出来后去哪了？'}
+  ,{id:'frogsong',emoji:'🐸',name:'听蛙鸣',hint:'夏夜池塘边',guide:'晚上听见“呱呱”声，是青蛙在叫。数一数一会儿叫几声？'}
+  ,{id:'cicada',emoji:'🦗',name:'听蝉鸣',hint:'夏日中午树下',guide:'“知了知了”的声音是谁发的？天气越热它叫得越响吗？'}
+  ,{id:'cricket',emoji:'🦗',name:'听蟋蟀',hint:'秋夜草丛',guide:'草丛里“蛐蛐”声是蟋蟀在摩擦翅膀。它躲在哪儿？'}
+  ,{id:'pebble',emoji:'🪨',name:'捡鹅卵石',hint:'河边或海边',guide:'找几块圆圆的石头，它们为什么是圆的？颜色和花纹一样吗？'}
+  ,{id:'feather',emoji:'🪶',name:'找羽毛',hint:'草地或树下',guide:'捡到一根羽毛，它属于什么鸟？摸起来轻不轻？'}
+  ,{id:'nest',emoji:'🪺',name:'找鸟巢',hint:'树上或屋檐',guide:'远远看一个鸟窝，用什么做的？有没有鸟在里面？别打扰它。'}
+  ,{id:'sunset',emoji:'🌇',name:'看晚霞',hint:'傍晚晴天',guide:'太阳快落山时天空变红变橙，今天晚霞是什么颜色？'}
+  ,{id:'fogwatch',emoji:'🌫️',name:'雾天观察',hint:'清晨有雾时',guide:'雾里看远处的树和房子，是不是变模糊了？雾散后又能看清吗？'}
+,
+  {
+  id: 'ladybug',
+  emoji: '🐞',
+  name: '找瓢虫',
+  hint: '叶丛间',
+  guide: '在叶子上找红底黑点的瓢虫，数数它身上有几颗“星”。'
+  },
+  {
+  id: 'ice',
+  emoji: '🧊',
+  name: '结冰观察',
+  hint: '寒冬',
+  guide: '水洼或叶面上的冰摸起来滑滑的，太阳出来后会化吗？'
+  },
+  {
+  id: 'fern',
+  emoji: '🌿',
+  name: '找蕨类',
+  hint: '阴湿墙角树下',
+  guide: '在墙角或树下找蕨类，看它羽毛状的叶子是怎么卷着生长的。'
+  },
+  {
+  id: 'moss',
+  emoji: '🟢',
+  name: '苔藓观察',
+  hint: '潮湿石砖上',
+  guide: '潮湿的石头或砖缝里有没有绿绿的苔藓？用手指轻轻摸一摸。'
+  },
+  {
+  id: 'shell',
+  emoji: '🐚',
+  name: '捡贝壳',
+  hint: '海边或河边',
+  guide: '在岸边找找贝壳，看看它们的花纹和螺旋形状有什么不同。'
+  },
+  {
+  id: 'acorn',
+  emoji: '🌰',
+  name: '橡果',
+  hint: '秋天橡树下',
+  guide: '橡树下找找小帽子一样的橡果，它是松鼠爱藏的粮食。'
+  },
+  {
+  id: 'pinecone',
+  emoji: '🌲',
+  name: '松果',
+  hint: '松树下',
+  guide: '捡一个松果，看它的鳞片是怎么一片片叠起来又张开的。'
+  },
+  {
+  id: 'moth',
+  emoji: '🦋',
+  name: '夜行飞蛾',
+  hint: '夜晚灯下',
+  guide: '晚上灯旁常飞来飞蛾，它和蝴蝶有什么不一样？静静看一会儿。'
+  },
+  {
+  id: 'dragonfly',
+  emoji: '🪰',
+  name: '看蜻蜓',
+  hint: '池塘水边',
+  guide: '池塘边看蜻蜓点水，它其实是在水面上产卵，不是玩耍。'
+  },
+  {
+  id: 'caterpillar',
+  emoji: '🐛',
+  name: '找毛毛虫',
+  hint: '菜叶树枝上',
+  guide: '菜叶或树叶上找毛毛虫，它以后会变成蝴蝶或者飞蛾。'
+  },
+  {id:'tadpole',emoji:'🐸',name:'找蝌蚪',hint:'水塘、小水沟',guide:'在水里找小蝌蚪，看它长着长尾巴，慢慢会不会长出腿。'},
+  {id:'squirrel',emoji:'🐿️',name:'看松鼠',hint:'树上、公园',guide:'看松鼠怎样在树枝间跳来跳去，怎样抱着果子啃。'},
+  {id:'grass',emoji:'🌾',name:'草尖上的露珠',hint:'清晨的草地',guide:'清晨到草地上看叶尖的露珠，等太阳出来它就会消失。'},
+  {id:'dandelion',emoji:'🌼',name:'看蒲公英',hint:'草地、路边',guide:'摘一朵蒲公英，对着绒毛吹一口气，看小伞一样的种子飞走。'},
+  {id:'snowflake',emoji:'❄️',name:'看雪花',hint:'冬天下雪时',guide:'冬天伸手接一片雪花，借着光看它六角的漂亮形状。'},
+  {id:'seashell',emoji:'🐚',name:'捡贝壳',hint:'海边沙滩',guide:'在海边捡几枚贝壳，轻轻贴在耳边，听有没有\'海的声音\'。'},
+  {"id":"rainbowfind","emoji":"🌈","name":"找彩虹","hint":"雨后看天","guide":"雨后抬头找彩虹，数数有几种颜色，看看彩虹是弯的还是直的。"},
+  {"id":"antline","emoji":"🐜","name":"蚂蚁搬家","hint":"墙角看蚂蚁","guide":"找一队蚂蚁，看它们排成线往哪走，是不是在搬食物。"},
+  {"id":"winddir","emoji":"🍃","name":"风的方向","hint":"拿纸条出门","guide":"拿一张轻纸条举高，看它往哪边飘，判断今天风吹向哪。"},
+  {"id":"moonw","emoji":"🌕","name":"看月亮","hint":"晚上看月","guide":"晚上看月亮是什么形状？圆还是弯？过几天再看看变了吗。"},
+  {"id":"seedfind","emoji":"🌰","name":"找种子","hint":"水果里找","guide":"吃苹果或橘子时，找找里面的种子，数数有几颗，它们长在哪。"},
+  {"id":"shadowlen","emoji":"🌞","name":"影子长短","hint":"晴天去户外","guide":"中午和傍晚各量一次自己的影子，哪个更长？为什么？"},
+  {"id":"snowflakew","emoji":"❄️","name":"看雪花","hint":"下雪时接","guide":"下雪时伸开黑手套接雪花，用放大镜看它是几角的。"},
+  {"id":"flowerp","emoji":"🌸","name":"数花瓣","hint":"摘一朵花","guide":"找一朵小花，轻轻数它的花瓣有几片，闻闻有没有香味。"},
+  {"id":"rockp","emoji":"🪨","name":"石头花纹","hint":"捡块石头","guide":"捡一块石头，看看上面有什么颜色花纹，摸摸是光滑还是粗糙。"},
+  {"id":"soundenv","emoji":"👂","name":"听环境音","hint":"闭眼听一分钟","guide":"闭眼安静一分钟，说说你听到了几种声音：风、车、鸟还是人？"},
+  {"id":"windflag","emoji":"🚩","name":"看风向","hint":"做个小旗","guide":"用塑料袋和棍子做面小旗插窗外，一天里看它朝哪边飘，早中晚一样吗？"},
+  {"id":"cloudtype","emoji":"☁️","name":"认云朵","hint":"带本子画云","guide":"上午下午各看一次云，画下形状：像棉花堆、像拉丝还是一片灰？"},
+  {"id":"temperature","emoji":"🌡️","name":"量气温","hint":"早晚量一次","guide":"早上和中午在同一地方量温度，差几度？什么时候最热？"},
+  {"id":"bud","emoji":"🌱","name":"看芽生长","hint":"连续记一周","guide":"找一颗刚冒芽的树芽，每天拍一张，看它几天展开成叶子。"},
+  {"id":"sundown","emoji":"🌇","name":"看日落方向","hint":"傍晚看天","guide":"傍晚看太阳从哪边落下，和早上升起的方向一样吗？"},
+  {"id":"condensation","emoji":"💧","name":"找露水","hint":"清晨去草丛","guide":"早上摸摸草叶，有没有凉凉的水珠？它从哪来？"},
+  {"id":"footprint","emoji":"🐾","name":"认脚印","hint":"泥地或雪地","guide":"找一串小动物的脚印，量量大小、看看步距，猜猜是谁留下的。"},
+  {"id":"bark","emoji":"🌳","name":"认树皮","hint":"摸几种树","guide":"找三种树，摸摸树皮是光滑、粗糙还是有裂纹，记下特征。"},
+  {"id":"soil","emoji":"🟤","name":"比泥土","hint":"挖一小把","guide":"花坛和沙坑各挖一把土，颜色一样吗？干湿一样吗？捏得成团吗？"},
+  {"id":"sensespot","emoji":"🦌","name":"动物安静观察","hint":"安静等五分钟","guide":"在公园安静坐五分钟，有几只小动物出现？它们在做什么？"}
+];
+
+var CHILD='user', KEY='', TEXT={};
+function getStore(){ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; } }
+function setStore(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
+function isDone(id){ var s=getStore(); return !!(s[id]&&s[id].done); }
+function noteOf(id){ var s=getStore(); return (s[id]&&s[id].note)||''; }
+
+var pens={};
+function render(){
+  pens={};
+  var html='';
+  TASKS.forEach(function(t,i){
+    var done=isDone(t.id);
+    html+='<div class="item'+(done?' done':'')+'" id="item-'+i+'">'+
+      '<div class="ifront" onclick="flip('+i+')">'+
+        '<span class="iemoji">'+t.emoji+'</span>'+
+        '<div class="itxt"><div class="iname">'+t.name+'</div>'+
+        '<div class="ihint">'+t.hint+'</div></div>'+
+        '<span class="iarrow">👉</span>'+
+      '</div>'+
+      '<div class="iback" id="back-'+i+'" hidden>'+
+        '<div class="guide">🔎 观察指南：'+t.guide+'</div>'+
+        '<textarea id="ta-'+i+'" placeholder="我发现了……（记下来吧）">'+escapeHtml(noteOf(t.id))+'</textarea>'+
+        '<div class="mtitle" style="margin-top:8px">🖌 也可以画一张观察到的事物（选填）</div>'+
+        '<div id="penSlot-'+i+'"></div>'+
+        '<div class="pp-tools"><button class="pp-btn save" onclick="savePen('+i+')">📥 保存图画</button></div>'+
+        '<div class="pp-previews" id="penprev-'+i+'">'+penPrevHtml(i)+'</div>'+
+        '<div class="irow"><button class="b-save" onclick="saveNote('+i+')">💾 保存记录</button>'+
+        '<button class="b-mark" onclick="mark('+i+')">✅ 已观察</button></div>'+
+        (done?'<div class="recnote">📝 已记录：'+escapeHtml(noteOf(t.id))+'</div>':'')+
+      '</div>'+
+      '<button class="imark" onclick="mark('+i+')">'+
+        '<span class="mark-ic">'+(done?'✅':'⬜')+'</span>'+(done?' 已观察':' 标记已观察')+'</button>'+
+    '</div>';
+  });
+  document.getElementById('items').innerHTML=html;
+  updateStats();
+}
+function flip(i){
+  var b=document.getElementById('back-'+i);
+  if(b.hidden){ b.hidden=false; document.getElementById('item-'+i).querySelector('.iarrow').textContent='👆'; requestAnimationFrame(function(){ initPen(i); }); }
+  else { b.hidden=true; document.getElementById('item-'+i).querySelector('.iarrow').textContent='👉'; }
+}
+function initPen(i){
+  if(pens[i]) return;
+  var slot=document.getElementById('penSlot-'+i); if(!slot) return;
+  if(!window.PenPaint) return;
+  pens[i]=PenPaint.create({height:180, placeholder:'🖌 画你观察到的事物'});
+  slot.appendChild(pens[i].el);
+}
+function savePen(i){
+  var pen=pens[i]; if(!pen || pen.isEmpty()){ alert('先在画板上画点什么～'); return; }
+  var t=TASKS[i]; var s=getStore(); s[t.id]=s[t.id]||{};
+  s[t.id].images=(s[t.id].images||[]).concat(pen.toDataURL());
+  setStore(s);
+  renderPenPrev(i);
+}
+function penPrevHtml(i){
+  var t=TASKS[i]; var s=getStore(); var imgs=(s[t.id]&&s[t.id].images)||[];
+  if(!imgs.length) return '';
+  return imgs.map(function(src,idx){
+    return '<div class="pp-pwrap"><img src="'+src+'" alt="笔迹"><button class="pp-pd" onclick="delPenImg('+i+','+idx+')">✕</button></div>';
+  }).join('');
+}
+function renderPenPrev(i){
+  var el=document.getElementById('penprev-'+i); if(el) el.innerHTML=penPrevHtml(i);
+}
+function delPenImg(i,idx){
+  var t=TASKS[i]; var s=getStore(); if(!s[t.id]||!s[t.id].images) return;
+  s[t.id].images.splice(idx,1); setStore(s); renderPenPrev(i);
+}
+function saveNote(i){
+  var t=TASKS[i], ta=document.getElementById('ta-'+i).value;
+  var s=getStore(); s[t.id]=s[t.id]||{}; s[t.id].note=ta; setStore(s);
+  var note=document.getElementById('item-'+i).querySelector('.recnote');
+  if(!note){ note=document.createElement('div'); note.className='recnote';
+    document.getElementById('back-'+i).appendChild(note); }
+  note.textContent='📝 已记录：'+(ta||'（空）');
+  flash(document.getElementById('back-'+i).querySelector('.b-save'),'已存！');
+}
+function mark(i){
+  var t=TASKS[i];
+  var s=getStore(); s[t.id]=s[t.id]||{};
+  if(s[t.id].done){ delete s[t.id].done; if(!s[t.id].note) delete s[t.id]; }
+  else { s[t.id].done=true; s[t.id].at=Date.now();
+    var ta=document.getElementById('ta-'+i); if(ta) s[t.id].note=ta.value; }
+  setStore(s);
+  render();
+  if(Object.keys(getStore()).filter(function(k){ return getStore()[k].done; }).length===TASKS.length){ celebrate(); }
+}
+function updateStats(){
+  var done=Object.keys(getStore()).filter(function(k){ return getStore()[k].done; }).length;
+  var total=TASKS.length, pct=total?Math.round(done/total*100):0;
+  document.getElementById('doneNum').textContent=done;
+  document.getElementById('totalNum').textContent=total;
+  document.getElementById('pctNum').textContent=pct+'%';
+  document.getElementById('progBar').style.width=pct+'%';
+  document.getElementById('progTxt').textContent='完成 '+done+' / '+total+' 项';
+}
+function resetAll(){ if(confirm('确定清空所有观察记录？')){ setStore({}); render(); } }
+function escapeHtml(s){ return (s||'').replace(/[&<>"]/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function flash(btn,txt){ var o=btn.textContent; btn.textContent=txt; setTimeout(function(){ btn.textContent=o; },900); }
+function celebrate(){
+  var emo=['🎉','✨','🌿','🌟','🔭','🌈','🍃','🌸'];
+  for(var k=0;k<26;k++){
+    (function(){
+      var c=document.createElement('div'); c.className='confetti';
+      c.textContent=emo[Math.floor(Math.random()*emo.length)];
+      c.style.left=Math.random()*100+'vw';
+      c.style.animationDuration=(2+Math.random()*2)+'s';
+      document.body.appendChild(c);
+      setTimeout(function(){ c.remove(); },4200);
+    })();
+  }
+  document.getElementById('celeb').style.display='flex';
+}
+function closeCeleb(){ document.getElementById('celeb').style.display='none'; }
+
+(function(){
+  var s=Portal.getSession();
+  CHILD=(s&&s.child)?s.child:'user';
+  KEY='science-observe-'+CHILD;
+  var d=new Date();
+  var wk=['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+  document.getElementById('dateStr').textContent=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+wk;
+  render();
+})();
+</script>
+<script src="penpaint.js"></script>
+</body>
+</html>

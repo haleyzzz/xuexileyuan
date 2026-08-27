@@ -1,0 +1,8 @@
+start-study.pid
+*.pid
+__*
+start-study.py
+start-study.bat
+study_keepalive.js
+sync-deploy.mjs
+手机访问地址.txt

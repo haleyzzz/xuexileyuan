@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<script src="accounts.js"></script>
+<script src="rope-particles.js"></script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>📊 学习进度看板</title>
+<meta name="theme-color" content="#06d6a0">
+<style>
+  :root{
+    --green:#06d6a0; --blue:#4cc9f0; --orange:#ff9f1c; --purple:#b292ff;
+    --pink:#ff8fab; --ink:#3d3a4b; --mut:#8a8a93; --line:#eef0f5;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei",system-ui,-apple-system,"Segoe UI",sans-serif;
+    background:linear-gradient(135deg,#fff8ef,#eef6ff); color:var(--ink);
+    padding:14px; max-width:760px; margin:0 auto; min-height:100vh; overflow-x:hidden;
+  }
+  header{
+    background:linear-gradient(120deg,var(--green),var(--blue)); color:#fff; border-radius:24px;
+    padding:18px 18px 16px; box-shadow:0 8px 22px rgba(76,201,240,.35); position:relative;
+  }
+  header h1{font-size:21px; display:flex; align-items:center; gap:8px}
+  .back-btn{
+    display:inline-block; border:0; border-radius:14px; padding:8px 14px; font-size:14px; font-weight:800;
+    background:rgba(255,255,255,.92); color:#0a8f6f; box-shadow:0 6px 16px rgba(0,0,0,.15);
+    cursor:pointer; white-space:nowrap; position:absolute; top:16px; left:16px;
+  }
+  .back-btn:active{transform:scale(.96)}
+  .header-top{display:flex; justify-content:flex-end; margin-bottom:8px}
+  .refresh-btn{
+    border:0; border-radius:12px; padding:7px 13px; font-size:13px; font-weight:800;
+    background:rgba(255,255,255,.25); color:#fff; cursor:pointer;
+  }
+  .refresh-btn:active{transform:scale(.96)}
+  .cur-child{font-size:16px; font-weight:800; margin-top:6px}
+  .cur-child .gd{
+    font-size:12px; font-weight:700; background:rgba(255,255,255,.25); border-radius:999px;
+    padding:2px 10px; margin-left:6px; vertical-align:middle;
+  }
+  .tip{font-size:13px; opacity:.95; margin-top:6px; line-height:1.6}
+
+  .card{background:#fff; border-radius:22px; padding:18px; box-shadow:0 6px 18px rgba(0,0,0,.06); margin-top:16px}
+  .card h2{font-size:17px; margin-bottom:12px; display:flex; align-items:center; gap:7px}
+  .card .hint{font-size:12.5px; color:var(--mut); line-height:1.6; margin:-4px 0 12px}
+
+  /* 综合进度环 */
+  .overall{display:flex; align-items:center; gap:18px; flex-wrap:wrap; justify-content:center; text-align:left}
+  .overall .info{flex:1; min-width:200px}
+  .overall .info .big{font-size:18px; font-weight:800; margin-bottom:6px}
+  .overall .info p{font-size:13px; color:var(--mut); line-height:1.6}
+  .ring-note{margin-top:10px; font-size:11.5px; color:#aab; line-height:1.6; border-top:1px dashed var(--line); padding-top:10px}
+
+  /* 当前孩子卡片网格 */
+  .grid{display:grid; grid-template-columns:repeat(2,1fr); gap:12px}
+  @media(max-width:520px){.grid{grid-template-columns:1fr}}
+  .pcard{border:3px solid var(--green); border-radius:20px; padding:14px; background:#fff; position:relative; overflow:hidden}
+  .pctop{display:flex; align-items:center; gap:8px; margin-bottom:8px}
+  .pce{font-size:24px}
+  .pcn{font-size:14px; font-weight:800; flex:1}
+  .pcnum{font-size:28px; font-weight:900; line-height:1.1}
+  .pcunit{font-size:14px; font-weight:700; color:#999; margin-left:3px}
+  .pcsub{font-size:12.5px; color:#888; margin-top:4px; min-height:16px}
+  .pbar{height:10px; background:#f0f0f0; border-radius:10px; overflow:hidden; margin-top:9px}
+  .pbar>i{display:block; height:100%; border-radius:10px; transition:width .5s}
+  .pcnote{font-size:11px; color:#aab; margin-top:5px}
+  .pcard.zero{opacity:.78}
+  .pcard.zero .pcnum{color:#bbb}
+  .zero-hint{font-size:11.5px; color:#c2b8a8; margin-top:6px; background:#fff7ef; border-radius:10px; padding:5px 8px; display:inline-block}
+
+  /* 兄弟对比表 */
+  .cmp{display:grid; grid-template-columns:1.15fr 1fr 1fr; gap:8px; align-items:center}
+  .cmp.head{font-weight:900; border-bottom:2px solid #ececf3; padding-bottom:8px; margin-bottom:2px}
+  .cmp.headcol{text-align:center; font-size:14px}
+  .cmp.headcol.z{color:#ff8c42}.cmp.headcol.x{color:#2aa9d6}
+  .cmp.row{border-bottom:1px solid #f1f1f6; padding:9px 2px}
+  .cmp.row:last-child{border-bottom:none}
+  .cmp.app{font-weight:800; display:flex; align-items:center; gap:6px; font-size:14px}
+  .cmp.cell{background:#fafafe; border-radius:13px; padding:8px 10px; text-align:center}
+  .cmp.cell.me{background:#eafaf3; border:2px solid var(--green); padding:6px 10px}
+  .cmp.val{font-size:20px; font-weight:900; line-height:1}
+  .cmp.unit{font-size:11px; font-weight:700; margin-left:2px; color:#9a9aa5}
+  .cmp.sub{font-size:11px; color:var(--mut); margin-top:3px; min-height:14px}
+  .cmp-legend{display:flex; gap:14px; flex-wrap:wrap; margin-top:12px; font-size:12px; color:var(--mut)}
+  .cmp-legend .dot{display:inline-block; width:12px; height:12px; border-radius:4px; vertical-align:-2px; margin-right:4px}
+
+  .note{font-size:12px; color:#aaa; text-align:center; margin-top:14px; line-height:1.7}
+  .foot{text-align:center; margin-top:16px}
+  .foot a{color:var(--blue); font-weight:700; text-decoration:none; font-size:15px}
+
+  .banner{
+    position:fixed; left:50%; bottom:20px; transform:translateX(-50%) translateY(20px);
+    background:linear-gradient(120deg,#06d6a0,#4cc9f0); color:#fff; padding:14px 22px; border-radius:18px;
+    font-size:15px; font-weight:800; box-shadow:0 10px 28px rgba(6,214,160,.45); z-index:95; opacity:0;
+    transition:.4s; max-width:92vw; text-align:center; pointer-events:none; line-height:1.5;
+  }
+  .banner.show{opacity:1; transform:translateX(-50%) translateY(0)}
+  .empty{text-align:center; color:#bbb; font-size:14px; padding:18px}
+</style>
+</head>
+<body>
+
+<header>
+  
+  <div class="header-top"><button class="refresh-btn" onclick="render()">🔄 刷新</button></div>
+  <h1>📊 学习进度看板</h1>
+  <div class="cur-child" id="curChild">加载中…</div>
+  <div class="tip">英语各模块进度一目了然 · 哥哥🦊 弟弟🐰 数据各自独立、并排对比</div>
+</header>
+
+<!-- 综合进度环 -->
+<div class="card">
+  <h2>🎯 综合进度</h2>
+  <div class="overall">
+    <div id="ring"></div>
+    <div class="info">
+      <div class="big" id="overallTxt">综合完成度</div>
+      <p id="overallSub">先去各个英语 App 练一练，这里就会显示孩子的整体投入情况～</p>
+      <div class="ring-note" id="ringNote"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 当前孩子专属进度 -->
+<div class="card">
+  <h2>🌟 <span id="curName">当前孩子</span> 的英语进度</h2>
+  <div class="hint">下面每张卡片都是 <b id="curName2">当前孩子</b> 自己的真实学习数据（按孩子隔离存储）。</div>
+  <div class="grid" id="curCards"></div>
+</div>
+
+<!-- 兄弟对比 -->
+<div class="card">
+  <h2>🐯 兄弟双娃对比</h2>
+  <div class="hint">无需切换，哥哥 Zachary(🦊) 与弟弟 Zoran(🐰) 的英语进度并排展示；高亮列 = 当前登录的孩子。</div>
+  <div id="cmpBody"></div>
+  <div class="cmp-legend">
+    <span><span class="dot" style="background:#ff8c42"></span>Zachary 哥哥</span>
+    <span><span class="dot" style="background:#4cc9f0"></span>Zoran 弟弟</span>
+    <span><span class="dot" style="background:#06d6a0"></span>当前查看</span>
+  </div>
+</div>
+
+<div class="note">
+  数据来自本机浏览器，与各英语 App 实时同步；「累计学习时长」按各模块页面<b>打开且可见</b>时计时（切走 / 关页自动暂停），换设备不累计。<br>
+  换设备需先在对应 App 里「导出备份」再导入。
+</div>
+
+
+<div class="banner" id="banner"></div>
+
+<script>
+/* ===== 基础配置 ===== */
+var APP = 'dash';
+var ME = null;                                   // 当前登录孩子的 uid（'zachary' / 'zoran'）
+var GRADE_NAMES = {0:'幼儿园',1:'一年级',2:'二年级',3:'三年级',4:'四年级',5:'五年级',6:'六年级'};
+var WORD_GOAL   = 150;   // 暑期单词卡建议目标（词）
+var READER_GOAL = 40;    // 暑期分级阅读建议目标（本）
+var STREAK_GOAL = 14;    // 连续打卡满格天数
+var MACARON = ['#ffafcc','#a2d2ff','#b9fbc0','#cdb4db','#ffe687','#ffd6a5','#06d6a0','#4cc9f0'];
+
+/* ===== 聚合单个孩子的全部英语数据（双账户按 uid 直接读取） ===== */
+function childData(uid){
+  // 🔤 英语单词卡
+  var learned = Accounts.get('wordtrain', uid, 'learned', []) || [];
+  var wordN = (learned && learned.length) || 0;
+
+  // ✍️ 单词拼写
+  var sp = Accounts.get('spell', uid, 'stats', {practiced:0,correct:0,wrong:0}) || {practiced:0,correct:0,wrong:0};
+  var spP = sp.practiced||0, spC = sp.correct||0;
+  var spAcc = spP>0 ? Math.round(spC/spP*100) : 0;
+
+  // 🎧 英语听写
+  var dc = Accounts.get('dictation', uid, 'stats', {sessions:0,words:0,correct:0}) || {sessions:0,words:0,correct:0};
+  var dcS = dc.sessions||0, dcW = dc.words||0, dcC = dc.correct||0;
+  var dcAcc = dcW>0 ? Math.round(dcC/dcW*100) : 0;
+  var dcLast = Accounts.get('dictation', uid, 'last', null);
+  var dcLastTxt = '';
+  if(dcLast && typeof dcLast==='object'){
+    if(dcLast.correct!=null && dcLast.total!=null) dcLastTxt = '上次 '+dcLast.correct+'/'+dcLast.total+' 正确';
+    else if(dcLast.score!=null) dcLastTxt = '上次得分 '+dcLast.score;
+    else if(dcLast.words!=null && dcLast.correct!=null) dcLastTxt = '上次 '+dcLast.correct+'/'+dcLast.words+' 正确';
+  }
+
+  // 📝 英语短文
+  var st = Accounts.get('story', uid, 'progress', {}) || {};
+  var storyN = 0;
+  for(var k in st){ if(st[k] && st[k].completed) storyN++; }
+
+  // 📚 分级阅读
+  var rd = {read:{}};
+  try { rd = JSON.parse(localStorage.getItem('reader2_'+uid)||'{}') || {read:{}}; } catch(e){}
+  var readerN = Object.keys(rd.read||{}).length;
+
+  // ✅ 英语每日打卡
+  var stk = Accounts.get('engci', uid, 'streak', {last:'',streak:0}) || {streak:0};
+  var streak = stk.streak||0;
+  var hist = Accounts.get('engci', uid, 'history', {}) || {};
+  var days = 0;
+  try { days = Object.keys(hist||{}).filter(function(key){ return (hist[key]||0)>0; }).length; } catch(e){}
+
+  // ⏱️ 累计学习时长（秒）：各模块页面打开且可见时计时，按 uid×模块隔离
+  // 与 study-time.js KEYS、rewards.js TIME_MODS 对齐：覆盖所有实际计时模块
+  var _tl = ['word','spell','dictation','story','reader','engci','phonics','pep','grammar','wordtrain-read'], timeSec = 0;
+  try { for(var _i=0;_i<_tl.length;_i++){ timeSec += Number(Accounts.get('time', uid, _tl[_i], 0))||0; } } catch(e){}
+
+  return {
+    uid:uid, wordN:wordN,
+    spP:spP, spC:spC, spAcc:spAcc,
+    dcS:dcS, dcW:dcW, dcC:dcC, dcAcc:dcAcc, dcLastTxt:dcLastTxt,
+    storyN:storyN, readerN:readerN,
+    streak:streak, days:days, timeSec:timeSec
+  };
+}
+
+/* ===== 工具 ===== */
+function pct(n, max){ if(!max || max<=0) return 0; var p=Math.round(n/max*100); return Math.min(100, Math.max(0,p)); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function fmtDur(s){ s = Math.max(0, Math.floor(s/60)); var h = Math.floor(s/60), m = s%60; if(h>0) return h+' 小时'+(m>0?(' '+m+' 分'):''); if(m>0) return m+' 分钟'; return '<1 分钟'; }
+
+/* ===== 综合进度环（SVG 环形图，口径见下） ===== */
+function ring(p){
+  var r=54, c=2*Math.PI*r, off=c*(1-p/100);
+  return '<svg width="140" height="140" viewBox="0 0 140 140">'+
+    '<circle cx="70" cy="70" r="'+r+'" fill="none" stroke="#eee" stroke-width="14"/>'+
+    '<circle cx="70" cy="70" r="'+r+'" fill="none" stroke="url(#dashRing)" stroke-width="14" stroke-linecap="round"'+
+      ' stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" transform="rotate(-90 70 70)"/>'+
+    '<defs><linearGradient id="dashRing" x1="0" y1="0" x2="1" y2="1">'+
+      '<stop offset="0" stop-color="#06d6a0"/><stop offset="1" stop-color="#4cc9f0"/></linearGradient></defs>'+
+    '<text x="70" y="78" text-anchor="middle" font-size="30" font-weight="800" fill="#3d3a4b">'+p+'%</text></svg>';
+}
+/* 综合进度口径：五项平均
+   ① 单词卡达成 = 已学词数 / WORD_GOAL
+   ② 分级阅读达成 = 已读本数 / READER_GOAL
+   ③ 拼写正确率（有练习时）
+   ④ 听写正确率（有练习时）
+   ⑤ 连续打卡达成 = 连续天数 / STREAK_GOAL
+   各模块无「累计学习时长」记录，故以练习量与正确率衡量投入。 */
+function overallPct(d){
+  var wordPct   = pct(d.wordN, WORD_GOAL);
+  var readerPct = pct(d.readerN, READER_GOAL);
+  var spellPct  = d.spP>0 ? d.spAcc : 0;
+  var dictPct   = d.dcW>0 ? d.dcAcc : 0;
+  var streakPct = pct(d.streak, STREAK_GOAL);
+  return Math.round((wordPct+readerPct+spellPct+dictPct+streakPct)/5);
+}
+
+/* ===== 当前孩子专属进度卡片 ===== */
+function pcard(t){
+  var isZero = (t.num===0);
+  var zeroCls = isZero ? ' zero' : '';
+  var hint = isZero ? '<div class="zero-hint">还没开始，去练练吧～</div>' : '';
+  var bar = (t.bar!=null) ? '<div class="pbar"><i style="width:'+t.bar+'%;background:'+t.color+'"></i></div>' : '';
+  var note = (t.note) ? '<div class="pcnote">'+esc(t.note)+'</div>' : '';
+  return '<div class="pcard'+zeroCls+'" style="border-color:'+t.color+'">'+
+    '<div class="pctop"><span class="pce">'+t.emoji+'</span><span class="pcn">'+esc(t.name)+'</span></div>'+
+    '<div class="pcnum" style="color:'+t.color+'">'+t.num+'<span class="pcunit">'+esc(t.unit)+'</span></div>'+
+    '<div class="pcsub">'+esc(t.sub)+'</div>'+
+    bar + note + hint +
+  '</div>';
+}
+function renderCurrent(d){
+  var cards = [
+    {emoji:'⏱️', name:'累计学习时长', color:'#ff9f1c', num:fmtDur(d.timeSec), unit:'', sub:'各模块有效学习合计',
+      bar:null, note:'仅页面打开且可见时计时'},
+    {emoji:'🔤', name:'英语单词卡', color:'#4cc9f0', num:d.wordN, unit:'词', sub:'已掌握单词',
+      bar:pct(d.wordN,WORD_GOAL), note:'目标 '+WORD_GOAL+' 词'},
+    {emoji:'✍️', name:'单词拼写', color:'#f72585', num:d.spP, unit:'次', sub:'正确率 '+d.spAcc+'%',
+      bar:(d.spP>0?d.spAcc:0), note:(d.spP>0?('正确 '+d.spC+'/'+d.spP):'还没练习')},
+    {emoji:'🎧', name:'英语听写', color:'#8338ec', num:d.dcS, unit:'场', sub:'累计 '+d.dcW+' 词 · 正确率 '+d.dcAcc+'%',
+      bar:(d.dcW>0?d.dcAcc:0), note:(d.dcLastTxt||(d.dcS>0?'多练几场更稳':'还没听写'))},
+    {emoji:'📝', name:'英语短文', color:'#06d6a0', num:d.storyN, unit:'篇', sub:'已学短文',
+      bar:pct(d.storyN,20), note:'目标 20 篇'},
+    {emoji:'📚', name:'分级阅读', color:'#3a86ff', num:d.readerN, unit:'本', sub:'已读分级读物',
+      bar:pct(d.readerN,READER_GOAL), note:'目标 '+READER_GOAL+' 本'},
+    {emoji:'✅', name:'英语每日打卡', color:'#ffd166', num:d.streak, unit:'天连', sub:'累计打卡 '+d.days+' 天',
+      bar:pct(d.streak,STREAK_GOAL), note:'连续打卡 · 目标 '+STREAK_GOAL+' 天'}
+  ];
+  document.getElementById('curCards').innerHTML = cards.map(pcard).join('');
+}
+
+/* ===== 兄弟对比（并排：模块 × 哥哥/弟弟 两列） ===== */
+function cmpCell(val, sub, isMe){
+  return '<div class="cmp cell'+(isMe?' me':'')+'"><div class="cmp val">'+esc(val)+'</div>'+
+    (sub?'<div class="cmp sub">'+esc(sub)+'</div>':'')+'</div>';
+}
+function renderCompare(){
+  var Z = childData('zachary'), X = childData('zoran');
+  var zMe = (ME==='zachary'), xMe = (ME==='zoran');
+  var rows = [
+    {em:'⏱️', name:'累计学习时长', z:fmtDur(Z.timeSec), zs:'', x:fmtDur(X.timeSec), xs:''},
+    {em:'🔤', name:'英语单词卡', z:Z.wordN+' 词', zs:'', x:X.wordN+' 词', xs:''},
+    {em:'✍️', name:'单词拼写', z:Z.spP+' 次', zs:'正确率 '+Z.spAcc+'%', x:X.spP+' 次', xs:'正确率 '+X.spAcc+'%'},
+    {em:'🎧', name:'英语听写', z:Z.dcS+' 场', zs:(Z.dcW?('正确 '+Z.dcAcc+'%'):''), x:X.dcS+' 场', xs:(X.dcW?('正确 '+X.dcAcc+'%'):'')},
+    {em:'📝', name:'英语短文', z:Z.storyN+' 篇', zs:'', x:X.storyN+' 篇', xs:''},
+    {em:'📚', name:'分级阅读', z:Z.readerN+' 本', zs:'', x:X.readerN+' 本', xs:''},
+    {em:'✅', name:'英语每日打卡', z:Z.streak+' 天连', zs:'累计 '+Z.days+' 天', x:X.streak+' 天连', xs:'累计 '+X.days+' 天'}
+  ];
+  var head = '<div class="cmp head">'+
+    '<div class="cmp app">模块</div>'+
+    '<div class="cmp headcol z">🦊 Zachary</div>'+
+    '<div class="cmp headcol x">🐰 Zoran</div>'+
+  '</div>';
+  var body = rows.map(function(r){
+    return '<div class="cmp row">'+
+      '<div class="cmp app"><span>'+r.em+'</span>'+r.name+'</div>'+
+      cmpCell(r.z, r.zs, zMe)+
+      cmpCell(r.x, r.xs, xMe)+
+    '</div>';
+  }).join('');
+  document.getElementById('cmpBody').innerHTML = head + body;
+}
+
+/* ===== 里程碑撒花（当前登录孩子） ===== */
+var MILESTONES = [
+  {id:'word100',  test:function(d){return d.wordN>=100;}, msg:function(d){return '🎉 '+d.name+' 已学满 100 词！词汇量 up up！';}},
+  {id:'word200',  test:function(d){return d.wordN>=200;}, msg:function(d){return '🏆 '+d.name+' 单词卡突破 200 词，太强了！';}},
+  {id:'streak7',  test:function(d){return d.streak>=7;},  msg:function(d){return '🔥 '+d.name+' 连续打卡 7 天，好习惯养成中！';}},
+  {id:'streak30', test:function(d){return d.streak>=30;}, msg:function(d){return '🏆 '+d.name+' 连续打卡 30 天，自律小达人！';}},
+  {id:'reader20', test:function(d){return d.readerN>=20;}, msg:function(d){return '📚 '+d.name+' 已读 20 本分级读物，阅读力飙升！';}},
+  {id:'reader40', test:function(d){return d.readerN>=40;}, msg:function(d){return '🏆 '+d.name+' 分级阅读通关 40 本，阅读小达人！';}},
+  {id:'dict10',   test:function(d){return d.dcS>=10;},  msg:function(d){return '🎧 '+d.name+' 听写已练 10 场，耳朵越来越灵！';}},
+  {id:'spell50',  test:function(d){return d.spP>=50;},  msg:function(d){return '✍️ '+d.name+' 拼写练习 50 次，下笔如有神！';}},
+  {id:'story10',  test:function(d){return d.storyN>=10;}, msg:function(d){return '📝 '+d.name+' 已学 10 篇短文，表达更流利！';}},
+  {id:'time1h',  test:function(d){return d.timeSec>=3600;},  msg:function(d){return '⏱️ '+d.name+' 累计学习已超过 1 小时，时间花在刀刃上！';}},
+  {id:'time10h', test:function(d){return d.timeSec>=36000;}, msg:function(d){return '🏆 '+d.name+' 累计学习突破 10 小时，真·小学霸！';}}
+];
+function achvStore(){
+  try { return JSON.parse(sessionStorage.getItem('dash_achv_v1')||'{}') || {}; } catch(e){ return {}; }
+}
+function saveAchv(o){ try { sessionStorage.setItem('dash_achv_v1', JSON.stringify(o)); } catch(e){} }
+function checkMilestones(d){
+  var store = achvStore();
+  var seen = store[d.uid] || [];
+  var hit = [];
+  MILESTONES.forEach(function(m){
+    if(m.test(d) && seen.indexOf(m.id)<0){ hit.push(m.msg(d)); seen.push(m.id); }
+  });
+  if(hit.length){
+    store[d.uid] = seen; saveAchv(store);
+    burst();
+    showBanner(hit.join('<br>'));
+  }
+}
+function burst(){
+  if(typeof RopeParticles!=='undefined' && RopeParticles && RopeParticles.burst){
+    RopeParticles.burst({ count:120, colors:MACARON,
+      emojis:['🎉','⭐','🌟','📚','🏆','🔥'], spread:9, upBias:-3, sizeMin:3, sizeMax:8,
+      duration:4200, shape:'mixed', originY:0.4 });
+  }
+}
+function showBanner(html){
+  var b = document.getElementById('banner');
+  b.innerHTML = html; b.classList.add('show');
+  clearTimeout(b._t); b._t = setTimeout(function(){ b.classList.remove('show'); }, 5000);
+}
+
+/* ===== 启动 ===== */
+function bootstrap(){
+  var u = Accounts.byId(ME);
+  if(!u){ return; }
+  var gradeName = (window.GRADE_NAMES && GRADE_NAMES[Accounts.gradeOf(ME)]) || '';
+  document.getElementById('curChild').innerHTML = u.emoji+' '+u.name+' <span class="gd">'+gradeName+'</span>';
+  document.getElementById('curName').textContent = u.name;
+  document.getElementById('curName2').textContent = u.name;
+
+  var d = childData(ME);
+
+  // 综合进度环
+  var ov = overallPct(d);
+  document.getElementById('ring').innerHTML = ring(ov);
+  document.getElementById('overallTxt').textContent = u.name+' 的综合进度 '+ov+'%';
+  document.getElementById('overallSub').textContent =
+    (ov>0) ? '五项平均：单词卡+分级阅读达成度、拼写/听写正确率、连续打卡。' : '还没有任何记录，先去各英语 App 练一练吧～';
+  document.getElementById('ringNote').innerHTML =
+    '口径：①单词卡 已学/'+WORD_GOAL+' ②分级阅读 已读/'+READER_GOAL+
+    ' ③拼写正确率 ④听写正确率 ⑤连续打卡/'+STREAK_GOAL+'，五项平均；另单列「累计学习时长」。';
+
+  renderCurrent(d);
+  renderCompare();
+
+  // 里程碑撒花（仅当前孩子，本次会话仅庆祝一次）
+  checkMilestones({ uid:ME, name:u.name,
+    wordN:d.wordN, spP:d.spP, spAcc:d.spAcc, dcS:d.dcS, dcW:d.dcW, dcAcc:d.dcAcc,
+    storyN:d.storyN, readerN:d.readerN, streak:d.streak, days:d.days, timeSec:d.timeSec });
+}
+function render(){
+  if(ME) bootstrap();
+}
+
+/* 登录入口：选择 Zachary / Zoran 后启动 */
+Accounts.gate(APP, {
+  onLogin: function(user){
+    ME = user;
+    bootstrap();
+    Accounts.mountSwitch(APP);
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>自然拼读串记卡</title>
+<style>
+  :root{
+    --blue:#2f6fed; --blue-d:#1f54c0; --purple:#7c5cff; --purple-d:#5b3fd6;
+    --green:#1fae6b; --red:#e8553e; --ink:#23303f; --mut:#7c8aa0; --line:#e3e9f2;
+    --bg:#f4f7fc; --card:#ffffff; --soft:#eef3fb;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei",system-ui,-apple-system,"Segoe UI",sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.5;
+    padding:14px; display:flex; flex-direction:column; align-items:center; min-height:100vh;
+  }
+  header{width:100%; max-width:480px}
+  .topbar{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px}
+  .title{font-size:19px; font-weight:800; letter-spacing:.5px}
+  .title small{display:block; font-size:11px; font-weight:500; color:var(--mut)}
+  .voice{display:flex; align-items:center; gap:5px; font-size:12px; color:var(--mut)}
+  select#voiceSel{font-size:12px; padding:4px 6px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--ink); max-width:150px}
+  .stats{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px}
+  .chip{font-size:12px; background:var(--soft); border:1px solid var(--line); border-radius:999px; padding:3px 10px; color:var(--mut)}
+  .chip b{color:var(--ink)}
+  .progress{height:8px; background:var(--soft); border-radius:999px; overflow:hidden; margin-bottom:12px}
+  .progress .bar{height:100%; width:0; background:linear-gradient(90deg,var(--blue),var(--purple)); transition:width .3s}
+  .legend{display:flex; gap:12px; font-size:11px; color:var(--mut); margin-bottom:6px}
+  .legend i{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:middle}
+  .legend .s{background:var(--blue)} .legend .l{background:var(--purple)}
+  .tabs{display:flex; gap:6px; overflow-x:auto; width:100%; max-width:480px; padding-bottom:6px; margin-bottom:8px; -webkit-overflow-scrolling:touch}
+  .tab{flex:0 0 auto; min-width:52px; text-align:center; padding:8px 6px; border-radius:12px; border:1px solid var(--line); background:#fff; cursor:pointer; transition:.15s}
+  .tab .L{font-size:20px; font-weight:800; line-height:1}
+  .tab .S{font-size:10px; color:var(--mut); margin-top:2px}
+  .tab.short.on{background:var(--blue); border-color:var(--blue); color:#fff}
+  .tab.long.on{background:var(--purple); border-color:var(--purple); color:#fff}
+  .tab.on .S{color:rgba(255,255,255,.85)}
+  .toolbar{display:flex; gap:8px; width:100%; max-width:480px; margin-bottom:10px}
+  .tbtn{flex:1; font-size:13px; font-weight:700; padding:9px 0; border-radius:12px; border:1px solid var(--line); background:#fff; color:var(--blue); cursor:pointer}
+  .tbtn.on{background:var(--blue); color:#fff; border-color:var(--blue)}
+  main{width:100%; max-width:480px}
+  .fam{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px 14px; margin-bottom:12px; box-shadow:0 6px 18px rgba(40,70,130,.06)}
+  .fam-h{display:flex; align-items:baseline; gap:8px; margin-bottom:10px}
+  .rime{font-size:18px; font-weight:800; color:var(--blue)}
+  .fam-hint{font-size:11px; color:var(--mut)}
+  .words{display:flex; flex-direction:column; gap:7px}
+  .wchip{display:flex; align-items:center; gap:9px; padding:9px 11px; border:1px solid var(--line); border-radius:12px; background:#fff; cursor:pointer; transition:.12s; user-select:none}
+  .wchip:active{background:var(--soft)}
+  .wchip.on{border-color:var(--green); background:#eafaf1}
+  .wchip .ws{font-size:15px; opacity:.7}
+  .wchip .ww{font-size:17px; font-weight:800; min-width:62px; text-transform:lowercase}
+  .wchip .wipa{font-size:13px; color:var(--blue); font-family:"Courier New",monospace}
+  .wchip .wcn{font-size:13px; color:var(--mut); flex:1}
+  .wchip .core{font-size:10px; background:var(--amber,#f5a623); color:#fff; border-radius:999px; padding:1px 7px; margin-left:2px}
+  .wchip .wmark{font-size:18px; color:var(--mut); width:26px; text-align:center; flex:0 0 auto}
+  .wchip.on .wmark{color:var(--green)}
+  .wchip.on .wmark::before{content:"✓"}
+  .wmark::before{content:"○"}
+  .empty{text-align:center; color:var(--mut); font-size:13px; padding:20px}
+  .tip{font-size:12px; color:var(--mut); text-align:center; margin-top:4px}
+</style>
+</head>
+<body>
+<header>
+  <div class="topbar">
+    <div class="title">自然拼读串记卡<small>元音音素 · 词族串记 · 点词跟读</small></div>
+    <div class="voice"><span>🔊</span><select id="voiceSel"><option>加载中…</option></select></div>
+  </div>
+  <div class="stats">
+    <span class="chip">已掌握 <b id="stM">0</b>/<b id="stT">0</b></span>
+    <span class="chip">核心词 <b id="stC">0</b>/<b id="stCT">0</b></span>
+  </div>
+  <div class="progress"><div class="bar" id="pgBar"></div></div>
+  <div class="legend"><span><i class="s"></i>短元音</span><span><i class="l"></i>长元音（magic e）</span></div>
+</header>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="toolbar">
+  <button class="tbtn" id="btnAll" onclick="speakAll()">🔊 全族朗读</button>
+  <button class="tbtn" id="btnCore" onclick="toggleCore()">只看核心词</button>
+</div>
+
+<main id="families"></main>
+<div class="tip">点单词听发音，点右侧 ○ 标记为「已会」（绿色）。进度自动按账户保存。</div>
+
+<script src="speech.js"></script>
+<script src="phonics-data.js"></script>
+<script src="accounts.js"></script>
+<script>
+var APP = 'phonics';
+var ME = null;
+var PH = (window.PHONICS && window.PHONICS.length) ? window.PHONICS : [];
+var curIdx = 0, coreOnly = false;
+var masteredSet = new Set();
+
+function totalWords(){ var n=0; PH.forEach(g=>g.families.forEach(f=>n+=f.words.length)); return n; }
+function coreWords(){ var n=0; PH.forEach(g=>g.families.forEach(f=>f.words.forEach(w=>{ if(w.core) n++; }))); return n; }
+
+function loadMastered(){ try{ var a=Accounts.get(APP, ME, 'mastered', []); if(Array.isArray(a)) a.forEach(k=>masteredSet.add(k)); }catch(e){} }
+function saveMastered(){ try{ Accounts.set(APP, ME, 'mastered', Array.from(masteredSet)); }catch(e){} }
+function isMastered(key){ return masteredSet.has(key); }
+
+function updateStats(){
+  var total=totalWords(), core=coreWords();
+  var m=0; PH.forEach(g=>g.families.forEach(f=>f.words.forEach(w=>{ if(isMastered(g.id+'|'+w.w)) m++; })));
+  document.getElementById('stM').textContent=m;
+  document.getElementById('stT').textContent=total;
+  document.getElementById('stC').textContent=coreMasteredCount();
+  document.getElementById('stCT').textContent=core;
+  var pct = total? Math.round(m/total*100):0;
+  document.getElementById('pgBar').style.width=pct+'%';
+}
+function coreMasteredCount(){
+  var n=0; PH.forEach(g=>g.families.forEach(f=>f.words.forEach(w=>{ if(w.core && isMastered(g.id+'|'+w.w)) n++; }))); return n;
+}
+
+function renderTabs(){
+  var h='';
+  PH.forEach(function(g,i){
+    var cls = (g.kind==='长元音'?'long':'short') + (i===curIdx?' on':'');
+    h+='<div class="tab '+cls+'" onclick="selectVowel('+i+')">'
+      +'<div class="L">'+g.letter+'</div><div class="S">'+g.sound+'</div></div>';
+  });
+  document.getElementById('tabs').innerHTML=h;
+}
+
+function selectVowel(i){ curIdx=i; renderTabs(); renderFamilies(); }
+
+function renderFamilies(){
+  var g=PH[curIdx];
+  var box=document.getElementById('families');
+  var html='';
+  g.families.forEach(function(f){
+    var words=f.words.filter(function(w){ return !coreOnly || w.core; });
+    if(!words.length) return;
+    html+='<div class="fam">';
+    html+='<div class="fam-h"><span class="rime">'+f.rime+'</span><span class="fam-hint">'+g.letter+' + '+f.rime.slice(1)+'</span></div>';
+    html+='<div class="words">';
+    words.forEach(function(w){
+      var key=g.id+'|'+w.w;
+      var on=isMastered(key)?' on':'';
+      var core=w.core?'<span class="core">核心</span>':'';
+      html+='<div class="wchip'+on+'" onclick="speak(\''+w.w+'\',0.85)">'
+        +'<span class="ws">🔊</span>'
+        +'<span class="ww">'+w.w+'</span>'
+        +'<span class="wipa">'+w.ipa+'</span>'
+        +'<span class="wcn">'+w.cn+'</span>'+core
+        +'<span class="wmark" onclick="event.stopPropagation();toggleMastered(\''+key+'\')"></span>'
+        +'</div>';
+    });
+    html+='</div></div>';
+  });
+  if(!html) html='<div class="empty">该音素下没有核心词 🤔</div>';
+  box.innerHTML=html;
+}
+
+function toggleMastered(key){
+  if(masteredSet.has(key)) masteredSet.delete(key); else masteredSet.add(key);
+  saveMastered(); renderFamilies(); updateStats();
+}
+
+function toggleCore(){
+  coreOnly=!coreOnly;
+  document.getElementById('btnCore').classList.toggle('on', coreOnly);
+  renderFamilies();
+}
+
+function speak(t, rate){ if(window.Speech && Speech.speak) Speech.speak(t, rate||0.9); }
+function playSeq(arr){
+  if(!arr.length) return;
+  speak(arr[0],0.8);
+  if(arr.length>1) setTimeout(function(){ playSeq(arr.slice(1)); }, 720);
+}
+function speakAll(){
+  var g=PH[curIdx], arr=[];
+  g.families.forEach(function(f){ f.words.forEach(function(w){ if(!coreOnly||w.core) arr.push(w.w); }); });
+  playSeq(arr);
+}
+
+function phonicsBootstrap(){
+  loadMastered();
+  renderTabs(); renderFamilies(); updateStats();
+  if(coreWords()===0){}
+  document.getElementById('btnCore').classList.toggle('on', coreOnly);
+}
+
+Accounts.gate(APP, { onLogin: function(user){
+  ME = user;
+  if(window.StudyTime) try{ StudyTime.track(ME, 'phonics'); }catch(e){}
+  phonicsBootstrap();
+  Accounts.mountSwitch(APP);
+}});
+</script>
+</body>
+</html>

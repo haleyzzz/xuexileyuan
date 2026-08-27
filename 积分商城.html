@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<script src="accounts.js"></script>
+<script src="rewards.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>🎁 积分商城</title>
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+  :root{--pink:#ff8fab;--blue:#4cc9f0;--purple:#b292ff;--green:#06d6a0;--orange:#ff9f1c;--ink:#3d3a4b}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#fff6ef,#eef6ff);
+    color:var(--ink);padding:16px;max-width:760px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  header{background:linear-gradient(120deg,var(--orange),var(--pink));color:#fff;border-radius:24px;
+    padding:20px;text-align:center;box-shadow:0 8px 22px rgba(255,143,171,.35)}
+  header h1{font-size:22px}
+  header .tip{font-size:12px;opacity:.95;margin-top:4px}
+  .balance{background:#fff;border-radius:22px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.06);margin-top:16px;text-align:center}
+  .balance .who{font-size:14px;color:#888}
+  .balance .num{font-size:46px;font-weight:900;color:var(--orange);line-height:1.1;margin:2px 0}
+  .balance .num small{font-size:18px;font-weight:800;color:#bbb}
+  .balance .bd{font-size:12px;color:#999;line-height:1.7;margin-top:4px}
+  .sec{font-size:16px;font-weight:800;margin:20px 4px 10px;display:flex;align-items:center;gap:8px}
+  .sec .em{font-size:20px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  @media(max-width:520px){.grid{grid-template-columns:1fr}}
+  .rw{border:3px solid #eee;border-radius:20px;padding:16px;background:#fff;display:flex;flex-direction:column;align-items:center;text-align:center;transition:.15s}
+  .rw .em{font-size:42px;line-height:1}
+  .rw .nm{font-size:15px;font-weight:800;margin:8px 0 2px}
+  .rw .ty{font-size:11px;font-weight:800;padding:2px 10px;border-radius:999px;background:#f1f1f5;color:#9a9aa5;margin-bottom:8px}
+  .rw .ty.实物{background:#e7f7ee;color:var(--green)}
+  .rw .ty.特权{background:#e9f3ff;color:#1f6fb7}
+  .rw .ty.虚拟{background:#f1ecff;color:var(--purple)}
+  .rw .cost{font-size:15px;font-weight:800;color:var(--orange);margin-bottom:10px}
+  .rw .cost small{font-size:12px;color:#bbb;font-weight:700}
+  .rw .btn{border:none;border-radius:14px;padding:9px 18px;font-size:14px;font-weight:800;background:var(--orange);color:#fff;cursor:pointer;width:100%}
+  .rw .btn:active{transform:scale(.97)}
+  .rw.cant{border-color:#f0f0f0;opacity:.7}
+  .rw.cant .btn{background:#e9e9ef;color:#aaa}
+  .hist{margin-top:8px}
+  .hrow{display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:15px;background:#fafaff;border:2px solid #eef;margin-bottom:8px}
+  .hrow .he{font-size:22px}
+  .hrow .hn{flex:1;font-weight:700;font-size:14px}
+  .hrow .hc{font-size:13px;font-weight:800;color:var(--orange)}
+  .hrow .hs{font-size:12px;font-weight:800;padding:3px 9px;border-radius:999px}
+  .hrow .hs.pending{background:#fff3d6;color:#c98a00}
+  .hrow .hs.done{background:#e7f7ee;color:var(--green)}
+  .hrow .hd{font-size:12px;color:#9a9a9a;cursor:pointer}
+  .empty{text-align:center;color:#bbb;font-size:14px;padding:18px}
+  /* 家长管理 */
+  .manage{margin-top:18px;border:2px dashed var(--purple);border-radius:22px;padding:16px;background:#fbfaff}
+  .manage h3{font-size:15px;margin-bottom:10px;color:var(--purple)}
+  .mrow{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+  .mrow input,.mrow select{border:2px solid #eee;border-radius:12px;padding:10px;font-size:15px;font-family:inherit}
+  .mrow input:focus,.mrow select:focus{outline:none;border-color:var(--blue)}
+  .mrow .mi{flex:1;min-width:80px}
+  .mbtn{border:none;border-radius:12px;padding:10px 16px;font-size:14px;font-weight:800;background:var(--green);color:#fff;cursor:pointer}
+  .mbtn:active{transform:scale(.97)}
+  .mbtn.t{border:2px solid var(--blue);background:#fff;color:var(--blue)}
+  .mbtn.d{background:#ffe3e3;color:#e0608f}
+  .rl-row{display:flex;align-items:center;gap:8px;padding:9px 11px;border-radius:14px;background:#fff;border:2px solid #eee;margin-bottom:8px}
+  .rl-row .re{font-size:22px}
+  .rl-row .rn{flex:1;font-weight:800;font-size:14px}
+  .rl-row .rc{width:70px;border:2px solid #eee;border-radius:10px;padding:7px;font-size:15px;font-family:inherit;text-align:center}
+  .foot{text-align:center;margin:20px 0 8px}
+  .foot a{color:var(--blue);font-weight:700;text-decoration:none;font-size:14px}
+  /* 飘落庆祝 */
+  .rw-burst{position:fixed;z-index:9994;pointer-events:none;font-size:24px;animation:rwFall 1.3s ease-in forwards}
+  @keyframes rwFall{from{opacity:1;transform:translateY(-10px) rotate(0)}to{opacity:0;transform:translateY(80vh) rotate(360deg)}}
+  .toast{position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:9995;background:rgba(61,58,75,.92);color:#fff;
+    padding:12px 18px;border-radius:14px;font-size:15px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:90vw;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎁 积分商城</h1>
+  <div class="tip">学习赚积分 · 积分换奖励</div>
+</header>
+
+<div class="balance" id="balanceCard"></div>
+
+<div class="sec"><span class="em">🛍️</span> 奖励货架</div>
+<div class="grid" id="rewardGrid"></div>
+
+<div class="sec"><span class="em">📜</span> 我的兑换</div>
+<div class="hist" id="histList"></div>
+
+<div class="sec"><span class="em">🔧</span> 家长管理 <button class="mbtn t" id="toggleManage" style="font-size:13px;padding:6px 14px">展开</button></div>
+<div class="manage" id="managePanel" style="display:none"></div>
+
+<div class="foot"><a href="门户.html">← 返回学习乐园首页</a></div>
+
+<script>
+(function(){
+  var uid = (window.Portal && Portal.getSession && Portal.getSession().child) || 'user';
+  var who = (window.Accounts && Accounts.byId(uid)) ? Accounts.byId(uid).name : uid;
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+  function fmtDate(ts){ var d=new Date(ts); return (d.getMonth()+1)+'月'+d.getDate()+'日'; }
+
+  function renderBalance(){
+    var b = Rewards.balance(uid);
+    var bd = Rewards.earnedBreakdown(uid);
+    var mins = Math.floor(bd.sec/60);
+    var html = '<div class="who">'+who+' 的积分</div>'+
+      '<div class="num">'+b+' <small>分</small></div>'+
+      '<div class="bd">已折算：学习 '+mins+' 分钟 · 打卡 '+bd.checkinPts+' 项 · 掌握单词 '+Math.floor(bd.wordPts/2)+' 个<br>'+
+      '连续跳绳 '+bd.ropeStreak+' 天(+'+bd.ropePts+') · 亲子共读 '+bd.readDays+' 天(+'+bd.readPts+')<br>'+
+      '家长奖励 +'+Rewards.bonusTotal(uid)+' · 已兑换 -'+Rewards.spentTotal(uid)+'</div>';
+    document.getElementById('balanceCard').innerHTML = html;
+  }
+
+  function renderRewards(){
+    var b = Rewards.balance(uid);
+    var cat = Rewards.catalog();
+    var g = document.getElementById('rewardGrid'); g.innerHTML='';
+    if(!cat.length){ g.innerHTML='<div class="empty">暂无奖励，请家长在下方「家长管理」中添加</div>'; return; }
+    cat.forEach(function(r){
+      var can = b >= r.cost;
+      var el = document.createElement('div'); el.className='rw'+(can?'':' cant');
+      el.innerHTML =
+        '<div class="em">'+esc(r.emoji)+'</div>'+
+        '<div class="nm">'+esc(r.name)+'</div>'+
+        '<div class="ty '+esc(r.type)+'">'+esc(r.type)+'</div>'+
+        '<div class="cost">'+r.cost+' <small>分</small></div>'+
+        '<button class="btn">'+(can?'兑换':'积分不足')+'</button>';
+      el.querySelector('.btn').onclick = function(){ doRedeem(r.id); };
+      g.appendChild(el);
+    });
+  }
+
+  function renderHistory(){
+    var l = Rewards.history(uid);
+    var box = document.getElementById('histList');
+    if(!l.length){ box.innerHTML='<div class="empty">还没有兑换记录，去货架上换一个吧～</div>'; return; }
+    box.innerHTML='';
+    l.slice().reverse().forEach(function(h){
+      var row = document.createElement('div'); row.className='hrow';
+      row.innerHTML =
+        '<div class="he">'+esc(h.emoji)+'</div>'+
+        '<div class="hn">'+esc(h.name)+'<br><small style="color:#9a9a9a;font-weight:600">'+fmtDate(h.ts)+'</small></div>'+
+        '<div class="hc">-'+h.cost+'</div>'+
+        '<div class="hs '+h.status+'">'+(h.status==='done'?'已兑现':'待兑现')+'</div>';
+      box.appendChild(row);
+    });
+  }
+
+  function doRedeem(id){
+    var res = Rewards.redeem(uid, id);
+    if(!res.ok){ toast(res.msg); return; }
+    celebrate();
+    toast('兑换成功！去找爸爸妈妈领取 '+esc(res.reward.emoji)+' '+esc(res.reward.name)+' 🎉');
+    renderAll();
+  }
+
+  /* —— 家长管理面板 —— */
+  function renderManage(){
+    var cat = Rewards.catalog();
+    var l = Rewards.history(uid);
+    var html = '';
+    // 手动加分
+    html += '<h3>➕ 给 '+who+' 手动加分</h3>'+
+      '<div class="mrow"><input class="mi" id="bonusN" type="number" min="1" placeholder="分数"><input class="mi" id="bonusNote" placeholder="理由(可选)"><button class="mbtn" id="bonusBtn">加分</button></div>';
+    // 奖励列表编辑
+    html += '<h3>🎁 奖励列表（两孩子共用）</h3>';
+    cat.forEach(function(r){
+      html += '<div class="rl-row" data-id="'+r.id+'">'+
+        '<span class="re">'+esc(r.emoji)+'</span>'+
+        '<span class="rn">'+esc(r.name)+'<br><small style="color:#9a9a9a;font-weight:600">'+esc(r.type)+'</small></span>'+
+        '<input class="rc" type="number" min="1" value="'+r.cost+'" data-id="'+r.id+'">'+
+        '<button class="mbtn d" data-del="'+r.id+'">删</button></div>';
+    });
+    // 新增奖励
+    html += '<div class="mrow"><input class="mi" id="newEm" placeholder="图标emoji" style="flex:0 0 70px">'+
+      '<input class="mi" id="newNm" placeholder="奖励名称">'+
+      '<select id="newTy"><option>实物</option><option>特权</option><option>虚拟</option></select>'+
+      '<input class="mi" id="newCost" type="number" min="1" placeholder="积分" style="flex:0 0 70px">'+
+      '<button class="mbtn" id="newBtn">添加</button></div>';
+    // 兑换记录标记
+    html += '<h3>📜 '+who+' 的兑换记录</h3>';
+    if(!l.length){ html += '<div class="empty">暂无兑换</div>'; }
+    l.slice().reverse().forEach(function(h){
+      var done = h.status==='done';
+      html += '<div class="hrow"><div class="he">'+h.emoji+'</div>'+
+        '<div class="hn">'+h.name+'<br><small style="color:#9a9a9a;font-weight:600">'+fmtDate(h.ts)+'</small></div>'+
+        '<div class="hc">-'+h.cost+'</div>'+
+        '<div class="hs '+(done?'done':'pending')+'">'+(done?'已兑现':'待兑现')+'</div>'+
+        (done?'':'<span class="hd" data-ok="'+h.ts+'">标记兑现</span>')+'</div>';
+    });
+    var p = document.getElementById('managePanel'); p.innerHTML = html;
+    // 绑定
+    p.querySelector('#bonusBtn').onclick = function(){
+      var n = p.querySelector('#bonusN').value, note = p.querySelector('#bonusNote').value;
+      if(Rewards.addBonus(uid, n, note)){ toast('已给 '+who+' 加 '+n+' 分'); renderAll(); } else toast('请输入有效分数');
+    };
+    p.querySelector('#newBtn').onclick = function(){
+      var em=p.querySelector('#newEm').value.trim(), nm=p.querySelector('#newNm').value.trim(),
+          ty=p.querySelector('#newTy').value, c=Math.max(1,Math.floor(p.querySelector('#newCost').value||0));
+      if(!em||!nm){ toast('请填写图标和名称'); return; }
+      Rewards.addReward({id:'r_'+Date.now(), emoji:em, name:nm, cost:c, type:ty});
+      toast('已添加奖励'); renderManage(); renderAll();
+    };
+    p.querySelectorAll('.rc').forEach(function(inp){
+      inp.onchange = function(){ Rewards.updateReward(inp.getAttribute('data-id'), {cost:Math.max(1,Math.floor(inp.value||0))}); toast('已更新积分'); renderAll(); };
+    });
+    p.querySelectorAll('[data-del]').forEach(function(b){
+      b.onclick = function(){ Rewards.removeReward(b.getAttribute('data-del')); toast('已删除'); renderManage(); renderAll(); };
+    });
+    p.querySelectorAll('[data-ok]').forEach(function(b){
+      b.onclick = function(){ Rewards.markDone(uid, Number(b.getAttribute('data-ok'))); toast('已标记兑现'); renderManage(); };
+    });
+  }
+
+  function renderAll(){ renderBalance(); renderRewards(); renderHistory(); }
+
+  /* —— 庆祝动画 —— */
+  function celebrate(){
+    var emos=['🎉','⭐','🎊','💎','🌟','🏆'];
+    for(var i=0;i<18;i++){
+      (function(i){
+        var s=document.createElement('div'); s.className='rw-burst';
+        s.textContent=emos[i%emos.length];
+        s.style.left=(8+Math.random()*84)+'vw';
+        s.style.top='-20px';
+        s.style.animationDelay=(Math.random()*0.3)+'s';
+        document.body.appendChild(s);
+        setTimeout(function(){ if(s.parentNode) s.parentNode.removeChild(s); }, 1700);
+      })(i);
+    }
+  }
+  function toast(msg){
+    var t=document.createElement('div'); t.className='toast'; t.textContent=msg;
+    document.body.appendChild(t);
+    setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 2200);
+  }
+
+  document.getElementById('toggleManage').onclick = function(){
+    var p=document.getElementById('managePanel');
+    if(p.style.display==='none'){ p.style.display='block'; renderManage(); this.textContent='收起'; }
+    else { p.style.display='none'; this.textContent='展开'; }
+  };
+
+  renderAll();
+})();
+</script>
+</body>
+</html>

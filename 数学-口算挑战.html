@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧮 数学口算挑战</title>
+<style>
+  :root{
+    --green:#06d6a0; --blue:#4cc9f0; --purple:#b292ff; --orange:#ff9f1c; --ink:#3d3a4b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(135deg,#eafff7,#eef4ff);color:var(--ink);
+    padding:18px;max-width:560px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  .back{position:fixed;left:14px;top:14px;z-index:30;border:none;background:rgba(255,255,255,.85);
+    border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink)}
+  header{background:linear-gradient(120deg,var(--blue),var(--green));color:#fff;
+    border-radius:24px;padding:20px;text-align:center;box-shadow:0 8px 22px rgba(76,201,240,.4)}
+  header h1{font-size:22px}
+  .date{font-size:14px;opacity:.95;margin-top:4px}
+  .stats{display:flex;gap:10px;margin:14px 0}
+  .stat{flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center;
+    box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .stat .num{font-size:26px;font-weight:800;color:var(--blue)}
+  .stat .lbl{font-size:12px;color:#999;margin-top:2px}
+
+  .board{background:#fff;border-radius:24px;padding:24px 18px;text-align:center;
+    box-shadow:0 8px 22px rgba(76,201,240,.25);margin:6px 0}
+  .timer{font-size:15px;color:#999;margin-bottom:8px}
+  .timer b{color:var(--orange);font-size:20px}
+  .q{font-size:44px;font-weight:800;letter-spacing:2px;min-height:56px;margin:8px 0}
+  .q .op{color:var(--purple)}
+  .answer{display:flex;gap:10px;margin-top:10px}
+  .answer input{flex:1;border:3px solid #cdeffb;border-radius:16px;padding:14px;
+    font-size:24px;text-align:center;font-family:inherit;color:var(--ink);outline:none}
+  .answer input:focus{border-color:var(--blue)}
+  .answer button{border:none;border-radius:16px;padding:0 22px;font-size:18px;font-weight:800;
+    background:var(--green);color:#fff;cursor:pointer;font-family:inherit}
+  .combo{font-size:14px;color:var(--orange);font-weight:800;min-height:20px;margin-top:8px}
+  .fb{font-size:14px;min-height:20px;margin-top:4px;font-weight:700}
+  .fb.ok{color:var(--green)} .fb.no{color:#ff6b6b}
+
+  .prog{display:flex;gap:10px;margin:14px 0 4px}
+  .prog .p{flex:1;background:#fff;border-radius:16px;padding:10px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.05)}
+  .prog .p .n{font-size:22px;font-weight:800;color:var(--blue)}
+  .prog .p .l{font-size:12px;color:#999}
+  .progress{height:14px;background:#e0f5ee;border-radius:10px;overflow:hidden;margin:6px 0 4px}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--green));border-radius:10px;transition:width .3s}
+
+  .start{width:100%;border:none;border-radius:18px;padding:16px;font-size:18px;font-weight:800;
+    background:linear-gradient(120deg,var(--blue),var(--green));color:#fff;cursor:pointer;font-family:inherit;margin-top:8px}
+  .tip{font-size:12px;color:#aaa;text-align:center;margin-top:14px;line-height:1.6}
+
+  .confetti{position:fixed;top:-40px;font-size:24px;pointer-events:none;z-index:99;
+    animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:.2}}
+  .celebrate{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;
+    align-items:center;justify-content:center;z-index:100}
+  .celebrate .box2{background:#fff;border-radius:24px;padding:26px 32px;text-align:center;animation:pop .4s;max-width:320px}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate h3{font-size:24px;margin-bottom:6px}
+  .celebrate .res{font-size:15px;color:#555;line-height:1.8;margin:8px 0}
+  .celebrate .res b{color:var(--blue);font-size:20px}
+  .celebrate button{margin-top:12px;border:none;background:var(--green);color:#fff;
+    padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+
+  /* 年级难度选择 */
+  .gg-label{font-size:13px;color:#888;margin:12px 2px 2px}
+  .grades{display:flex;gap:6px;overflow-x:auto;padding:4px 0 8px}
+  .grades button{flex:0 0 auto;border:2px solid #cdeffb;background:#fff;color:#3aa9d6;
+    border-radius:14px;padding:6px 12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit}
+  .grades button.on{background:linear-gradient(120deg,var(--blue),var(--green));color:#fff;border-color:transparent}
+</style>
+</head>
+<body>
+
+
+
+<header>
+  <h1>🧮 数学口算挑战</h1>
+  <div class="date" id="dateStr">今天</div>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="num" id="bestNum">0</div><div class="lbl">🏆 最佳分</div></div>
+  <div class="stat"><div class="num" id="scoreNum">0</div><div class="lbl">⭐ 本轮得分</div></div>
+  <div class="stat"><div class="num" id="timeNum">60</div><div class="lbl">⏱️ 剩余秒</div></div>
+</div>
+
+<div class="gg-label">🎚️ 选择年级难度：</div>
+<nav class="grades" id="grades"></nav>
+
+<div class="board" id="board">
+  <div class="timer">⏱️ 还剩 <b id="timeBig">60</b> 秒</div>
+  <div class="q" id="q">准备好了吗？</div>
+  <div class="answer" id="answerBox">
+    <input id="ans" type="number" inputmode="numeric" placeholder="?" disabled>
+    <button id="submitBtn" onclick="submit()" disabled>算！</button>
+  </div>
+  <div class="combo" id="combo"></div>
+  <div class="fb" id="fb"></div>
+  <div class="hw-slot" id="hwSlot"></div>
+  <button class="start" id="nextBtn" onclick="nextManual()" style="display:none;margin-top:10px">➡️ 下一题（先看「对照答案」）</button>
+</div>
+
+<div class="prog">
+  <div class="p"><div class="n" id="doneNum">0</div><div class="l">✅ 答对题数</div></div>
+  <div class="p"><div class="n" id="totalNum">0</div><div class="l">📝 已做题数</div></div>
+</div>
+<div class="progress"><i id="progBar"></i></div>
+
+<button class="start" id="startBtn" onclick="start()">▶️ 开始挑战（60 秒）</button>
+
+<div class="tip">按所选年级自动调整难度（一年级 20 以内加减，逐步到六年级小数与多位数混合），越准越快分越高！<br>数据按小朋友分别保存，不会上传。</div>
+
+<div class="celebrate" id="celeb">
+  <div class="box2">
+    <h3>🎉 时间到！</h3>
+    <div class="res">本轮得分 <b id="rScore">0</b><br>答对 <b id="rCorrect">0</b> 题 · 共做 <b id="rTotal">0</b> 题<br>最佳 <b id="rBest">0</b> 分</div>
+    <button onclick="closeCeleb()">再战一局 💪</button>
+  </div>
+</div>
+
+<script>
+var CHILD='user', BEST_KEY='';
+var running=false, score=0, correct=0, total=0, combo=0, timeLeft=60, timer=null;
+var cur=null;
+var gradeSel=3; /* 默认三年级难度 */
+var GRADE_CFG={
+  1:{ops:['+','-'], add:[1,20], sub:[10,20]},
+  2:{ops:['+','-','×'], add:[1,100], sub:[10,100], mul:[2,9]},
+  3:{ops:['+','-','×','÷'], add:[1,100], sub:[10,100], mul:[2,9], div:[2,9]},
+  4:{ops:['+','-','×','÷'], add:[100,9999], sub:[100,9999], mul:[2,99], div:[2,99]},
+  5:{ops:['+','-','×','÷'], add:[1,100], sub:[10,100], mul:[2,99], div:[2,99], dec:true},
+  6:{ops:['+','-','×','÷'], add:[100,9999], sub:[100,9999], mul:[2,99], div:[2,99], dec:true},
+  7:{ops:['+','-','×','÷'], add:[1,200], sub:[50,200], mul:[2,12], div:[2,12]},
+  8:{ops:['+','-','×','÷'], add:[100,999], sub:[100,999], mul:[2,19], div:[2,19]}
+};
+var GRADE_NAMES={7:'三年级·进阶',8:'四年级·预备'};
+function gradeName(g){ return GRADE_NAMES[g]||(g+'年级'); }
+function rnd(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+var curHW=null;
+function getBest(){ try{ return parseInt(localStorage.getItem(BEST_KEY))||0; }catch(e){ return 0; } }
+function setBest(v){ try{ localStorage.setItem(BEST_KEY, String(v)); }catch(e){} }
+
+function start(){
+  running=true; score=0; correct=0; total=0; combo=0; timeLeft=60;
+  document.getElementById('startBtn').style.display='none';
+  document.getElementById('ans').disabled=false;
+  document.getElementById('submitBtn').disabled=false;
+  updateHud();
+  genQuestion();
+  timer=setInterval(function(){
+    timeLeft--;
+    if(timeLeft<=0){ timeLeft=0; end(); }
+    document.getElementById('timeNum').textContent=timeLeft;
+    document.getElementById('timeBig').textContent=timeLeft;
+  },1000);
+}
+function genQuestion(){
+  var cfg=GRADE_CFG[gradeSel]||GRADE_CFG[3];
+  curHW=null;
+  var t=cfg.ops[rnd(0,cfg.ops.length-1)];
+  var a,b,ans,dec=false,da=0,db=0;
+  if(t==='+'){
+    if(cfg.dec && Math.random()<0.4){ da=rnd(1,9); db=rnd(1,9); a=rnd(1,cfg.add[1]); b=rnd(1,cfg.add[1]); ans=a+b; dec=true; }
+    else { a=rnd(cfg.add[0],cfg.add[1]); b=rnd(cfg.add[0],cfg.add[1]); ans=a+b; }
+  } else if(t==='-'){
+    if(cfg.dec && Math.random()<0.4){ da=rnd(1,9); db=rnd(1,da); a=rnd(1,cfg.sub[1]); b=rnd(1,a); ans=a-b; dec=true; }
+    else { a=rnd(cfg.sub[0],cfg.sub[1]); b=rnd(1,a); ans=a-b; }
+  } else if(t==='×'){
+    if(gradeSel>=4 && Math.random()<0.5){ a=rnd(10,99); b=rnd(2,9); }
+    else { a=rnd(2,cfg.mul[1]); b=rnd(2,cfg.mul[1]); }
+    ans=a*b;
+  } else {
+    b=rnd(2,cfg.div[1]); ans=rnd(2,cfg.div[1]); a=b*ans;
+  }
+  cur={a:a,b:b,t:t,ans:ans};
+  var A=dec?(a+'.'+da):a, B=dec?(b+'.'+db):b;
+  document.getElementById('q').innerHTML=A+' <span class="op">'+t+'</span> '+B+' = ?';
+  var inp=document.getElementById('ans'); inp.value='';
+  if(!window.Handwrite) inp.focus();
+  document.getElementById('combo').textContent='';
+  document.getElementById('fb').textContent='';
+  var slot=document.getElementById('hwSlot'); slot.innerHTML='';
+  if(window.Handwrite){
+    curHW=Handwrite.create({revealText:String(cur.ans), placeholder:'✍️ 用手写答案（如 '+cur.ans+'）', onReveal:function(){
+      document.getElementById('fb').className='fb no';
+      document.getElementById('fb').textContent='🔢 正确答案：'+cur.ans;
+      document.getElementById('nextBtn').style.display='block';
+    }});
+    slot.appendChild(curHW.el);
+  }
+  document.getElementById('nextBtn').style.display='none';
+}
+function nextManual(){
+  if(!running||!cur) return;
+  genQuestion();
+}
+function submit(){
+  if(!running||!cur) return;
+  var v=parseInt(document.getElementById('ans').value,10);
+  if(isNaN(v)) return;
+  total++;
+  if(v===cur.ans){
+    correct++; combo++;
+    score += 10 + Math.max(0,combo-1)*2;
+    document.getElementById('fb').className='fb ok';
+    document.getElementById('fb').textContent='✅ 答对啦！+'+(10+Math.max(0,combo-1)*2)+(combo>1?' 连击×'+combo:'');
+    if(combo>1){ document.getElementById('combo').textContent='🔥 连击 '+combo+'！'; }
+  } else {
+    combo=0;
+    document.getElementById('fb').className='fb no';
+    document.getElementById('fb').textContent='❌ 正确答案：'+cur.ans;
+    document.getElementById('combo').textContent='';
+  }
+  updateHud();
+  if(running) genQuestion();
+}
+function updateHud(){
+  document.getElementById('scoreNum').textContent=score;
+  document.getElementById('doneNum').textContent=correct;
+  document.getElementById('totalNum').textContent=total;
+  document.getElementById('bestNum').textContent=getBest();
+  var pct=total?Math.round(correct/total*100):0;
+  document.getElementById('progBar').style.width=pct+'%';
+}
+function end(){
+  running=false; clearInterval(timer);
+  document.getElementById('ans').disabled=true;
+  document.getElementById('submitBtn').disabled=true;
+  document.getElementById('q').textContent='⏰ 时间到！';
+  document.getElementById('combo').textContent='';
+  document.getElementById('fb').textContent='';
+  var best=getBest();
+  if(score>best){ best=score; setBest(best); }
+  document.getElementById('rScore').textContent=score;
+  document.getElementById('rCorrect').textContent=correct;
+  document.getElementById('rTotal').textContent=total;
+  document.getElementById('rBest').textContent=best;
+  document.getElementById('bestNum').textContent=best;
+  document.getElementById('startBtn').style.display='block';
+  document.getElementById('startBtn').textContent='▶️ 再战一局（60 秒）';
+  celebrate();
+}
+function celebrate(){
+  var emo=['🎉','✨','🌟','🧮','⭐','💡','🔢','🏆'];
+  for(var k=0;k<24;k++){
+    (function(){
+      var c=document.createElement('div'); c.className='confetti';
+      c.textContent=emo[Math.floor(Math.random()*emo.length)];
+      c.style.left=Math.random()*100+'vw';
+      c.style.animationDuration=(2+Math.random()*2)+'s';
+      document.body.appendChild(c);
+      setTimeout(function(){ c.remove(); },4200);
+    })();
+  }
+  document.getElementById('celeb').style.display='flex';
+}
+function closeCeleb(){ document.getElementById('celeb').style.display='none'; }
+
+function renderGrades(){
+  var html='';
+  var ks=Object.keys(GRADE_CFG).map(Number).sort(function(a,b){return a-b;});
+  ks.forEach(function(g){ html+='<button class="'+(gradeSel===g?'on':'')+'" onclick="setGrade('+g+')">'+gradeName(g)+'</button>'; });
+  document.getElementById('grades').innerHTML=html;
+}
+function setGrade(g){ gradeSel=g; renderGrades(); }
+
+(function(){
+  var s=Portal.getSession();
+  CHILD=(s&&s.child)?s.child:'user';
+  BEST_KEY='math-mental-best-'+CHILD;
+  var d=new Date();
+  var wk=['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+  document.getElementById('dateStr').textContent=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+wk;
+  document.getElementById('bestNum').textContent=getBest();
+  renderGrades();
+  document.getElementById('ans').addEventListener('keydown',function(e){ if(e.key==='Enter') submit(); });
+})();
+</script>
+<script src="handwrite.js"></script>
+</body>
+</html>

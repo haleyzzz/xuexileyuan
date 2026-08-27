@@ -1,0 +1,16 @@
+{
+  "name": "三升四暑假打卡",
+  "short_name": "暑假打卡",
+  "description": "三年级升四年级暑期学习打卡（语数英+跳绳），支持离线使用",
+  "start_url": "门户.html",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff8ef",
+  "theme_color": "#ff8fab",
+  "icons": [
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

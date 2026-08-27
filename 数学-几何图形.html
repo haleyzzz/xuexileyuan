@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📐 几何图形</title>
+<style>
+  :root{ --c1:#4cc9f0; --c2:#06d6a0; --green:#06d6a0; --ink:#23303f; }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#eef9ff,#eafff6);color:var(--ink);padding:18px;max-width:560px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  .back{position:fixed;left:14px;top:14px;z-index:30;border:none;background:rgba(255,255,255,.85);border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink)}
+  header{background:linear-gradient(120deg,var(--c1),var(--c2));color:#fff;border-radius:24px;padding:20px;text-align:center;box-shadow:0 8px 22px rgba(76,201,240,.4)}
+  header h1{font-size:22px}
+  .date{font-size:14px;opacity:.95;margin-top:4px}
+  .stats{display:flex;gap:10px;margin:14px 0}
+  .stat{flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .stat .num{font-size:26px;font-weight:800;color:var(--c1)}
+  .stat .lbl{font-size:12px;color:#999;margin-top:2px}
+  .screen{display:none}
+  .screen.on{display:block}
+  .btn{display:block;width:100%;border:none;border-radius:16px;padding:14px;font-size:16px;font-family:inherit;cursor:pointer;font-weight:800;color:#fff;background:var(--c1);margin-top:8px}
+  .btn.gh{background:var(--c2)}
+  .btn.sec{background:#eaf7ff;color:var(--c1)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+  .chip{border:none;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;background:#eaf7ff;color:var(--c1)}
+  .chip.on{background:var(--c1);color:#fff}
+  .prog-wrap{margin:6px 0 14px}
+  .progress{height:14px;background:#e0f4fb;border-radius:10px;overflow:hidden}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--c1),var(--c2));border-radius:10px;transition:width .4s}
+  .prog-txt{font-size:13px;color:#888;text-align:center;margin-top:4px}
+  .q{background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.06);padding:14px;margin-bottom:12px;border:3px solid transparent;transition:border-color .2s}
+  .q.done-ok{border-color:var(--green)}
+  .q.done-no{border-color:#ff6b6b}
+  .q .qt{font-size:15px;font-weight:700;margin-bottom:10px;line-height:1.6}
+  .q .qt .qn{color:var(--c1);margin-right:6px}
+  .q .qt .tg{display:inline-block;font-size:11px;background:#eaf7ff;color:var(--c1);border-radius:8px;padding:1px 8px;margin-left:6px;font-weight:600}
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{border:none;border-radius:12px;padding:11px 14px;font-size:14px;text-align:left;font-family:inherit;cursor:pointer;background:#eaf7ff;color:var(--ink);transition:.15s}
+  .opt:active{transform:scale(.98)}
+  .opt.ok{background:var(--green);color:#fff}
+  .opt.no{background:#ff6b6b;color:#fff}
+  .opt.dim{opacity:.45;pointer-events:none}
+  .why{font-size:13px;color:#888;margin-top:10px;background:#f6fafd;border-radius:10px;padding:9px;line-height:1.6;display:none}
+  .why.on{display:block}
+  .report{background:#fff;border-radius:24px;box-shadow:0 8px 22px rgba(0,0,0,.08);padding:24px;text-align:center;margin-top:14px}
+  .report .stars{font-size:34px;letter-spacing:4px;margin:6px 0}
+  .report .score{font-size:30px;font-weight:800;color:var(--c1)}
+  .report .sub{font-size:14px;color:#888;margin-top:4px}
+  .report .line{font-size:15px;color:var(--ink);margin-top:10px}
+  .report .pass{color:var(--green);font-weight:800}
+  .report .fail{color:#ff6b6b;font-weight:800}
+  .reset{background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;text-decoration:underline;display:block;margin:10px auto 0;font-family:inherit}
+  .tip{font-size:12px;color:#aaa;text-align:center;margin-top:14px;line-height:1.6}
+  .celebrate{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:100}
+  .celebrate .box2{background:#fff;border-radius:24px;padding:28px 34px;text-align:center;animation:pop .4s;max-width:320px}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate h3{font-size:24px;margin-bottom:8px}
+  .celebrate p{color:#888;font-size:14px;line-height:1.6}
+  .celebrate button{margin-top:16px;border:none;background:var(--c2);color:#fff;padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+</style>
+<script>
+/* iOS 朗读稳定性补丁：保留 utterance 全局引用防 GC 静音 + 朗读前 resume()（与 speech.js 同逻辑，本页未引 speech.js 故内联） */
+(function(){ if(window.__ttsPatched) return; window.__ttsPatched=true;
+  if(!window.speechSynthesis) return;
+  var _sp=window.speechSynthesis.speak.bind(window.speechSynthesis);
+  window.speechSynthesis.speak=function(u){ try{window.speechSynthesis.resume();}catch(e){} window.__ttsUtt=u; return _sp(u); };
+})();
+</script>
+</head>
+<body>
+
+<header><h1>📐 几何图形</h1><div class="date" id="dateStr">今天</div></header>
+<div class="stats">
+  <div class="stat"><div class="num" id="bestNum">0</div><div class="lbl">🏆 最佳对题</div></div>
+  <div class="stat"><div class="num" id="totalNum">0</div><div class="lbl">📝 题目总数</div></div>
+  <div class="stat"><div class="num" id="passNum">80%</div><div class="lbl">✅ 通关线</div></div>
+</div>
+<div class="screen on" id="scrMenu">
+  <h2 style="font-size:17px;margin:6px 4px 10px">🎯 图形·周长·面积·对称·角</h2>
+  <div class="chips" id="topicChips"></div>
+  <div class="tip" style="margin:0 0 12px">点主题挑着练，或一键全部。选对 80% 就通关！</div>
+  <button class="btn" onclick="start()">🚀 开始闯关</button>
+  <button class="btn sec" onclick="resetBest()">↺ 清空最佳记录</button>
+</div>
+<div class="screen" id="scrQuiz">
+  <div class="prog-wrap"><div class="progress"><i id="progBar"></i></div><div class="prog-txt" id="progTxt">已答 0 / 0</div></div>
+  <div id="quizArea"></div>
+  <button class="btn gh" id="finishBtn" onclick="finish()" style="display:none">🏁 查看战报</button>
+</div>
+<div class="screen" id="scrReport">
+  <div class="report">
+    <div class="stars" id="rStars">⭐⭐⭐</div>
+    <div class="score" id="rScore">0 / 0</div>
+    <div class="sub" id="rPct">正确率 0%</div>
+    <div class="line" id="rPass"></div>
+  </div>
+  <button class="btn" onclick="start()">🔄 再来一轮</button>
+  <button class="btn sec" onclick="goMenu()">🏠 回到首页</button>
+</div>
+<div class="tip">数据按小朋友分别保存，不会上传。</div>
+<div class="celebrate" id="celeb"><div class="box2"><h3>🎉 几何小达人！</h3><p>图形周长面积都难不倒你啦！</p><button onclick="closeCeleb()">继续闯关 💪</button></div></div>
+<script>
+var CHILD='user', KEY='', store={};
+var TOPICS=[['全部',''],['图形','图形'],['周长','周长'],['面积','面积'],['对称','对称'],['角','角']];
+var curTopic='';
+var GEOM=[
+  {"q":"正方体有（ ）个面。","opts":["4","6","8","12"],"ans":1,"why":"正方体上下、前后、左右共 6 个面，每个面都是正方形。","topic":"图形"},
+  {"q":"长方体有（ ）条棱。","opts":["8","10","12","14"],"ans":2,"why":"长方体有 12 条棱（长、宽、高各 4 条）。","topic":"图形"},
+  {"q":"下面哪个是立体图形？","opts":["正方形","长方形","正方体","三角形"],"ans":2,"why":"正方体占有空间是立体图形；正方形、长方形、三角形是平面图形。","topic":"图形"},
+  {"q":"球能稳稳地（ ）。","opts":["立着","滚动","站住","叠高"],"ans":1,"why":"球是曲面，能滚动，不能平稳立住。","topic":"图形"},
+  {"q":"圆柱上下两个面是（ ）。","opts":["圆形","正方形","三角形","长方形"],"ans":0,"why":"圆柱上下底面都是相等的圆。","topic":"图形"},
+  {"q":"下面哪个图形有 4 条相等的边和 4 个直角？","opts":["长方形","正方形","三角形","平行四边形"],"ans":1,"why":"正方形四条边相等、四个角都是直角。","topic":"图形"},
+  {"q":"红领巾的形状是（ ）三角形。","opts":["锐角","直角","钝角","等边"],"ans":2,"why":"红领巾最大的角大于 90°，是钝角三角形。","topic":"图形"},
+  {"q":"一个正方形可以分成 2 个（ ）。","opts":["圆","三角形","正方形","长方体"],"ans":1,"why":"沿对角线或对边中点的连线剪开，正方形能分成两个三角形。","topic":"图形"},
+  {"q":"长方形有（ ）条对称轴。","opts":["1","2","3","4"],"ans":1,"why":"长方形沿左右中线、上下中线对折重合，有 2 条对称轴。","topic":"对称"},
+  {"q":"正方形有（ ）条对称轴。","opts":["2","3","4","无数"],"ans":2,"why":"正方形有 4 条对称轴（两条中线+两条对角线）。","topic":"对称"},
+  {"q":"圆有（ ）条对称轴。","opts":["1","2","4","无数"],"ans":3,"why":"圆沿任意直径对折都重合，有无数条对称轴。","topic":"对称"},
+  {"q":"下面（ ）是轴对称图形。","opts":["平行四边形","字母 Z","字母 A","任意三角形"],"ans":2,"why":"字母 A 左右对折能重合，是轴对称图形。","topic":"对称"},
+  {"q":"直角的度数是（ ）。","opts":["45°","90°","120°","180°"],"ans":1,"why":"直角等于 90°。","topic":"角"},
+  {"q":"比直角小的角是（ ）。","opts":["锐角","直角","钝角","平角"],"ans":0,"why":"锐角小于 90°，比直角小。","topic":"角"},
+  {"q":"比直角大、比平角小的角是（ ）。","opts":["锐角","直角","钝角","周角"],"ans":2,"why":"钝角大于 90° 小于 180°。","topic":"角"},
+  {"q":"一块三角板中一定有（ ）角。","opts":["锐角","直角","钝角","平角"],"ans":1,"why":"学生三角板都带一个直角（等腰直角板、30°60°90°板）。","topic":"角"},
+  {"q":"一个长方形的长是 6 厘米、宽 4 厘米，周长是（ ）。","opts":["10 厘米","20 厘米","24 厘米","12 厘米"],"ans":1,"why":"长方形周长=(长+宽)×2=(6+4)×2=20 厘米。","topic":"周长"},
+  {"q":"一个正方形的边长是 5 厘米，周长是（ ）。","opts":["10 厘米","15 厘米","20 厘米","25 厘米"],"ans":2,"why":"正方形周长=边长×4=5×4=20 厘米。","topic":"周长"},
+  {"q":"一个长方形长 8、宽 2，周长是（ ）。","opts":["10","16","20","24"],"ans":2,"why":"(8+2)×2=20。","topic":"周长"},
+  {"q":"一个正方形周长 12 厘米，边长是（ ）。","opts":["2 厘米","3 厘米","4 厘米","6 厘米"],"ans":1,"why":"边长=周长÷4=12÷4=3 厘米。","topic":"周长"},
+  {"q":"长方形长 9、宽 3，周长是（ ）。","opts":["12","18","24","36"],"ans":2,"why":"(9+3)×2=24。","topic":"周长"},
+  {"q":"长方形长 7、宽 5，面积是（ ）。","opts":["12","24","35","49"],"ans":2,"why":"长方形面积=长×宽=7×5=35。","topic":"面积"},
+  {"q":"正方形边长 4，面积是（ ）。","opts":["8","12","16","20"],"ans":2,"why":"正方形面积=边长×边长=4×4=16。","topic":"面积"},
+  {"q":"长方形长 10、宽 6，面积是（ ）。","opts":["16","30","60","36"],"ans":2,"why":"10×6=60。","topic":"面积"},
+  {"q":"正方形边长 9，面积是（ ）。","opts":["18","36","81","72"],"ans":2,"why":"9×9=81。","topic":"面积"},
+  {"q":"测量课桌面的大小，用（ ）作单位合适。","opts":["厘米","平方厘米","米","千克"],"ans":1,"why":"桌面大小是面积，用平方厘米等面积单位。","topic":"面积"},
+  {"q":"测量黑板的长度，用（ ）作单位合适。","opts":["厘米","平方厘米","米","平方米"],"ans":2,"why":"黑板长度用米；若说黑板面大小才用平方米。","topic":"面积"},
+  {"q":"下面图形中，一定是轴对称图形的是（ ）。","opts":["平行四边形","等腰梯形","任意四边形","三角形"],"ans":1,"why":"等腰梯形左右对折重合，是轴对称图形；一般平行四边形不是。","topic":"对称"},
+  {"q":"3 时整，时针和分针成（ ）角。","opts":["锐角","直角","钝角","平角"],"ans":1,"why":"3 时整时针指 3、分针指 12，夹角 90° 是直角。","topic":"角"},
+  {"q":"9 时整，时针和分针成（ ）角。","opts":["锐角","直角","钝角","平角"],"ans":1,"why":"9 时整也是 90°，是直角。","topic":"角"},
+  {"q":"钟面上 3:30，时针分针成（ ）角。","opts":["锐角","直角","钝角","平角"],"ans":2,"why":"3:30 夹角约 105°，大于直角是钝角。","topic":"角"},
+  {"q":"一个三角形有（ ）个角。","opts":["2","3","4","5"],"ans":1,"why":"三角形有 3 个角。","topic":"角"},
+  {"q":"正方体有（ ）个顶点。","opts":["6","8","10","12"],"ans":1,"why":"正方体 8 个顶点（角）。","topic":"图形"},
+  {"q":"用 4 根同样长的小棒能摆成（ ）。","opts":["三角形","正方形","五边形","圆"],"ans":1,"why":"4 根等长小棒首尾相连是正方形。","topic":"图形"},
+  {"q":"下面（ ）不是平面图形。","opts":["圆","圆柱","正方形","平行四边形"],"ans":1,"why":"圆柱是立体图形，其余是平面图形。","topic":"图形"},
+  {"q":"平行四边形（ ）对称轴。","opts":["有 1 条","有 2 条","有 4 条","没有"],"ans":3,"why":"一般平行四边形无论怎么对折都不重合，没有对称轴。","topic":"对称"},
+  {"q":"等边三角形有（ ）条对称轴。","opts":["1","2","3","0"],"ans":2,"why":"等边三角形每条边的高都是对称轴，共 3 条。","topic":"对称"},
+  {"q":"长方形长 12、宽 8，面积是（ ）。","opts":["20","40","96","40 平方厘米"],"ans":2,"why":"12×8=96（平方单位）。","topic":"面积"},
+  {"q":"正方形周长 32，面积是（ ）。","opts":["16","64","128","256"],"ans":1,"why":"边长=32÷4=8，面积=8×8=64。","topic":"面积"},
+  {"q":"下面图形中，只有 1 条对称轴的是（ ）。","opts":["正方形","等边三角形","等腰三角形","圆"],"ans":2,"why":"等腰三角形只有底边上的高 1 条对称轴。","topic":"对称"},
+  {"q":"角的大小与（ ）有关。","opts":["边的长短","两边张开的大小","边的颜色","顶点位置"],"ans":1,"why":"角由两边张开的幅度决定，张开越大角越大。","topic":"角"},
+  {"q":"两个完全一样的直角三角形可以拼成（ ）。","opts":["长方形","圆","球","圆柱"],"ans":0,"why":"两个一样直角三角形沿斜边或直角边拼可成长方形。","topic":"图形"},
+  {"q":"一个锐角和一个直角一定能拼成（ ）。","opts":["锐角","直角","钝角","平角"],"ans":2,"why":"锐角+直角 大于 90° 小于 180°，是钝角。","topic":"角"},
+  {"q":"周长是 16 厘米的正方形，边长是（ ）。","opts":["2","4","8","16"],"ans":1,"why":"16÷4=4 厘米。","topic":"周长"},
+  {"q":"边长为 1 厘米的正方形，面积是（ ）。","opts":["1 厘米","1 平方厘米","1 厘米平方","1 米"],"ans":1,"why":"边长 1 厘米的正方形面积是 1 平方厘米。","topic":"面积"},
+  {"q":"周长相等的长方形中，面积最大的是（ ）。","opts":["长 9 宽 1","长 6 宽 4","长 7 宽 3","长 8 宽 2"],"ans":1,"why":"长 6 宽 4 面积 24 最大（越接近正方形面积越大）。","topic":"面积"},
+  {"q":"下面图形中，对称轴最多的是（ ）。","opts":["长方形","正方形","等边三角形","圆"],"ans":3,"why":"圆有无数条对称轴，比其余都多。","topic":"对称"},
+  {"q":"一个长方形剪掉一个角，剩下图形最多有（ ）个角。","opts":["3","4","5","6"],"ans":2,"why":"沿不过顶点的斜线剪，会多出一个角，最多 5 个角。","topic":"图形"},
+  {"q":"钟面上 6 时整，时针分针成（ ）角。","opts":["直角","钝角","平角","周角"],"ans":2,"why":"6 时整两针成一条直线，是 180° 平角。","topic":"角"},
+  {"q":"下面（ ）的周长可以用“(a+b)×2”算。","opts":["正方形","长方形","圆","三角形"],"ans":1,"why":"长方形周长=(长+宽)×2。","topic":"周长"},
+  {"q":"下面（ ）的面积可以用“边长×边长”算。","opts":["长方形","正方形","三角形","圆"],"ans":1,"why":"正方形面积=边长×边长。","topic":"面积"},
+  {"q":"一个长方形长 10 厘米、宽 5 厘米，面积是（ ）。","opts":["15 平方厘米","30 平方厘米","50 平方厘米","50 厘米"],"ans":2,"why":"长方形面积=长×宽=10×5=50 平方厘米。","topic":"面积"},
+  {"q":"平行四边形有（ ）组对边分别平行。","opts":["1","2","3","4"],"ans":1,"why":"平行四边形有 2 组对边分别平行。","topic":"图形"},
+  {"q":"一个三角形不可能同时有（ ）。","opts":["锐角和直角","直角和钝角","两个直角","锐角和钝角"],"ans":2,"why":"三角形内角和 180°，两个直角已 180°，不可能。","topic":"角"},
+  {"q":"下面（ ）是中心对称图形。","opts":["等边三角形","正方形","等腰三角形","任意三角形"],"ans":1,"why":"正方形绕中心转 180° 与原图重合，是中心对称。","topic":"对称"},
+  {"q":"正方形的周长是 20 厘米，面积是（ ）。","opts":["25 平方厘米","20 平方厘米","16 平方厘米","5 平方厘米"],"ans":0,"why":"边长=20÷4=5，面积=5×5=25 平方厘米。","topic":"面积"},
+  {"q":"钟面 12 时整，时针分针重合成（ ）角。","opts":["锐角","直角","平角","周角"],"ans":3,"why":"12 时整两针重合，夹角 0°（周角）。","topic":"角"},
+  {"q":"把正方形对折一次，不可能得到（ ）。","opts":["长方形","三角形","梯形","正方形"],"ans":2,"why":"沿中线或对角线对折得长方形或三角形，得不出梯形。","topic":"图形"},
+  {"q":"长方形周长一定，长越长，宽就（ ）。","opts":["越长","越短","不变","消失"],"ans":1,"why":"周长固定，长增加宽必须减少。","topic":"周长"},
+  {"q":"下面对称轴最少的是（ ）。","opts":["圆","正方形","等边三角形","等腰三角形"],"ans":3,"why":"等腰三角形只有 1 条对称轴，最少。","topic":"对称"},
+  {"q":"直角三角板上的两个锐角合起来是（ ）。","opts":["90°","180°","45°","60°"],"ans":0,"why":"三角形内角和 180°，减去直角 90°，两锐角和 90°。","topic":"角"},
+  {"q":"棱长 1 厘米的正方体，体积是（ ）。","opts":["1 厘米","1 立方厘米","1 平方厘米","1 厘米平方"],"ans":1,"why":"正方体体积=棱长³=1×1×1=1 立方厘米。","topic":"图形"},
+  {"q":"下面（ ）不是四边形。","opts":["梯形","平行四边形","圆","长方形"],"ans":2,"why":"圆是曲线图形，没有四条边，不是四边形。","topic":"图形"},
+  {"q":"圆的半径扩大 2 倍，直径扩大（ ）倍。","opts":["1","2","4","不变"],"ans":1,"why":"直径=2×半径，半径扩 2 倍直径也扩 2 倍。","topic":"图形"},
+  {"q":"下面用来量面积的单位是（ ）。","opts":["米","厘米","平方米","千克"],"ans":2,"why":"平方米是面积单位。","topic":"面积"},
+  {"q":"等腰三角形（ ）对称轴。","opts":["没有","有 1 条","有 2 条","有 3 条"],"ans":1,"why":"等腰三角形底边上的高所在直线是 1 条对称轴。","topic":"对称"},
+  {"q":"两个锐角一定能拼成（ ）。","opts":["锐角","直角","钝角","以上都有可能"],"ans":3,"why":"两锐角可拼锐角(20°+30°)、直角(45°+45°)、钝角(60°+50°)。","topic":"角"},
+  {"q":"4 个一样的小正方形拼，不能拼成（ ）。","opts":["长方形","大正方形","三角形","L 形"],"ans":2,"why":"正方形只能拼出多边形成品，拼不出三角形。","topic":"图形"},
+  {"q":"长方形长 7 厘米、周长 24 厘米，宽是（ ）。","opts":["5 厘米","10 厘米","17 厘米","3 厘米"],"ans":0,"why":"(7+宽)×2=24 → 7+宽=12 → 宽=5 厘米。","topic":"周长"},
+  {"q":"下面有 4 条对称轴的是（ ）。","opts":["长方形","等边三角形","正方形","等腰三角形"],"ans":2,"why":"正方形有 4 条对称轴。","topic":"对称"},
+  {"q":"角的两边是（ ）。","opts":["直线","线段","射线","曲线"],"ans":2,"why":"角由一点引出的两条射线组成，两边是射线。","topic":"角"}
+  ,{"q":"正方体有（ ）个面是正方形。","opts":["4","6","8","12"],"ans":1,"why":"正方体的 6 个面都是正方形。","topic":"图形"}
+  ,{"q":"下面（ ）的面是圆形。","opts":["魔方","篮球","硬币","课本"],"ans":2,"why":"硬币正反面都是圆形；篮球是球体不是平面圆。","topic":"图形"}
+  ,{"q":"三角形按角分，不可能有（ ）。","opts":["2 个锐角","1 个直角","2 个直角","1 个钝角"],"ans":2,"why":"三角形内角和 180°，两个直角已 180°，不可能。","topic":"角"}
+  ,{"q":"长方形长 9 厘米、宽 3 厘米，周长是（ ）。","opts":["12 厘米","24 厘米","27 厘米","36 厘米"],"ans":1,"why":"(9+3)×2=24 厘米。","topic":"周长"}
+  ,{"q":"正方形边长 6 厘米，周长是（ ）。","opts":["12 厘米","18 厘米","24 厘米","36 厘米"],"ans":2,"why":"6×4=24 厘米。","topic":"周长"}
+  ,{"q":"一个长方形长 11、宽 4，面积是（ ）。","opts":["15","30","44","48"],"ans":2,"why":"11×4=44。","topic":"面积"}
+  ,{"q":"正方形边长 7，面积是（ ）。","opts":["14","28","49","56"],"ans":2,"why":"7×7=49。","topic":"面积"}
+  ,{"q":"长方形长 12、宽 5，面积是（ ）。","opts":["17","34","60","24"],"ans":2,"why":"12×5=60。","topic":"面积"}
+  ,{"q":"正方形周长 28，面积是（ ）。","opts":["49","28","14","56"],"ans":0,"why":"边长=28÷4=7，面积=7×7=49。","topic":"面积"}
+  ,{"q":"半圆的对称轴有（ ）条。","opts":["0","1","2","无数"],"ans":1,"why":"半圆只有一条对称轴（过圆心垂直直径的直线）。","topic":"对称"}
+  ,{"q":"长方形（ ）是轴对称图形。","opts":["一定","不一定","一定不","只有 1 条"],"ans":0,"why":"长方形上下、左右中线对折都重合，一定是轴对称图形。","topic":"对称"}
+  ,{"q":"下面（ ）有 3 条对称轴。","opts":["长方形","正方形","等边三角形","圆"],"ans":2,"why":"等边三角形有 3 条对称轴。","topic":"对称"}
+  ,{"q":"钟面上 1 时整，时针分针成（ ）角。","opts":["锐角","直角","钝角","平角"],"ans":0,"why":"1 时整夹角 30°，是锐角。","topic":"角"}
+  ,{"q":"钟面上 4 时整，时针分针成（ ）角。","opts":["锐角","直角","钝角","平角"],"ans":2,"why":"4 时整夹角 120°，是钝角。","topic":"角"}
+  ,{"q":"一个周角等于（ ）个直角。","opts":["2","3","4","6"],"ans":2,"why":"周角 360°，直角 90°，360÷90=4。","topic":"角"}
+  ,{"q":"一个平角等于（ ）个直角。","opts":["1","2","3","4"],"ans":1,"why":"平角 180°，直角 90°，180÷90=2。","topic":"角"}
+  ,{"q":"下面图形中，只有 2 条对称轴的是（ ）。","opts":["正方形","等边三角形","长方形","圆"],"ans":2,"why":"长方形有 2 条对称轴。","topic":"对称"}
+  ,{"q":"正方形的（ ）都相等。","opts":["对边","邻边","4 条边","只有角"],"ans":2,"why":"正方形的 4 条边都相等，4 个角都是直角。","topic":"图形"}
+  ,{"q":"平行四边形（ ）角相等。","opts":["4 个","对角","没有","邻"],"ans":1,"why":"平行四边形对角相等，邻角互补。","topic":"图形"}
+  ,{"q":"长方形的周长一定，宽越短，长就（ ）。","opts":["越短","越长","不变","消失"],"ans":1,"why":"周长固定，宽减少长必须增加。","topic":"周长"}
+  ,{"q":"用 2 个一样的小正方形拼成长方形，周长比原来 2 个正方形周长和（ ）。","opts":["变大","变小","不变","无法比"],"ans":1,"why":"拼起来重合了 2 条边，周长会减少。","topic":"周长"}
+  ,{"q":"下面用来量长度的单位是（ ）。","opts":["平方米","平方厘米","米","升"],"ans":2,"why":"米是长度单位；平方类是面积，升是容积。","topic":"图形"}
+  ,{"q":"一个三角形中最多有（ ）个直角。","opts":["0","1","2","3"],"ans":1,"why":"三角形内角和 180°，最多 1 个直角。","topic":"角"}
+  ,{"q":"梯形有（ ）条平行的边。","opts":["0","1","2","4"],"ans":2,"why":"梯形只有一组（2 条）对边平行。","topic":"图形"}
+];
+function speak(t){ try{ if(!('speechSynthesis'in window))return; window.speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance(t); u.lang='zh-CN'; u.rate=.9; window.speechSynthesis.speak(u); }catch(e){} }
+function getStore(){ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; } }
+function setStore(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
+function setScreen(id){ document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('on');}); document.getElementById(id).classList.add('on'); }
+var score=0, answered=0, list=[];
+function renderChips(){
+  var h=''; TOPICS.forEach(function(t){ h+='<button class="chip'+(t[1]===curTopic?' on':'')+'" onclick="pickTopic(\''+t[1]+'\')">'+t[0]+'</button>'; });
+  document.getElementById('topicChips').innerHTML=h;
+}
+function pickTopic(t){ curTopic=t; renderChips(); }
+function start(){ score=0; answered=0; list = curTopic? GEOM.filter(function(x){return x.topic===curTopic;}):GEOM.slice(); setScreen('scrQuiz'); renderQuiz(); }
+function renderQuiz(){
+  var html='';
+  list.forEach(function(it,idx){
+    html+='<div class="q" id="q'+idx+'"><div class="qt"><span class="qn">'+(idx+1)+'.</span>'+it.q+'<span class="tg">'+it.topic+'</span></div><div class="opts">';
+    it.opts.forEach(function(op,oi){ html+='<button class="opt" onclick="choose('+idx+','+oi+')" id="o'+idx+'_'+oi+'">'+op+'</button>'; });
+    html+='</div><div class="why" id="w'+idx+'"></div></div>';
+  });
+  document.getElementById('quizArea').innerHTML=html;
+  document.getElementById('finishBtn').style.display='none';
+  updateProg();
+}
+function choose(idx,oi){
+  var it=list[idx]; var q=document.getElementById('q'+idx);
+  if(q.classList.contains('done-ok')||q.classList.contains('done-no')) return;
+  answered++;
+  var ok=(oi===it.ans);
+  var opts=q.querySelectorAll('.opt');
+  opts.forEach(function(b,i){ b.classList.add('dim'); if(i===it.ans) b.classList.add('ok'); });
+  if(ok){ q.classList.add('done-ok'); score++; } else { q.classList.add('done-no'); opts[oi].classList.add('no'); }
+  var w=document.getElementById('w'+idx); w.textContent='💡 '+it.why; w.classList.add('on');
+  updateProg();
+  if(answered>=list.length) document.getElementById('finishBtn').style.display='block';
+}
+function updateProg(){
+  document.getElementById('progBar').style.width=(answered/list.length*100)+'%';
+  document.getElementById('progTxt').textContent='已答 '+answered+' / '+list.length;
+}
+function finish(){
+  var pct=Math.round(score/list.length*100);
+  document.getElementById('rScore').textContent=score+' / '+list.length;
+  document.getElementById('rPct').textContent='正确率 '+pct+'%';
+  var stars = pct>=90?'⭐⭐⭐':pct>=70?'⭐⭐':'⭐';
+  document.getElementById('rStars').textContent=stars;
+  var pass = score/list.length>=0.8;
+  document.getElementById('rPass').innerHTML = pass?'<span class="pass">🎊 通关！几何小能手</span>':'<span class="fail">再练练，争取通关 80%</span>';
+  if(score>(store.best||0)){ store.best=score; setStore(store); }
+  if(pass) showCeleb();
+  setScreen('scrReport');
+}
+function resetBest(){ if(confirm('确定清空最佳对题记录？')){ setStore({best:0}); store={best:0}; document.getElementById('bestNum').textContent='0'; } }
+function goMenu(){ setScreen('scrMenu'); }
+function showCeleb(){ var c=document.getElementById('celeb'); c.style.display='flex'; }
+function closeCeleb(){ document.getElementById('celeb').style.display='none'; }
+(function init(){
+  var s=Portal.getSession(); CHILD=(s&&s.child)?s.child:'user'; KEY='geom-'+CHILD; store=getStore();
+  document.getElementById('dateStr').textContent=new Date().toLocaleDateString('zh-CN');
+  document.getElementById('totalNum').textContent=GEOM.length;
+  document.getElementById('bestNum').textContent=store.best||0;
+  renderChips();
+})();
+</script>
+</body>
+</html>

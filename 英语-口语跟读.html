@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>英语口语跟读</title>
+<style>
+:root{ --c1:#3a86ff; --c2:#4895ef; --bg:#eef4ff; --card:#fff; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+body{margin:0; font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:linear-gradient(180deg,#dce9ff,#eef4ff); color:#1f2a44; padding:14px; padding-bottom:30px;}
+.head{text-align:center; margin:6px 0 14px;}
+.head h1{font-size:22px; margin:0 0 4px; color:var(--c1);}
+.head p{margin:0; color:#7a89a8; font-size:13px;}
+.note{display:none; background:#fff4e0; color:#9a6a00; border:1px solid #ffd591; border-radius:12px;
+  padding:9px 12px; font-size:13px; margin:0 0 12px; line-height:1.5;}
+.chips{display:flex; gap:8px; overflow-x:auto; padding:4px 2px 10px; -webkit-overflow-scrolling:touch;}
+.chip{flex:0 0 auto; border:1.5px solid #cdddff; background:#fff; color:#3a5a9a; border-radius:20px;
+  padding:7px 14px; font-size:13px; cursor:pointer; font-weight:600; transition:.15s;}
+.chip.on{background:var(--c2); color:#fff; border-color:var(--c2);}
+.list{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+@media(max-width:520px){ .list{grid-template-columns:1fr;} }
+.card{background:var(--card); border-radius:16px; padding:12px; box-shadow:0 4px 14px rgba(58,134,255,.10);
+  display:flex; flex-direction:column; gap:6px;}
+.card .en{font-size:16px; font-weight:700; color:#1f2a44; line-height:1.35;}
+.card .zh{font-size:12px; color:#7a89a8;}
+.card .tip{font-size:11px; color:#b06a00; background:#fff6e6; border-radius:8px; padding:4px 7px;}
+.card .row{display:flex; gap:8px; align-items:center; margin-top:2px;}
+.btn{border:none; border-radius:12px; padding:9px 0; font-size:14px; font-weight:700; cursor:pointer;
+  font-family:inherit; flex:1; color:#fff;}
+.btn.listen{background:#52b788;}
+.btn.rec{background:var(--c2);}
+.btn.rec.on{background:#e63946;}
+.best{font-size:12px; color:#3a86ff; font-weight:700;}
+/* panel */
+.panel{position:fixed; inset:0; background:rgba(0,0,0,.4); display:none; align-items:center; justify-content:center; z-index:90; padding:16px;}
+.panel .box{background:#fff; border-radius:22px; padding:22px; max-width:440px; width:100%; animation:pop .35s;}
+@keyframes pop{from{transform:scale(.9);opacity:0;}to{transform:scale(1);opacity:1;}}
+.panel .g{font-size:12px; color:#9aa7c2; font-weight:700;}
+.panel .en{font-size:22px; font-weight:800; color:#1f2a44; line-height:1.4; margin:6px 0;}
+.panel .zh{font-size:14px; color:#5a6b8c; margin-bottom:8px;}
+.panel .tip{font-size:12px; color:#b06a00; background:#fff6e6; border-radius:8px; padding:6px 9px; margin-bottom:12px; line-height:1.5;}
+.panel .acts{display:flex; gap:10px; margin-bottom:12px;}
+.panel .acts .btn{padding:12px 0;}
+.status{font-size:13px; color:#7a89a8; min-height:18px; text-align:center; margin-bottom:6px;}
+.said{background:#f2f6ff; border-radius:12px; padding:10px 12px; font-size:14px; line-height:1.5; min-height:20px; margin-bottom:8px;}
+.said b{color:#1f2a44;}
+.score{display:none; text-align:center; margin-bottom:10px;}
+.score .pct{font-size:30px; font-weight:800; color:var(--c1);}
+.score .stars{font-size:22px; letter-spacing:3px;}
+.self{display:none; text-align:center; margin-bottom:10px;}
+.self .lab{font-size:13px; color:#7a89a8; margin-bottom:6px;}
+.self .st{font-size:26px; cursor:pointer; margin:0 3px; filter:grayscale(1); opacity:.5; transition:.15s;}
+.self .st.on{filter:none; opacity:1;}
+.closex{width:100%; border:none; background:#eef2fb; color:#5a6b8c; border-radius:12px; padding:11px 0;
+  font-size:14px; font-weight:700; cursor:pointer; font-family:inherit;}
+.celebrate{position:fixed; inset:0; background:rgba(0,0,0,.35); display:none; align-items:center; justify-content:center; z-index:100;}
+.celebrate .box2{background:#fff; border-radius:24px; padding:28px 34px; text-align:center; animation:pop .4s; max-width:320px;}
+.celebrate h3{font-size:24px; margin-bottom:8px;}
+.celebrate p{color:#888; font-size:14px; line-height:1.6;}
+.celebrate button{margin-top:16px; border:none; background:var(--c2); color:#fff; padding:11px 26px; border-radius:14px; font-size:15px; font-family:inherit; cursor:pointer; font-weight:700;}
+.tabs{display:flex; gap:10px; margin:0 0 10px;}
+.tab{flex:1; border:1.5px solid #cdddff; background:#fff; color:#3a5a9a; border-radius:14px; padding:11px 0; font-size:15px; font-weight:800; cursor:pointer; font-family:inherit; transition:.15s;}
+.tab.on{background:var(--c1); color:#fff; border-color:var(--c1);}
+.back{display:block; width:100%; border:1.5px solid #cdddff; background:#fff; color:#3a86ff; border-radius:12px; padding:10px 0; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; margin-bottom:10px;}
+.prow{background:#fff; border-radius:16px; padding:12px; box-shadow:0 4px 14px rgba(58,134,255,.10); margin-bottom:10px;}
+.prow .pen{font-size:15px; font-weight:700; line-height:1.4; margin-bottom:6px;}
+.prow .pact{display:flex; gap:8px; align-items:center;}
+.prow .pact .btn{flex:1;}
+.prow .best{margin-left:auto;}
+</style>
+</head>
+<body>
+<div class="head"><h1>🎤 英语口语跟读</h1><p>听示范 · 开口读 · 智能评分</p></div>
+<div class="note" id="srNote">提示：当前浏览器不支持语音识别，已切换为「跟读后自评」模式，照样能练口语哦～</div>
+<div class="tabs" id="tabs">
+  <button class="tab on" data-m="sent" onclick="setMode('sent')">🔤 句子跟读</button>
+  <button class="tab" data-m="para" onclick="setMode('para')">📄 短文跟读</button>
+</div>
+<div class="chips" id="chips"></div>
+<div class="list" id="list"></div>
+
+<div class="panel" id="panel">
+  <div class="box">
+    <div class="g" id="pG"></div>
+    <div class="en" id="pEn"></div>
+    <div class="zh" id="pZh"></div>
+    <div class="tip" id="pTip"></div>
+    <div class="pgloss" id="pGloss"></div>
+    <div class="acts">
+      <button class="btn listen" onclick="listen()">🔊 听示范</button>
+      <button class="btn rec" style="background:#ff7a59" onclick="toggleGloss('pGloss')">🔤逐字</button>
+      <button class="btn rec" id="recBtn" onclick="startRec()">🎤 开始跟读</button>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="said" id="said"></div>
+    <div class="score" id="scoreBox">
+      <div class="pct" id="pct">0%</div>
+      <div class="stars" id="stars"></div>
+    </div>
+    <div class="self" id="selfBox">
+      <div class="lab">跟读后，给自己打个分吧：</div>
+      <span class="st" data-v="1" onclick="selfRate(1)">⭐</span>
+      <span class="st" data-v="2" onclick="selfRate(2)">⭐</span>
+      <span class="st" data-v="3" onclick="selfRate(3)">⭐</span>
+      <span class="st" data-v="4" onclick="selfRate(4)">⭐</span>
+      <span class="st" data-v="5" onclick="selfRate(5)">⭐</span>
+    </div>
+    <button class="closex" onclick="closePanel()">关闭</button>
+  </div>
+</div>
+
+<div class="celebrate" id="celeb"><div class="box2"><h3>🎉 口语小达人！</h3><p>敢于开口就是最棒的，继续练会更流利！</p><button onclick="closeCeleb()">继续练习 💪</button></div></div>
+
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<script src="speech.js"></script>
+<script src="gloss.js"></script>
+<script src="resume.js"></script>
+<script>
+var CHILD='user', KEY='', store={};
+var SENTENCES=[
+ {id:'o01',g:1,en:'I am a boy.',zh:'我是一个男孩。',tip:'重读 am，a 发 /æ/（张大嘴）。'},
+ {id:'o02',g:1,en:'This is a cat.',zh:'这是一只猫。',tip:'this 的 th 要咬舌（/ð/）。'},
+ {id:'o03',g:1,en:'I like apples.',zh:'我喜欢苹果。',tip:'like 尾音 k 轻读。'},
+ {id:'o04',g:1,en:'She is my mom.',zh:'她是我的妈妈。',tip:'she 的 sh 是 /ʃ/ 音。'},
+ {id:'o05',g:1,en:'We can run.',zh:'我们会跑。',tip:'can 的 a 发短音 /æ/。'},
+ {id:'o06',g:1,en:'It is a dog.',zh:'它是一只狗。',tip:'it 的 i 发短音 /ɪ/。'},
+ {id:'o07',g:2,en:'He goes to school by bus.',zh:'他坐公交上学。',tip:'goes 尾音 z；school 的 ch 发 /k/。'},
+ {id:'o08',g:2,en:'My mother is a teacher.',zh:'我妈妈是一名老师。',tip:'mother 的 th 咬舌（/ð/）。'},
+ {id:'o09',g:2,en:'I have a red book.',zh:'我有一本红色的书。',tip:'have 的 a 发短音 /æ/。'},
+ {id:'o10',g:2,en:'The sun is yellow.',zh:'太阳是黄色的。',tip:'sun 的 u 发短音 /ʌ/。'},
+ {id:'o11',g:2,en:'We eat rice for lunch.',zh:'我们午饭吃米饭。',tip:'lunch 的 ch 咬舌（/tʃ/）。'},
+ {id:'o12',g:2,en:'They play in the park.',zh:'他们在公园里玩。',tip:'park 的 ar 发 /ɑː/。'},
+ {id:'o13',g:3,en:'We should eat more vegetables.',zh:'我们应该多吃蔬菜。',tip:'should 的 sh 发 /ʃ/。'},
+ {id:'o14',g:3,en:'The cat is under the table.',zh:'猫在桌子下面。',tip:'under 的 th 咬舌（/ð/）。'},
+ {id:'o15',g:3,en:'I can swim very well.',zh:'我游泳游得很好。',tip:'swim 的 i 发短音 /ɪ/。'},
+ {id:'o16',g:3,en:'She has a pink dress.',zh:'她有一条粉色的裙子。',tip:'has 尾音 z 轻读。'},
+ {id:'o17',g:3,en:'We read books every day.',zh:'我们每天都读书。',tip:'此处 read 发 /red/（过去式）。'},
+ {id:'o18',g:3,en:'He likes to draw cars.',zh:'他喜欢画汽车。',tip:'likes 尾音 s 轻读。'},
+ {id:'o19',g:4,en:'The weather is sunny and warm today.',zh:'今天天气晴朗又温暖。',tip:'weather 的 th 咬舌（/ð/）。'},
+ {id:'o20',g:4,en:'My father cooks dinner for us.',zh:'爸爸为我们做晚饭。',tip:'father 的 th 咬舌（/ð/）。'},
+ {id:'o21',g:4,en:'We planted a small tree.',zh:'我们种了一棵小树。',tip:'planted 尾音 d 轻读。'},
+ {id:'o22',g:4,en:'She writes a letter to her friend.',zh:'她给朋友写了一封信。',tip:'writes 尾音 ts 轻读。'},
+ {id:'o23',g:4,en:'The children are playing outside.',zh:'孩子们在外面玩。',tip:'children 的 th 咬舌（/ð/）。'},
+ {id:'o24',g:4,en:'I finished my homework early.',zh:'我早早地写完了作业。',tip:'finished 尾音 t 轻读。'},
+ {id:'o25',g:5,en:'I finished my homework before dinner.',zh:'晚饭前我写完了作业。',tip:'before 的 th 咬舌（/ð/）。'},
+ {id:'o26',g:5,en:'Reading books broadens our minds.',zh:'阅读开阔我们的思维。',tip:'broadens 的 th 咬舌（/ð/）。'},
+ {id:'o27',g:5,en:'We should protect the environment.',zh:'我们应该保护环境。',tip:'environment 重音在中间。'},
+ {id:'o28',g:5,en:'He practiced speaking English daily.',zh:'他每天都练习说英语。',tip:'practiced 尾音 t 轻读。'},
+ {id:'o29',g:5,en:'The science museum is very interesting.',zh:'科学博物馆非常有趣。',tip:'interesting 重音在首。'},
+ {id:'o30',g:5,en:'Teamwork helps us solve problems.',zh:'团队合作帮我们解决问题。',tip:'teamwork 两个词连读。'},
+ {id:'o31',g:6,en:'Traveling broadens our horizons.',zh:'旅行开阔我们的眼界。',tip:'horizons 重音在 ho。'},
+ {id:'o32',g:6,en:'We must balance study and rest.',zh:'我们要平衡学习与休息。',tip:'balance 重音在 ba。'},
+ {id:'o33',g:6,en:'Good habits lead to a bright future.',zh:'好习惯通向美好的未来。',tip:'habits 尾音 ts 轻读。'},
+ {id:'o34',g:6,en:'Critical thinking is a key skill.',zh:'批判性思维是一项关键能力。',tip:'critical 重音在 cri。'},
+ {id:'o35',g:6,en:'Never give up when facing difficulties.',zh:'面对困难永不放弃。',tip:'difficulties 重音在 di。'},
+ {id:'o36',g:6,en:'Practice makes perfect in learning.',zh:'熟能生巧。',tip:'perfect 重音在 per。'},
+ {id:'o37',g:1,en:'I have two big eyes.',zh:'我有两只大眼睛。',tip:'eyes 尾音 z 轻读。'},
+ {id:'o38',g:1,en:'The book is on the desk.',zh:'书在桌子上。',tip:'on 的 o 发短音 /ɒ/。'},
+ {id:'o39',g:1,en:'A: Hello! B: Hi!',zh:'你好！/ 你好！（情景对话）',tip:'角色对话：Hello 的 h 要吐气。',dialog:true},
+ {id:'o40',g:1,en:'We are good friends.',zh:'我们是好朋友。',tip:'are 尾音 r 轻卷舌。'},
+ {id:'o41',g:2,en:'I want a glass of milk.',zh:'我想要一杯牛奶。',tip:'want 的 a 发短音 /ɒ/。'},
+ {id:'o42',g:2,en:'The dog is sleeping now.',zh:'狗现在正在睡觉。',tip:'sleeping 尾 ing 鼻音。'},
+ {id:'o43',g:2,en:'A: How are you? B: I am fine.',zh:'你好吗？/ 我很好。（情景对话）',tip:'How 的 h 吐气；fine 尾 n。',dialog:true},
+ {id:'o44',g:2,en:'Please open the window.',zh:'请打开窗户。',tip:'Please 尾音 z 轻读。'},
+ {id:'o45',g:3,en:'My favorite color is blue.',zh:'我最喜欢的颜色是蓝色。',tip:'favorite 重音在 fa。'},
+ {id:'o46',g:3,en:'The children like playing soccer.',zh:'孩子们喜欢踢足球。',tip:'soccer 尾音 r 轻卷。'},
+ {id:'o47',g:3,en:'A: What is your name? B: My name is Lily.',zh:'你叫什么名字？/ 我叫莉莉。（情景对话）',tip:'What 的 w 上齿咬下唇；name 尾 m。',dialog:true},
+ {id:'o48',g:3,en:'We went to the zoo last week.',zh:'上周我们去了动物园。',tip:'went 尾音 t 轻读。'},
+ {id:'o49',g:4,en:'She is reading a storybook quietly.',zh:'她正在安静地读故事书。',tip:'quietly 尾 ly 轻读。'},
+ {id:'o50',g:4,en:'The little bird is singing in the tree.',zh:'小鸟在树上唱歌。',tip:'singing 尾 ing 鼻音。'},
+ {id:'o51',g:4,en:'A: Can I help you? B: Yes, please.',zh:'需要帮忙吗？/ 好的，谢谢。（情景对话）',tip:'help 尾音 p 轻读；please 尾 z。',dialog:true},
+ {id:'o52',g:4,en:'My grandfather tells me funny stories.',zh:'爷爷给我讲有趣的故事。',tip:'grandfather 的 th 咬舌（/ð/）。'},
+ {id:'o53',g:5,en:'We should save water and electricity.',zh:'我们应该节约水电。',tip:'electricity 重音在 e。'},
+ {id:'o54',g:5,en:'The students are preparing for the exam.',zh:'学生们正在准备考试。',tip:'preparing 尾 ing 鼻音。'},
+ {id:'o55',g:5,en:'A: What time is it? B: It is half past three.',zh:'几点了？/ 三点半。（情景对话）',tip:'half 的 th 咬舌（/ð/）。',dialog:true},
+ {id:'o56',g:5,en:'Learning a language needs practice.',zh:'学一门语言需要练习。',tip:'language 的 ng 鼻音。'},
+ {id:'o57',g:6,en:'We should respect our teachers and parents.',zh:'我们应该尊敬老师和父母。',tip:'respect 重音在 re。'},
+ {id:'o58',g:6,en:'A healthy lifestyle helps us stay energetic.',zh:'健康的生活方式帮我们保持精力充沛。',tip:'energetic 重音在 e。'},
+ {id:'o59',g:6,en:'A: Where are you going? B: I am going to the library.',zh:'你去哪儿？/ 我要去图书馆。（情景对话）',tip:'Where 的 w 上齿咬下唇；library 重音在 li。',dialog:true},
+ {id:'o60',g:6,en:'Knowledge is the light that guides our future.',zh:'知识是指引我们未来的光。',tip:'knowledge 重音在 know。'}
+ ,{id:'o61',g:1,en:'I have a small nose.',zh:'我有一个小鼻子。',tip:'nose 的 o 发 /əʊ/（嘴收圆）。'}
+ ,{id:'o62',g:1,en:'The bird can fly.',zh:'小鸟会飞。',tip:'fly 的 fl 连读，y 发 /aɪ/。'}
+ ,{id:'o63',g:1,en:'A: Good morning! B: Good morning!',zh:'早上好！/ 早上好！（情景对话）',tip:'morning 重音在 morn。',dialog:true}
+ ,{id:'o64',g:1,en:'He is my brother.',zh:'他是我的弟弟。',tip:'brother 的 th 咬舌（/ð/）。'}
+ ,{id:'o65',g:2,en:'I like green apples.',zh:'我喜欢青苹果。',tip:'green 的 gr 轻读。'}
+ ,{id:'o66',g:2,en:'The fish is in the water.',zh:'鱼在水里。',tip:'water 的 t 常浊化成 /d/。'}
+ ,{id:'o67',g:2,en:'A: Nice to meet you. B: Nice to meet you too.',zh:'很高兴认识你。/ 我也很高兴认识你。（情景对话）',tip:'nice 的 c 发 /s/。',dialog:true}
+ ,{id:'o68',g:2,en:'She has two big eyes.',zh:'她有两只大眼睛。',tip:'eyes 尾音 z 轻读。'}
+ ,{id:'o69',g:3,en:'We have music class on Monday.',zh:'我们星期一有音乐课。',tip:'Monday 重音在 Mon。'}
+ ,{id:'o70',g:3,en:'The rabbit has long ears.',zh:'兔子有长耳朵。',tip:'rabbit 的 r 轻卷舌。'}
+ ,{id:'o71',g:3,en:'A: How old are you? B: I am eight.',zh:'你几岁了？/ 我八岁。（情景对话）',tip:'eight 的 eigh 发 /eɪ/。',dialog:true}
+ ,{id:'o72',g:3,en:'He can ride a horse.',zh:'他会骑马。',tip:'ride 的 i 发 /aɪ/。'}
+ ,{id:'o73',g:4,en:'We cleaned our room together.',zh:'我们一起打扫了房间。',tip:'cleaned 尾音 d 轻读。'}
+ ,{id:'o74',g:4,en:'The girls are dancing happily.',zh:'女孩们正开心地跳舞。',tip:'happily 尾音 ly 轻读。'}
+ ,{id:'o75',g:4,en:'A: What do you like? B: I like drawing.',zh:'你喜欢什么？/ 我喜欢画画。（情景对话）',tip:'drawing 尾音 ing 鼻音。',dialog:true}
+ ,{id:'o76',g:4,en:'My sister won the game.',zh:'我姐姐赢了比赛。',tip:'sister 的 s 轻读。'}
+ ,{id:'o77',g:5,en:'The Great Wall is long and old.',zh:'长城又长又古老。',tip:'Wall 的 w 上齿咬下唇。'}
+ ,{id:'o78',g:5,en:'We should keep our city clean.',zh:'我们应该保持城市清洁。',tip:'city 重音在 ci。'}
+ ,{id:'o79',g:5,en:'A: Where is the library? B: It is next to the park.',zh:'图书馆在哪儿？/ 它在公园旁边。（情景对话）',tip:'next 的 x 发 /ks/。',dialog:true}
+ ,{id:'o80',g:5,en:'He won the first prize.',zh:'他得了一等奖。',tip:'prize 的 z 发 /z/。'}
+ ,{id:'o81',g:6,en:'Reading widely improves our writing.',zh:'广泛阅读能提升我们的写作。',tip:'improves 重音在 im。'}
+ ,{id:'o82',g:6,en:'We should be kind to others.',zh:'我们应该善待他人。',tip:'kind 的 k 轻读。'}
+ ,{id:'o83',g:6,en:'A: What would you like to be? B: I want to be a writer.',zh:'你想成为什么？/ 我想当作家。（情景对话）',tip:'writer 重音在 wri。',dialog:true}
+ ,{id:'o84',g:6,en:'Practice speaking every single day.',zh:'坚持每天开口说。',tip:'single 重音在 sin。'}
+ ,{id:'o85',g:1,en:'I can see a red ball.',zh:'我能看见一个红色的球。',tip:'ball 的 al 发 /ɔː/。'}
+ ,{id:'o86',g:1,en:'The pig is very fat.',zh:'这只猪很胖。',tip:'pig 的 i 发短音 /ɪ/。'}
+ ,{id:'o87',g:2,en:'There are seven days in a week.',zh:'一周有七天。',tip:'week 的 ee 发 /iː/。'}
+ ,{id:'o88',g:2,en:'My pen is in my bag.',zh:'我的钢笔在书包里。',tip:'pen 的 e 发 /e/。'}
+ ,{id:'o89',g:3,en:'They are my good classmates.',zh:'他们是我的好同学。',tip:'classmates 两个词连读。'}
+ ,{id:'o90',g:3,en:'I feed the cat every morning.',zh:'我每天早上喂猫。',tip:'feed 的 ee 发 /iː/。'}
+ ,{id:'o91',g:1,en:'I have two small hands.',zh:'我有两只小手。',tip:'hands 尾音 z 轻读。'}
+ ,{id:'o92',g:1,en:'The sun is yellow and warm.',zh:'太阳黄黄的、暖暖的。',tip:'yellow 重音在 ye。'}
+ ,{id:'o93',g:1,en:'A: Hello! B: Hello!',zh:'你好！/ 你好！（情景对话）',tip:'hello 重音在 he。',dialog:true}
+ ,{id:'o94',g:1,en:'The little dog is cute.',zh:'这只小狗真可爱。',tip:'cute 的 u 发 /juː/。'}
+ ,{id:'o95',g:1,en:'I drink milk in the morning.',zh:'我早上喝牛奶。',tip:'milk 的 i 发短音 /ɪ/。'}
+ ,{id:'o96',g:2,en:'The cat is on the chair.',zh:'猫在椅子上。',tip:'chair 的 ch 发 /tʃ/。'}
+ ,{id:'o97',g:2,en:'We play in the park.',zh:'我们在公园里玩。',tip:'park 的 ar 发 /ɑː/。'}
+ ,{id:'o98',g:2,en:'A: Thank you. B: You are welcome.',zh:'谢谢你。/ 不客气。（情景对话）',tip:'welcome 重音在 wel。',dialog:true}
+ ,{id:'o99',g:2,en:'She has a pink dress.',zh:'她有一条粉色的连衣裙。',tip:'pink 的 p 轻读。'}
+ ,{id:'o100',g:2,en:'The box is big and red.',zh:'这个盒子又大又红。',tip:'box 的 x 发 /ks/。'}
+ ,{id:'o101',g:3,en:'I go to school by bus.',zh:'我坐公交车上学。',tip:'bus 的 u 发短音 /ʌ/。'}
+ ,{id:'o102',g:3,en:'The duck is in the pond.',zh:'鸭子在池塘里。',tip:'pond 的 on 发 /ɒ/。'}
+ ,{id:'o103',g:3,en:'A: What color is it? B: It is blue.',zh:'它是什么颜色？/ 它是蓝色。（情景对话）',tip:'color 的 o 发短音 /ʌ/。',dialog:true}
+ ,{id:'o104',g:3,en:'He likes to read books.',zh:'他喜欢读书。',tip:'books 尾音 s 轻读。'}
+ ,{id:'o105',g:3,en:'We have four seasons in a year.',zh:'一年有四季。',tip:'seasons 尾音 z 轻读。'}
+ ,{id:'o106',g:4,en:'They are playing football.',zh:'他们正在踢足球。',tip:'football 两个词连读。'}
+ ,{id:'o107',g:4,en:'My birthday is in June.',zh:'我的生日在六月。',tip:'June 的 J 发 /dʒ/。'}
+ ,{id:'o108',g:4,en:'A: Can you swim? B: Yes, I can.',zh:'你会游泳吗？/ 我会。（情景对话）',tip:'swim 的 i 发短音 /ɪ/。',dialog:true}
+ ,{id:'o109',g:4,en:'She writes a letter to her friend.',zh:'她给朋友写信。',tip:'letter 的 tt 轻读。'}
+ ,{id:'o110',g:4,en:'The weather is sunny today.',zh:'今天天气晴朗。',tip:'sunny 尾音 y 轻读。'}
+ ,{id:'o111',g:5,en:'We should eat more vegetables.',zh:'我们应该多吃蔬菜。',tip:'vegetables 重音在 ve。'}
+ ,{id:'o112',g:5,en:'The science museum is interesting.',zh:'科学博物馆很有趣。',tip:'interesting 重音在 in。'}
+ ,{id:'o113',g:5,en:'A: How much is it? B: It is ten yuan.',zh:'多少钱？/ 十元。（情景对话）',tip:'much 的 ch 发 /tʃ/。',dialog:true}
+ ,{id:'o114',g:5,en:'He finished his homework quickly.',zh:'他很快写完了作业。',tip:'quickly 尾音 ly 轻读。'}
+ ,{id:'o115',g:5,en:'They climbed the high mountain.',zh:'他们爬上了高山。',tip:'mountain 重音在 moun。'}
+ ,{id:'o116',g:6,en:'Reading makes a full man.',zh:'阅读使人充实。',tip:'full 的 f 轻读。'}
+ ,{id:'o117',g:6,en:'We must protect the environment.',zh:'我们必须保护环境。',tip:'protect 重音在 pro。'}
+ ,{id:'o118',g:6,en:'A: What are you doing? B: I am cleaning my room.',zh:'你在做什么？/ 我在打扫房间。（情景对话）',tip:'cleaning 尾 ing 鼻音。',dialog:true}
+ ,{id:'o119',g:6,en:'Knowledge comes from practice.',zh:'知识来源于实践。',tip:'practice 重音在 prac。'}
+ ,{id:'o120',g:6,en:'Good habits lead to success.',zh:'好习惯带来成功。',tip:'success 重音在 suc。'}
+ ,{id:'o121',g:1,en:'I go to school by bus.',zh:'我坐公交车上学。',tip:'bus 的 u 发 /ʌ/。'}
+ ,{id:'o122',g:1,en:'The duck can swim.',zh:'鸭子会游泳。',tip:'swim 尾音 m 闭嘴。'}
+ ,{id:'o123',g:2,en:'My sister likes dancing.',zh:'我妹妹喜欢跳舞。',tip:'dancing 尾 ing 鼻音。'}
+ ,{id:'o124',g:2,en:'Look at the rainbow!',zh:'看那道彩虹！',tip:'rainbow 重音在 rain。'}
+ ,{id:'o125',g:3,en:'We plant trees in spring.',zh:'我们在春天种树。',tip:'spring 的 spr 连读。'}
+ ,{id:'o126',g:3,en:'A: What time is it? B: It is seven o\'clock.',zh:'几点了？/ 七点了。（情景对话）',tip:'o\'clock 的 ck 发 /k/。',dialog:true}
+ ,{id:'o127',g:3,en:'The fish swims in the pond.',zh:'鱼在池塘里游。',tip:'pond 尾音 d 轻读。'}
+ ,{id:'o128',g:4,en:'I did my homework yesterday.',zh:'我昨天做了作业。',tip:'yesterday 重音在 yes。'}
+ ,{id:'o129',g:4,en:'A: Where is the library? B: It is next to the park.',zh:'图书馆在哪里？/ 在公园旁边。（情景对话）',tip:'library 重音在 bra。',dialog:true}
+ ,{id:'o130',g:4,en:'Autumn is a golden season.',zh:'秋天是金色的季节。',tip:'autumn 的 n 不发音。'}
+ ,{id:'o131',g:5,en:'We should keep our classroom clean.',zh:'我们应该保持教室干净。',tip:'classroom 两个词连读。'}
+ ,{id:'o132',g:5,en:'A: May I come in? B: Come in, please.',zh:'我可以进来吗？/ 请进。（情景对话）',tip:'please 尾音 z 轻读。',dialog:true}
+ ,{id:'o133',g:5,en:'Practice makes perfect.',zh:'熟能生巧。',tip:'perfect 重音在 per。'}
+ ,{id:'o134',g:6,en:'Failure is the mother of success.',zh:'失败是成功之母。',tip:'failure 重音在 fai。'}
+ ,{id:'o135',g:6,en:'A: Would you like some tea? B: No, thanks.',zh:'你想喝茶吗？/ 不用了，谢谢。（情景对话）',tip:'would 的 l 轻读。',dialog:true}
+ ,{id:'o136',g:6,en:'Where there is a will, there is a way.',zh:'有志者事竟成。',tip:'will 和 way 的 w 上齿咬下唇。'}
+ ,{id:'o137',g:5,en:'The early bird catches the worm.',zh:'早起的鸟儿有虫吃。',tip:'early 的 ear 发 /ɜː/。'}
+ ,{id:'o138',g:4,en:'It is never too old to learn.',zh:'活到老学到老。',tip:'learn 的 l 轻读。'}
+ ,{id:'o139',g:3,en:'East or west, home is best.',zh:'金窝银窝不如自己的草窝。',tip:'east 和 west 尾音 t 轻读。'}
+ ,{id:'o140',g:6,en:'Actions speak louder than words.',zh:'行动胜于言语。',tip:'actions 尾音 z 轻读。'}
+];
+var PARAS=[
+ {id:'p1',g:2,title:'My Family',zh:'我的家人',sents:[
+   {en:'I have a happy family.',tip:'happy 重音在 ha。'},
+   {en:'My father is tall.',tip:'father 的 th 咬舌（/ð/）。'},
+   {en:'I love my mother.',tip:'mother 的 th 咬舌（/ð/）。'}]},
+ {id:'p2',g:3,title:'A Busy Morning',zh:'忙碌的早晨',sents:[
+   {en:'I get up at seven.',tip:'seven 的 v 轻读。'},
+   {en:'I eat breakfast with my family.',tip:'breakfast 重音在 break。'},
+   {en:'Then I go to school.',tip:'school 的 ch 发 /k/。'}]},
+ {id:'p3',g:3,title:'Our Classroom',zh:'我们的教室',sents:[
+   {en:'Our classroom is clean and bright.',tip:'classroom 两个词连读。'},
+   {en:'We read books every morning.',tip:'every 的 e 发短音 /e/。'},
+   {en:'We help each other.',tip:'each 的 ch 咬舌（/tʃ/）。'}]},
+ {id:'p4',g:4,title:'My Favorite Season',zh:'我最喜欢的季节',sents:[
+   {en:'Spring is warm and green.',tip:'spring 的 sp 轻读。'},
+   {en:'Flowers bloom everywhere.',tip:'flowers 尾音 z 轻读。'},
+   {en:'I like to fly kites.',tip:'kites 尾音 ts 轻读。'}]},
+ {id:'p5',g:4,title:'A Trip to the Zoo',zh:'动物园之行',sents:[
+   {en:'We went to the zoo last Sunday.',tip:'Sunday 重音在 Sun。'},
+   {en:'I saw a big elephant.',tip:'elephant 重音在 e。'},
+   {en:'The monkey was very funny.',tip:'monkey 尾音 y 轻读。'}]},
+ {id:'p6',g:5,title:'Helping at Home',zh:'在家帮忙',sents:[
+   {en:'I help my mother cook dinner.',tip:'mother 的 th 咬舌（/ð/）。'},
+   {en:'I wash the dishes after meals.',tip:'dishes 尾音 z 轻读。'},
+   {en:'My parents praise me.',tip:'parents 重音在 par。'}]},
+ {id:'p7',g:5,title:'The Science Class',zh:'科学课',sents:[
+   {en:'We did an interesting experiment.',tip:'experiment 重音在 per。'},
+   {en:'We observed how plants grow.',tip:'observed 尾音 d 轻读。'},
+   {en:'Science teaches us to think.',tip:'teaches 尾音 z 轻读。'}]},
+ {id:'p8',g:6,title:'My Dream',zh:'我的梦想',sents:[
+   {en:'I want to be a scientist.',tip:'scientist 重音在 sci。'},
+   {en:'I will study hard every day.',tip:'study 的 u 发短音 /ʌ/。'},
+   {en:'I believe I can make it.',tip:'believe 重音在 lie。'}]}
+ ,{id:'p9',g:2,title:'My Pet',zh:'我的宠物',sents:[{en:'I have a little dog.',tip:'little 的 t 轻读。'},{en:'It likes to play with me.',tip:'play 的 ay 发 /eɪ/。'},{en:'I love my pet very much.',tip:'love 的 v 上齿咬下唇。'}]}
+ ,{id:'p10',g:3,title:'A Rainy Day',zh:'下雨天',sents:[{en:'It is raining outside.',tip:'raining 尾 ing 鼻音。'},{en:'I take my umbrella.',tip:'umbrella 重音在 bre。'},{en:'The rain makes flowers happy.',tip:'makes 尾音 s 轻读。'}]}
+ ,{id:'p11',g:3,title:'The Library',zh:'图书馆',sents:[{en:'The library is quiet.',tip:'quiet 的 qu 发 /kw/。'},{en:'I borrow a storybook.',tip:'borrow 的 r 轻卷。'},{en:'Reading makes me happy.',tip:'makes 尾音 s 轻读。'}]}
+ ,{id:'p12',g:4,title:'My Birthday',zh:'我的生日',sents:[{en:'Yesterday was my birthday.',tip:'birthday 重音在 birth。'},{en:'My friends came to my party.',tip:'friends 尾音 z 轻读。'},{en:'We ate cake and sang songs.',tip:'sang 的 a 发 /æ/。'}]}
+ ,{id:'p13',g:4,title:'Helping Others',zh:'帮助别人',sents:[{en:'I help my grandma cross the road.',tip:'cross 的 ss 轻读。'},{en:'She says thank you to me.',tip:'thank 的 th 咬舌（/θ/）。'},{en:'Helping others makes me happy.',tip:'others 重音在 o。'}]}
+ ,{id:'p14',g:5,title:'My Hobby',zh:'我的爱好',sents:[{en:'My hobby is painting pictures.',tip:'painting 尾 ing 鼻音。'},{en:'I paint animals and flowers.',tip:'flowers 尾音 z 轻读。'},{en:'It is fun and relaxing.',tip:'relaxing 重音在 re。'}]}
+ ,{id:'p15',g:5,title:'A School Trip',zh:'一次校外旅行',sents:[{en:'We visited a science museum.',tip:'visited 尾音 d 轻读。'},{en:'We saw dinosaurs and robots.',tip:'dinosaurs 重音在 dino。'},{en:'The trip was full of fun.',tip:'trip 的 tr 轻读。'}]}
+ ,{id:'p16',g:6,title:'Protect the Earth',zh:'保护地球',sents:[{en:'We should save trees and water.',tip:'trees 尾音 z 轻读。'},{en:'Do not litter on the ground.',tip:'litter 的 t 轻读。'},{en:'A clean earth is our home.',tip:'earth 的 th 咬舌（/θ/）。'}]}
+ ,{id:'p17',g:1,title:'My Toys',zh:'我的玩具',sents:[{en:'I have many toys.',tip:'many 重音在 ma。'},{en:'The bear is brown.',tip:'brown 的 br 轻读。'},{en:'I like my red car.',tip:'car 的 ar 发 /ɑː/。'}]}
+ ,{id:'p18',g:2,title:'At the Park',zh:'在公园',sents:[{en:'The park is green and big.',tip:'green 的 gr 轻读。'},{en:'Birds are singing in the tree.',tip:'singing 尾 ing 鼻音。'},{en:'We are happy here.',tip:'happy 重音在 ha。'}]}
+ ,{id:'p19',g:3,title:'My School Bag',zh:'我的书包',sents:[{en:'My school bag is heavy.',tip:'heavy 重音在 he。'},{en:'I put my books inside.',tip:'inside 两个词连读。'},{en:'A pencil is in the box.',tip:'pencil 尾音 l 轻读。'}]}
+ ,{id:'p20',g:4,title:'Weekend Fun',zh:'周末趣事',sents:[{en:'I visited my grandma.',tip:'visited 尾音 d 轻读。'},{en:'We ate delicious food.',tip:'delicious 重音在 de。'},{en:'It was a happy day.',tip:'happy 重音在 ha。'}]}
+ ,{id:'p21',g:5,title:'My Weekend Plan',zh:'我的周末计划',sents:[{en:'I will read a new book.',tip:'will 的 w 上齿咬下唇。'},{en:'I will ride my bike.',tip:'bike 的 i 发 /aɪ/。'},{en:'I will help my mom.',tip:'help 的 h 轻读。'}]}
+ ,{id:'p22',g:1,title:'My Friends',zh:'我的朋友',sents:[{en:'I have a good friend.',tip:'friend 的 fr 轻读。'},{en:'He is very kind.',tip:'kind 的 k 轻读。'},{en:'We play together.',tip:'together 重音在 to。'}]}
+ ,{id:'p23',g:4,title:'A Sports Day',zh:'运动日',sents:[{en:'We had a sports day.',tip:'sports 尾音 ts 轻读。'},{en:'I ran very fast.',tip:'fast 的 f 轻读。'},{en:'Our team won the race.',tip:'race 的 r 轻卷舌。'}]}
+ ,{id:'p24',g:6,title:'My Favorite Book',zh:'我最喜欢的书',sents:[{en:'I like reading stories.',tip:'stories 尾音 z 轻读。'},{en:'The book teaches me a lot.',tip:'teaches 尾音 z 轻读。'},{en:'I learn new words every day.',tip:'learn 的 l 轻读。'}]}
+ ,{id:'p25',g:1,title:'My Room',zh:'我的房间',sents:[{en:'This is my room.',tip:'room 的 oo 发 /uː/。'},{en:'The bed is small.',tip:'small 的 sm 连读。'},{en:'I clean it every day.',tip:'clean 的 cl 清晰。'}]}
+ ,{id:'p26',g:2,title:'Breakfast Time',zh:'早餐时间',sents:[{en:'It is seven o\'clock.',tip:'o\'clock 的 ck 发 /k/。'},{en:'Mum makes eggs for me.',tip:'eggs 尾音 z 轻读。'},{en:'I drink a glass of milk.',tip:'glass 的 a 发 /ɑː/。'}]}
+ ,{id:'p27',g:3,title:'My favourite season',zh:'我最喜欢的季节',sents:[{en:'Spring is my favourite season.',tip:'favourite 的 fa 轻读。'},{en:'It is warm and sunny.',tip:'sunny 尾音 y 轻读。'},{en:'We fly kites in the park.',tip:'fly 的 fl 轻读。'}]}
+ ,{id:'p28',g:4,title:'A Trip to the Zoo',zh:'动物园之旅',sents:[{en:'We went to the zoo by bus.',tip:'went 尾音 t 轻读。'},{en:'We saw pandas and tigers.',tip:'saw 的 aw 发 /ɔː/。'},{en:'The monkeys were very funny.',tip:'monkeys 重音在 mon。'}]}
+ ,{id:'p29',g:5,title:'My Best Friend',zh:'我最好的朋友',sents:[{en:'Tom is my best friend.',tip:'best 尾音 t 轻读。'},{en:'We often play basketball together.',tip:'often 的 t 可轻读。'},{en:'He always helps me.',tip:'always 重音在 al。'}]}
+ ,{id:'p30',g:5,title:'A Busy Weekend',zh:'忙碌的周末',sents:[{en:'I got up early on Saturday.',tip:'early 的 ear 发 /ɜː/。'},{en:'I washed my clothes first.',tip:'washed 尾音 t 轻读。'},{en:'Then I did my homework.',tip:'homework 重音在 home。'}]}
+ ,{id:'p31',g:6,title:'Great Inventions',zh:'伟大的发明',sents:[{en:'Paper is a great invention.',tip:'paper 重音在 pa。'},{en:'It changed the world.',tip:'changed 尾音 d 轻读。'},{en:'We use it every day.',tip:'use 的 s 发 /z/。'}]}
+ ,{id:'p32',g:6,title:'Be Honest',zh:'做个诚实的孩子',sents:[{en:'Honesty is very important.',tip:'honest 的 h 不发音。'},{en:'We should tell the truth.',tip:'truth 的 th 咬舌。'},{en:'People trust honest kids.',tip:'trust 的 tr 连读。'}]}
+];
+var MODE='sent', curParaIdx=null;
+var gradeFilter='all';
+var curId=null;
+var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+var rec=null, recognizing=false;
+
+function getStore(){ try{ return JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ return {}; } }
+function saveStore(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} }
+
+function init(){
+  var s=(window.Portal&&Portal.getSession)?Portal.getSession():null;
+  CHILD=(s&&s.child)?s.child:'user'; KEY='oral-'+CHILD; store=getStore();
+  if(!SR){ document.getElementById('srNote').style.display='block'; }
+  renderChips(); updateTabs(); renderList();
+  resumeOral();
+}
+// 断点续学：打开页面时，自动定位到上次在练的那一句/那一篇
+function resumeOral(){
+  if(!window.Resume) return;
+  var lm = Resume.get('oral', CHILD, 'last_mode');
+  if(lm==='para'){ MODE='para'; renderChips(); updateTabs(); }
+  if(MODE==='para'){
+    var pi = Resume.get('oral', CHILD, 'last_para');
+    if(pi!=null && PARAS[pi]){ curParaIdx=pi; renderList(); }
+    var ls = Resume.get('oral', CHILD, 'last_para_sent');
+    if(ls!=null && curParaIdx!=null){ var pid=PARAS[curParaIdx].id; setTimeout(function(){ var el=document.getElementById('gloss-para-'+pid+'-'+ls); if(el){ el.scrollIntoView({block:'center'}); el.style.outline='2px solid #ffb86b'; setTimeout(function(){ el.style.outline=''; },2600); } },80); }
+  } else {
+    var id = Resume.get('oral', CHILD, 'last_id');
+    if(id){ var el2=document.getElementById('gloss-'+id); if(el2){ setTimeout(function(){ el2.scrollIntoView({block:'center'}); el2.style.outline='2px solid #ffb86b'; setTimeout(function(){ el2.style.outline=''; },2600); },80); } }
+  }
+}
+function renderChips(){
+  var box=document.getElementById('chips'); box.innerHTML='';
+  var opts=[['all','全部']].concat([1,2,3,4,5,6].map(function(g){return [String(g),g+'年级'];}));
+  opts.forEach(function(o){
+    var c=document.createElement('div'); c.className='chip'+(gradeFilter===o[0]?' on':'');
+    c.textContent=o[1]; c.onclick=function(){ gradeFilter=o[0]; curParaIdx=null; renderChips(); renderList(); };
+    box.appendChild(c);
+  });
+}
+function renderList(){
+  if(MODE==='para'){
+    if(curParaIdx!==null){ renderParaDetail(); return; }
+    renderParaList(); return;
+  }
+  var box=document.getElementById('list'); box.innerHTML='';
+  SENTENCES.filter(function(s){return gradeFilter==='all'||String(s.g)===gradeFilter;})
+  .forEach(function(s){
+    var best=store[s.id]?('最佳 '+store[s.id]+'%'):'未练习';
+    var d=document.createElement('div'); d.className='card';
+    d.innerHTML='<div class="en">'+(s.dialog?'🗣️ ':'')+esc(s.en)+'</div><div class="zh">'+esc(s.zh)+'</div>'+
+      '<div class="tip">💡 '+esc(s.tip)+'</div>'+
+      '<div class="row"><button class="btn listen" style="background:#52b788" onclick="sentListen(\''+s.id+'\')">🔊 听</button>'+
+      '<button class="btn listen" onclick="openPanel(\''+s.id+'\')">去练习</button>'+
+      '<button class="btn rec" style="background:#ff7a59" onclick="toggleGloss(\'gloss-'+s.id+'\')">🔤逐字</button>'+
+      '<span class="best">'+best+'</span></div>'+
+      '<div class="pgloss" id="gloss-'+s.id+'" data-en="'+esc(s.en)+'"></div>';
+    box.appendChild(d);
+  });
+}
+function esc(t){return String(t).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+// 逐字翻译：显示该句英文的词对词中文（依赖 gloss.js 的 Gloss.buildPGlossHTML）
+function toggleGloss(id){
+  var el=document.getElementById(id); if(!el || !window.Gloss) return;
+  if(el.getAttribute('data-filled')!=='1'){
+    el.innerHTML=Gloss.buildPGlossHTML(el.getAttribute('data-en')||'');
+    el.setAttribute('data-filled','1');
+  }
+  el.classList.toggle('on');
+}
+
+function findItem(id){
+  if(id && id.indexOf('para-')===0){
+    var parts=id.split('-'); // para-<pid>-<i>
+    var p=PARAS.find(function(x){return x.id===parts[1];});
+    var i=parseInt(parts[2],10);
+    if(p&&p.sents[i]) return {en:p.sents[i].en, zh:'', tip:p.sents[i].tip||'', g:p.g};
+    return null;
+  }
+  return SENTENCES.find(function(x){return x.id===id;})||null;
+}
+
+function openPanel(id){
+  var s=findItem(id); if(!s) return;
+  curId=id;
+  // 断点续学：记住上次练的是哪句/哪篇
+  if(window.Resume){
+    Resume.set('oral', CHILD, 'last_id', id);
+    Resume.set('oral', CHILD, 'last_mode', MODE);
+    if(id && id.indexOf('para-')===0){
+      var _pp=id.split('-'); var _p=PARAS.find(function(x){return x.id===_pp[1];});
+      if(_p){ Resume.set('oral', CHILD, 'last_para', PARAS.indexOf(_p)); Resume.set('oral', CHILD, 'last_para_sent', parseInt(_pp[2],10)); }
+    }
+  }
+  document.getElementById('pG').textContent=s.g+'年级';
+  document.getElementById('pEn').textContent=s.en;
+  document.getElementById('pZh').textContent=s.zh||'';
+  document.getElementById('pTip').textContent='💡 '+(s.tip||'');
+  var pg=document.getElementById('pGloss'); if(pg){ pg.setAttribute('data-en', s.en); pg.removeAttribute('data-filled'); pg.classList.remove('on'); }
+  document.getElementById('said').innerHTML='';
+  document.getElementById('status').textContent='';
+  document.getElementById('scoreBox').style.display='none';
+  document.getElementById('selfBox').style.display = SR ? 'none' : 'block';
+  resetSelfStars();
+  document.getElementById('panel').style.display='flex';
+}
+function closePanel(){ document.getElementById('panel').style.display='none'; if(recognizing) stopRec(); renderList(); }
+
+function listen(){
+  var s=findItem(curId);
+  if(window.Speech&&Speech.speak) Speech.speak((s.en||'').replace(/[AB]:\s*/g,''), 0.9);
+}
+// 句子列表「🔊 听」：无需进面板，点一下即朗读该句
+function sentListen(id){
+  var s=findItem(id);
+  if(s&&window.Speech&&Speech.speak) Speech.speak((s.en||'').replace(/[AB]:\s*/g,''), 0.9);
+}
+function norm(t){ return (t||'').toLowerCase().replace(/[^a-z0-9\s']/g,' ').replace(/\s+/g,' ').trim(); }
+function scoreOf(target, said){
+  var t=norm(target).split(' ').filter(Boolean);
+  var s=norm(said).split(' ').filter(Boolean);
+  if(!t.length) return 0;
+  var setT={}, setS={};
+  t.forEach(function(w){ setT[w]=(setT[w]||0)+1; });
+  s.forEach(function(w){ setS[w]=(setS[w]||0)+1; });
+  var hit=0;
+  Object.keys(setT).forEach(function(w){ hit+=Math.min(setS[w]||0, setT[w]); });
+  return Math.round(hit/t.length*100);
+}
+function starsOf(p){ return p>=90?5 : p>=75?4 : p>=60?3 : p>=40?2 : 1; }
+
+function startRec(){
+  if(!SR){ document.getElementById('status').textContent='本浏览器不支持语音识别，请改用下方自评～'; return; }
+  if(recognizing){ stopRec(); return; }
+  if(!rec){
+    rec=new SR(); rec.lang='en-US'; rec.interimResults=false; rec.maxAlternatives=1;
+    rec.onresult=function(e){
+      var txt=e.results[0][0].transcript;
+      showSaid(txt);
+      var s=findItem(curId);
+      var target=(s.en||'').replace(/[AB]:\s*/g,'');
+      var pct=scoreOf(target, txt);
+      showScore(pct);
+    };
+    rec.onerror=function(e){ document.getElementById('status').textContent='识别出错：'+(e.error||'未知')+'，再试一次～'; stopRec(); };
+    rec.onend=function(){ stopRec(); };
+  }
+  try{ rec.start(); recognizing=true;
+    document.getElementById('recBtn').classList.add('on'); document.getElementById('recBtn').textContent='⏹ 停止';
+    document.getElementById('status').textContent='请跟着读出来…';
+  }catch(e){ document.getElementById('status').textContent='无法启动麦克风，请检查权限。'; }
+}
+function stopRec(){ recognizing=false; if(rec&&rec.stop) try{rec.stop();}catch(e){}
+  document.getElementById('recBtn').classList.remove('on'); document.getElementById('recBtn').textContent='🎤 开始跟读'; }
+function showSaid(txt){ document.getElementById('said').innerHTML='你说：<b>'+esc(txt)+'</b>'; }
+function showScore(pct){
+  document.getElementById('status').textContent='';
+  document.getElementById('scoreBox').style.display='block';
+  document.getElementById('pct').textContent=pct+'%';
+  var n=starsOf(pct); var str=''; for(var i=0;i<5;i++) str+= i<n?'⭐':'☆';
+  document.getElementById('stars').textContent=str;
+  var prev=store[curId]||0; if(pct>prev){ store[curId]=pct; saveStore(); }
+  if(pct>=60) setTimeout(celebrate, 350);
+  if(curId && curId.indexOf('para-')===0){ var pp=curId.split('-'); checkParaDone(pp[1]); }
+}
+function checkParaDone(pId){
+  var p=PARAS.find(function(x){return x.id===pId;}); if(!p) return;
+  var all=p.sents.every(function(_,i){ return store['para-'+pId+'-'+i]!=null; });
+  if(all) setTimeout(celebrate, 350);
+}
+function resetSelfStars(){ var els=document.querySelectorAll('.self .st'); els.forEach(function(e){e.classList.remove('on');}); }
+function selfRate(v){
+  resetSelfStars();
+  var els=document.querySelectorAll('.self .st');
+  for(var i=0;i<v;i++) els[i].classList.add('on');
+  var prev=store[curId]||0; if(v*20>prev){ store[curId]=v*20; saveStore(); }
+  if(v>=4) setTimeout(celebrate, 300);
+}
+function celebrate(){ document.getElementById('celeb').style.display='flex'; }
+function closeCeleb(){ document.getElementById('celeb').style.display='none'; }
+
+function setMode(m){ MODE=m; curParaIdx=null; renderChips(); updateTabs(); renderList(); }
+function updateTabs(){ var t=document.getElementById('tabs'); if(!t) return; t.querySelectorAll('.tab').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-m')===MODE); }); }
+function renderParaList(){
+  var box=document.getElementById('list'); box.innerHTML='';
+  var items=PARAS.filter(function(p){return gradeFilter==='all'||String(p.g)===gradeFilter;});
+  if(!items.length){ box.innerHTML='<div class="tip">该年级暂无短文，换个年级看看～</div>'; return; }
+  items.forEach(function(p){
+    var all=p.sents.every(function(_,i){return store['para-'+p.id+'-'+i]!=null;});
+    var d=document.createElement('div'); d.className='card';
+    d.innerHTML='<div class="en">📄 '+esc(p.title)+'</div><div class="zh">'+esc(p.zh)+'</div>'+
+      (all?'<div class="best">✓ 已读完</div>':'<div class="zh">'+p.sents.length+' 句 · 点开逐句跟读</div>');
+    d.onclick=function(){ curParaIdx=PARAS.indexOf(p); if(window.Resume){ Resume.set('oral', CHILD, 'last_para', curParaIdx); Resume.set('oral', CHILD, 'last_mode', 'para'); } renderList(); };
+    box.appendChild(d);
+  });
+}
+function renderParaDetail(){
+  var p=PARAS[curParaIdx]; if(!p){ curParaIdx=null; renderList(); return; }
+  var box=document.getElementById('list'); box.innerHTML='';
+  var h=document.createElement('button'); h.className='back'; h.textContent='← 返回短文列表'; h.onclick=function(){ curParaIdx=null; renderList(); };
+  box.appendChild(h);
+  var t=document.createElement('div'); t.style.cssText='font-size:18px;font-weight:800;color:#1f2a44;margin:4px 2px 2px;';
+  t.textContent='📄 '+p.title+'（'+p.g+'年级）'; box.appendChild(t);
+  var z=document.createElement('div'); z.style.cssText='font-size:13px;color:#7a89a8;margin:0 2px 12px;';
+  z.textContent='📖 '+p.zh; box.appendChild(z);
+  p.sents.forEach(function(s,i){
+    var best=store['para-'+p.id+'-'+i];
+    var row=document.createElement('div'); row.className='prow';
+    row.innerHTML='<div class="pen">'+esc(s.en)+'</div>'+
+      '<div class="pact"><button class="btn listen" onclick="paraListen(\''+p.id+'\','+i+')">🔊 听这句</button>'+
+      '<button class="btn rec" onclick="openPanel(\'para-'+p.id+'-'+i+'\')">🎤 读这句</button>'+
+      '<button class="btn rec" style="background:#ff7a59" onclick="toggleGloss(\'gloss-para-'+p.id+'-'+i+'\')">🔤逐字</button>'+
+      (best!=null?'<span class="best">最佳 '+best+'%</span>':'')+'</div>'+
+      '<div class="pgloss" id="gloss-para-'+p.id+'-'+i+'" data-en="'+esc(s.en)+'"></div>';
+    box.appendChild(row);
+  });
+}
+function paraListen(pId,i){ var p=PARAS.find(function(x){return x.id===pId;}); if(p&&window.Speech&&Speech.speak) Speech.speak(p.sents[i].en,0.9); }
+
+init();
+</script>
+<script src="sync.js"></script>
+</body>
+</html>

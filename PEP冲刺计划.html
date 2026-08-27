@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>PEP 冲刺计划 · 番茄钟</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+       background:linear-gradient(160deg,#fff4ec,#ffe9d6);color:#333;padding:14px;padding-bottom:90px}
+  .wrap{max-width:760px;margin:0 auto}
+  h1{font-size:21px;margin:6px 0 2px;color:#e8590c}
+  .sub{font-size:12px;color:#a06a4a;margin-bottom:12px}
+  .card{background:#fff;border-radius:16px;padding:14px 14px;margin-bottom:14px;box-shadow:0 4px 16px rgba(232,89,12,.08)}
+  .card h2{font-size:15px;margin:0 0 10px;color:#d9480f;display:flex;align-items:center;gap:6px}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .bookchip{padding:7px 11px;border-radius:20px;border:1.5px solid #ffd0b0;background:#fff7f0;font-size:13px;cursor:pointer;user-select:none}
+  .bookchip.on{background:#e8590c;color:#fff;border-color:#e8590c}
+  .preset{padding:6px 10px;border-radius:18px;background:#fff;border:1.5px solid #ffc7a0;font-size:12px;cursor:pointer}
+  .preset:active{background:#ffe9d6}
+  input,select{font-size:14px;padding:7px 9px;border:1.5px solid #ffd0b0;border-radius:9px;background:#fff;color:#333}
+  label{font-size:13px;color:#7a5340;margin-right:4px}
+  .btn{padding:9px 16px;border:none;border-radius:11px;background:#e8590c;color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+  .btn:active{transform:scale(.97)}
+  .btn.ghost{background:#fff;color:#e8590c;border:1.5px solid #e8590c}
+  .btn.sm{padding:6px 11px;font-size:12px;border-radius:9px}
+  .btn.green{background:#2b8a3e}
+  .stat{display:flex;gap:14px;flex-wrap:wrap;margin:4px 0 10px}
+  .stat b{font-size:22px;color:#e8590c;display:block}
+  .stat span{font-size:11px;color:#999}
+  .bar{height:11px;border-radius:6px;background:#ffe2cc;overflow:hidden;margin:6px 0}
+  .bar>i{display:block;height:100%;background:linear-gradient(90deg,#ff922b,#e8590c);width:0;transition:width .4s}
+  .bookrow{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:13px}
+  .bookrow .nm{width:96px;color:#7a5340}
+  .bookrow .bar{flex:1;margin:0}
+  .bookrow .bar>i{background:#ffa94d}
+  .bookrow .pc{width:42px;text-align:right;color:#e8590c;font-weight:600}
+  .unit{background:#fffaf5;border:1.5px solid #ffe0c7;border-radius:13px;padding:11px 12px;margin:9px 0}
+  .unit.done{opacity:.62;background:#f3fce9;border-color:#c5e8a8}
+  .uhead{display:flex;align-items:center;gap:8px;cursor:pointer}
+  .ucheck{width:22px;height:22px;border-radius:6px;border:2px solid #e8590c;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;background:#fff}
+  .unit.done .ucheck{background:#2b8a3e;border-color:#2b8a3e}
+  .ut{font-size:15px;font-weight:600;flex:1}
+  .ut small{font-weight:400;color:#bb8a6a;font-size:12px}
+  .ubtns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .preview{margin-top:9px;border-top:1px dashed #ffd9bf;padding-top:9px;font-size:13px;display:none}
+  .preview.show{display:block}
+  .wgrid{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+  .wtag{padding:4px 9px;background:#fff;border:1px solid #ffd9bf;border-radius:8px;cursor:pointer;font-size:13px}
+  .wtag:active{background:#ffe9d6}
+  .wtag i{color:#bb8a6a;font-style:normal;font-size:11px;margin-left:3px}
+  .tl{margin:5px 0;padding:6px 8px;background:#fff;border-radius:8px}
+  .tl b{color:#e8590c}
+  .tl .cn{color:#999;font-size:12px}
+  .pt{padding:6px 8px;background:#fff7f0;border-left:3px solid #ff922b;border-radius:6px;margin:5px 0;font-size:13px}
+  .pt .cn{color:#999;font-size:12px}
+  /* 番茄钟 */
+  .pomo{position:sticky;top:8px;z-index:20;background:#fff;border:2px solid #e8590c;border-radius:18px;padding:14px;box-shadow:0 8px 24px rgba(232,89,12,.18);text-align:center}
+  .pomo.relax{border-color:#2b8a3e;box-shadow:0 8px 24px rgba(43,138,62,.18)}
+  .ptitle{font-size:13px;color:#a06a4a;margin-bottom:6px}
+  .ptitle b{color:#e8590c}
+  .ringwrap{position:relative;width:200px;height:200px;margin:4px auto}
+  .ringwrap svg{transform:rotate(-90deg)}
+  #timeText{font-size:42px;font-weight:800;fill:#e8590c}
+  .pomo.relax #timeText{fill:#2b8a3e}
+  .phase{font-size:13px;color:#999;margin-top:2px}
+  .pctrl{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+  .pmeta{display:flex;justify-content:space-around;margin-top:8px;font-size:12px;color:#a06a4a}
+  .pmeta b{color:#e8590c;font-size:18px;display:block}
+  .setrow{display:flex;gap:10px;justify-content:center;margin-top:8px;font-size:12px;color:#a06a4a;align-items:center;flex-wrap:wrap}
+  .setrow input{width:54px;text-align:center;padding:5px}
+  .daynav{display:flex;justify-content:space-between;align-items:center;margin:4px 0 8px}
+  .daynav .d{font-size:13px;color:#7a5340}
+  .daynav button{background:#fff;border:1.5px solid #ffc7a0;color:#e8590c;border-radius:8px;padding:5px 12px;font-size:13px}
+  .empty{text-align:center;color:#bb8a6a;padding:18px;font-size:14px}
+  #voiceSel{position:fixed;top:8px;right:8px;z-index:30;font-size:12px;padding:4px 6px;max-width:120px}
+  .hint{font-size:11px;color:#bb8a6a;margin-top:6px;line-height:1.5}
+  a.olink{color:#e8590c;text-decoration:none;font-size:12px}
+  /* 闯关小测 */
+  .mask{position:fixed;inset:0;background:rgba(40,20,10,.45);z-index:40;display:none;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto}
+  .mask.show{display:flex}
+  .qcard{background:#fff;border-radius:18px;max-width:560px;width:100%;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+  .qcard h3{margin:0 0 6px;font-size:17px;color:#e8590c}
+  .qprog{font-size:12px;color:#a06a4a;margin-bottom:10px}
+  .qq{font-size:16px;font-weight:600;margin:10px 0 12px;line-height:1.5}
+  .qopts{display:flex;flex-direction:column;gap:9px}
+  .qopt{text-align:left;padding:12px 14px;border:1.5px solid #ffd0b0;border-radius:12px;background:#fff7f0;font-size:15px;cursor:pointer;color:#333}
+  .qopt:active{transform:scale(.98)}
+  .qopt.correct{background:#d3f9d8;border-color:#2b8a3e;color:#1b5e20}
+  .qopt.wrong{background:#ffe3e3;border-color:#e03131;color:#a31515}
+  .qopt:disabled{cursor:default}
+  .qaudio{text-align:center;justify-content:center;padding:10px 14px;border:1.5px dashed #ff9f43;border-radius:12px;background:#fff3e0;font-size:15px;cursor:pointer;color:#d9480f;font-weight:700;margin-bottom:10px}
+  .qexp{margin-top:12px;font-size:13px;color:#7a5340;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .qresult{font-size:22px;font-weight:800;text-align:center;margin:8px 0}
+  .qresult.pass{color:#2b8a3e}.qresult.fail{color:#e8590c}
+  .qscore{text-align:center;font-size:14px;color:#a06a4a;margin-bottom:12px}
+  .badge{display:inline-block;background:#fff3bf;border:1px solid #ffe066;border-radius:10px;font-size:11px;color:#b08900;padding:1px 7px;margin-left:6px}
+</style>
+</head>
+<body>
+<select id="voiceSel"></select>
+<div class="wrap">
+  <h1>🍅 PEP 冲刺计划</h1>
+  <div class="sub">人教版 PEP（三年级起点）· 三上~六下 46 单元 · 番茄钟陪你逐个攻克</div>
+
+  <!-- 番茄钟（吸顶） -->
+  <div class="pomo" id="pomoBox">
+    <div class="ptitle">正在攻克：<b id="curUnit">自由选择</b></div>
+    <div class="ringwrap">
+      <svg width="200" height="200" viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="90" fill="none" stroke="#ffe2cc" stroke-width="14"/>
+        <circle id="ring" cx="100" cy="100" r="90" fill="none" stroke="#e8590c" stroke-width="14"
+                stroke-linecap="round" stroke-dasharray="565.49" stroke-dashoffset="0"/>
+      </svg>
+      <div style="position:absolute;top:0;left:0;width:200px;height:200px;display:flex;align-items:center;justify-content:center;flex-direction:column">
+        <div id="timeText">30:00</div>
+        <div class="phase" id="phaseText">专注</div>
+      </div>
+    </div>
+    <div class="pctrl">
+      <button class="btn" id="startBtn" onclick="toggleTimer()">开始</button>
+      <button class="btn ghost" onclick="resetTimer()">重置</button>
+    </div>
+    <div class="pmeta">
+      <div>今日番茄<b id="pomoToday">0</b></div>
+      <div>本单元番茄<b id="unitPomo">0</b></div>
+      <div>已完成单元<b id="doneCnt">0</b></div>
+    </div>
+    <div class="setrow">
+      <label>专注</label><input id="focusMin" type="number" min="1" max="60" value="30">分
+      <label>休息</label><input id="breakMin" type="number" min="1" max="30" value="5">分
+      <label>每单元</label><input id="pomoPer" type="number" min="1" max="8" value="2">个
+    </div>
+  </div>
+
+  <!-- 计划总览 -->
+  <div class="card" id="overviewCard">
+    <h2>📊 冲刺总览</h2>
+    <div class="stat" id="overviewStat"></div>
+    <div class="bar"><i id="overallBar"></i></div>
+    <div id="bookBars"></div>
+    <div class="hint" id="planHint"></div>
+  </div>
+
+  <!-- 今日任务 -->
+  <div class="card">
+    <h2>🎯 今日任务</h2>
+    <div class="daynav">
+      <button onclick="shiftDay(-1)">← 前一天</button>
+      <div class="d" id="dayLabel"></div>
+      <button onclick="shiftDay(1)">后一天 →</button>
+    </div>
+    <div id="todayList"></div>
+  </div>
+
+  <!-- 制定计划 -->
+  <div class="card">
+    <h2>🛠 制定冲刺计划</h2>
+    <div style="font-size:13px;color:#7a5340;margin-bottom:6px">选择要冲刺的教材（默认全部 8 册）：</div>
+    <div class="row" id="bookSel"></div>
+    <div class="row" style="margin:8px 0">
+      <span class="preset" onclick="presetScope('all')">全部 8 册</span>
+      <span class="preset" onclick="presetScope('g3')">仅三年级</span>
+      <span class="preset" onclick="presetScope('g4')">仅四年级</span>
+      <span class="preset" onclick="presetScope('g5')">仅五年级</span>
+      <span class="preset" onclick="presetScope('g6')">仅六年级</span>
+    </div>
+    <div class="row" style="margin:8px 0">
+      <label>每天单元数</label>
+      <input id="pace" type="number" min="1" max="6" value="2">
+      <label>开始日期</label>
+      <input id="startDate" type="date">
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn" onclick="genPlan()">生成冲刺计划</button>
+      <button class="btn ghost" onclick="clearPlan()">清除计划</button>
+    </div>
+    <div class="hint">提示：每个单元按「每单元番茄数」完成番茄钟后自动标记掌握；也可手动勾选。计划与进度按登录账户（哥哥/弟弟）分别保存。</div>
+  </div>
+
+  <div class="card">
+    <h2>🔗 完整同步课堂</h2>
+    <div class="hint">想看某个单元的全部单词/课文/句型详解，打开 <a class="olink" href="PEP同步课堂.html" target="_blank">PEP 同步课堂 →</a></div>
+  </div>
+</div>
+
+<!-- 闯关小测弹窗 -->
+<div class="mask" id="quizBox" onclick="if(event.target===this)closeQuiz()">
+  <div class="qcard">
+    <h3 id="quizTitle">📝 单元闯关小测</h3>
+    <div class="qprog" id="quizProg"></div>
+    <div id="quizBody"></div>
+  </div>
+</div>
+
+<script src="accounts.js"></script>
+<script src="portal-common.js"></script>
+<script src="speech.js"></script>
+<script src="pep-data.js"></script>
+<script>
+var APP = 'pep-sprint';
+var ME = null;
+var plan = null;        // {scope,pace,startDate,days:[{date,units:[{g,term,u,title,key}]}],total}
+var prog = null;        // {done:{}, pomo:{}}
+var viewOffset = 0;     // 今日任务翻看偏移（天）
+
+/* ---------- 工具 ---------- */
+function fmt(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayStr(){ return fmt(new Date()); }
+function say(t){ try{ if(window.Speech && Speech.speak) Speech.speak(t,0.9); }catch(e){} }
+function beep(freq,dur){
+  try{
+    var Ctx=window.AudioContext||window.webkitAudioContext; if(!Ctx) return;
+    var ctx=new Ctx(); var o=ctx.createOscillator(); var g=ctx.createGain();
+    o.frequency.value=freq; o.type='sine'; o.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.25,ctx.currentTime); o.start(); o.stop(ctx.currentTime+(dur||0.18));
+  }catch(e){}
+}
+function fanfare(){ beep(660,0.15); setTimeout(function(){beep(880,0.15);},160); setTimeout(function(){beep(1175,0.22);},330); }
+
+/* ---------- 数据取用 ---------- */
+function unitWords(g,t,u){ return (window.PEP_WORDS||[]).filter(function(x){return x.g===g&&x.term===t&&x.u===u;}); }
+function unitTexts(g,t,u){ return (window.PEP_TEXTS||[]).filter(function(x){return x.g===g&&x.term===t&&x.u===u;}); }
+function unitPats(g,t,u){ return (window.PEP_PATTERNS||[]).filter(function(x){return x.g===g&&x.term===t&&x.u===u;}); }
+function bookLabel(g,t){ var b=(window.PEP_META||[]).find(function(x){return x.g===g&&x.term===t;}); return b?b.label:(g+'年级'+t); }
+
+/* ---------- 计划生成 ---------- */
+function presetScope(which){
+  var all=(window.PEP_META||[]).map(function(b){return b.g+'-'+b.term;});
+  var sel=all;
+  if(which!=='all'){ var g=parseInt(which.replace('g',''),10); sel=all.filter(function(k){return k.split('-')[0]==String(g);}); }
+  planScopeSel=sel; renderBookSel();
+}
+var planScopeSel=null;
+function renderBookSel(){
+  var box=document.getElementById('bookSel'); box.innerHTML='';
+  (window.PEP_META||[]).forEach(function(b){
+    var key=b.g+'-'+b.term;
+    var on = planScopeSel? planScopeSel.indexOf(key)>=0 : true;
+    var el=document.createElement('div'); el.className='bookchip'+(on?' on':''); el.textContent=b.label;
+    el.onclick=function(){ if(!planScopeSel) planScopeSel=(window.PEP_META||[]).map(function(x){return x.g+'-'+x.term;});
+      var i=planScopeSel.indexOf(key); if(i>=0) planScopeSel.splice(i,1); else planScopeSel.push(key); renderBookSel(); };
+    box.appendChild(el);
+  });
+}
+function genPlan(){
+  if(!planScopeSel) planScopeSel=(window.PEP_META||[]).map(function(x){return x.g+'-'+x.term;});
+  Accounts.set(APP,ME,'dismissed',false);   // 用户主动生成计划 → 取消「不再自动生成」标记
+  var scope=planScopeSel.slice();
+  var pace=Math.max(1,parseInt(document.getElementById('pace').value,10)||2);
+  var sd=document.getElementById('startDate').value || todayStr();
+  var books=(window.PEP_META||[]).filter(function(b){return scope.indexOf(b.g+'-'+b.term)>=0;})
+            .sort(function(a,b){ return (a.g-b.g)||(a.term==='上'?-1:1); });
+  var units=[];
+  books.forEach(function(b){ b.units.forEach(function(u){ units.push({g:b.g,term:b.term,u:u.n,title:u.title,key:b.g+'-'+b.term+'-'+u.n}); }); });
+  var start=new Date(sd+'T00:00:00');
+  var days=[]; var i=0;
+  while(i<units.length){
+    var chunk=units.slice(i,i+pace); i+=pace;
+    var d=new Date(start); d.setDate(start.getDate()+days.length);
+    days.push({date:fmt(d),units:chunk});
+  }
+  plan={scope:scope,pace:pace,startDate:sd,days:days,total:units.length};
+  prog=prog||{done:{},pomo:{},quiz:{}};
+  Accounts.set(APP,ME,'plan',plan);
+  renderAll();
+}
+function clearPlan(){ plan=null; Accounts.set(APP,ME,'plan',null); Accounts.set(APP,ME,'dismissed',true); renderAll(); }
+
+/* ---------- 进度 ---------- */
+function isDone(key){ return !!(prog&&prog.done&&prog.done[key]); }
+function markDone(key,done){
+  prog=prog||{done:{},pomo:{},quiz:{}}; prog.done=prog.done||{};
+  if(done) prog.done[key]=1; else delete prog.done[key];
+  Accounts.set(APP,ME,'progress',prog); renderAll();
+}
+function pomoTodayCnt(){ var t=todayStr(); return (prog&&prog.pomo&&prog.pomo[t])||0; }
+
+/* ---------- 渲染总览 ---------- */
+function renderOverview(){
+  var stat=document.getElementById('overviewStat');
+  var doneN=plan? plan.days.reduce(function(s,d){return s+d.units.filter(function(u){return isDone(u.key);}).length;},0):0;
+  var total=plan?plan.total:0;
+  if(!plan){ stat.innerHTML='<span><b>—</b><span>未制定计划</span></span><span><b>46</b><span>PEP 总单元</span></span>';
+    document.getElementById('overallBar').style.width='0%';
+    document.getElementById('bookBars').innerHTML='';
+    document.getElementById('planHint').textContent='先在下方选择教材范围并生成计划。'; return; }
+  var daysN=plan.days.length;
+  var endDate=plan.days[daysN-1].date;
+  stat.innerHTML='<span><b>'+doneN+'/'+total+'</b><span>已完成单元</span></span>'+
+                 '<span><b>'+daysN+'</b><span>计划天数</span></span>'+
+                 '<span><b>'+plan.pace+'</b><span>每天单元</span></span>'+
+                 '<span><b>'+plan.startDate+'</b><span>起 ~ '+endDate+'</span></span>';
+  document.getElementById('overallBar').style.width=(total?Math.round(doneN/total*100):0)+'%';
+  // 每册进度
+  var bb=document.getElementById('bookBars'); bb.innerHTML='';
+  (window.PEP_META||[]).forEach(function(b){
+    var key=b.g+'-'+b.term; if(plan.scope.indexOf(key)<0) return;
+    var us=b.units.map(function(u){return b.g+'-'+b.term+'-'+u.n;});
+    var dn=us.filter(isDone).length;
+    var row=document.createElement('div'); row.className='bookrow';
+    row.innerHTML='<div class="nm">'+b.label+'</div><div class="bar"><i style="width:'+(us.length?Math.round(dn/us.length*100):0)+'%"></i></div><div class="pc">'+dn+'/'+us.length+'</div>';
+    bb.appendChild(row);
+  });
+  document.getElementById('planHint').textContent='建议每天按节奏推进；完成当天番茄钟后单元会自动标记，也可手动勾选。';
+  document.getElementById('doneCnt').textContent=doneN;
+}
+
+/* ---------- 渲染今日 ---------- */
+function findDay(){
+  if(!plan||!plan.days.length) return null;
+  // 以偏移定位
+  var idx=viewOffset;
+  if(idx<0) idx=0; if(idx>=plan.days.length) idx=plan.days.length-1;
+  return plan.days[idx];
+}
+function renderToday(){
+  var lab=document.getElementById('dayLabel');
+  var box=document.getElementById('todayList');
+  if(!plan||!plan.days.length){ lab.textContent=''; box.innerHTML='<div class="empty">还没有计划，先在下方生成 🛠</div>'; return; }
+  var idx=viewOffset; if(idx<0)idx=0; if(idx>=plan.days.length)idx=plan.days.length-1;
+  var day=plan.days[idx];
+  lab.textContent='第 '+(idx+1)+' / '+plan.days.length+' 天 · '+day.date+(day.date===todayStr()?'（今天）':'');
+  if(idx===0 && day.date>todayStr()){ box.innerHTML='<div class="empty">计划从 '+plan.startDate+' 才开始，还没到哦～</div>'; return; }
+  if(idx===plan.days.length-1 && day.date<todayStr()){ box.innerHTML='<div class="empty">🎉 全部单元已排期完毕，去回顾没掌握的吧！</div>'; return; }
+  box.innerHTML='';
+  day.units.forEach(function(u){ box.appendChild(renderUnit(u)); });
+}
+function renderUnit(u){
+  var el=document.createElement('div'); el.className='unit'+(isDone(u.key)?' done':'');
+  var rec=quizRec(u.key);
+  var badge = rec&&rec.pass ? ' <span class="badge">🏅闯关'+rec.best+'/'+rec.total+'</span>' : '';
+  el.innerHTML='<div class="uhead" onclick="togglePreview(\''+u.key+'\')">'+
+    '<div class="ucheck" id="chk-'+u.key+'">'+(isDone(u.key)?'✓':'')+'</div>'+
+    '<div class="ut">'+bookLabel(u.g,u.term)+' · Unit '+u.u+badge+'<br><small>'+u.title+'</small></div></div>'+
+    '<div class="ubtns">'+
+      '<button class="btn sm" onclick="event.stopPropagation();startUnit(\''+u.key+'\')">🍅 开始番茄</button>'+
+      '<button class="btn sm ghost" onclick="event.stopPropagation();readUnit(\''+u.g+'\',\''+u.term+'\',\''+u.u+'\')">🔊 朗读单元</button>'+
+      '<button class="btn sm" style="background:#7048e8;color:#fff" onclick="event.stopPropagation();openQuiz(\''+u.key+'\')">📝 闯关</button>'+
+      '<button class="btn sm green" onclick="event.stopPropagation();markDone(\''+u.key+'\','+(isDone(u.key)?'false':'true')+')">'+(isDone(u.key)?'↺ 取消掌握':'✓ 标记掌握')+'</button>'+
+    '</div>'+
+    '<div class="preview" id="pv-'+u.key+'"></div>';
+  return el;
+}
+function togglePreview(key){
+  var pv=document.getElementById('pv-'+key); if(!pv) return;
+  if(pv.classList.contains('show')){ pv.classList.remove('show'); return; }
+  var parts=key.split('-'); var g=+parts[0],t=parts[1],u=+parts[2];
+  var ws=unitWords(g,t,u), ts=unitTexts(g,t,u), ps=unitPats(g,t,u);
+  var h='<div style="font-size:12px;color:#bb8a6a;margin-bottom:4px">单词 '+ws.length+' 个 · 课文 '+ts.length+' 篇 · 句型 '+ps.length+' 条</div>';
+  if(ws.length){ h+='<div class="wgrid">'; ws.slice(0,12).forEach(function(w){ h+='<span class="wtag" onclick="say(\''+w.w+'\')">'+w.w+'<i>'+w.ipa+'</i></span>'; }); h+='</div>'; }
+  ts.forEach(function(tx){ h+='<div class="tl"><b>'+tx.title+'</b><div class="cn">'+(tx.lines||[]).map(function(l){return l.role+': '+l.en;}).join(' ｜ ')+'</div></div>'; });
+  ps.forEach(function(p){ h+='<div class="pt"><b>'+p.focus+'</b>：'+p.pattern+'<div class="cn">'+(p.examples||[]).slice(0,2).join('； ')+'</div></div>'; });
+  pv.innerHTML=h; pv.classList.add('show');
+}
+function readUnit(g,t,u){
+  var ws=unitWords(g,t,u); var txt=ws.map(function(w){return w.w;}).join('. ');
+  if(txt) say(txt);
+}
+function startUnit(key){ curUnitKey=key; var parts=key.split('-'); curUnitTitle=bookLabel(+parts[0],parts[1])+' Unit '+parts[2]; document.getElementById('curUnit').textContent=curUnitTitle; unitPomoCount=0; document.getElementById('unitPomo').textContent='0'; resetTimer(); }
+
+/* ---------- 单元闯关小测 ---------- */
+function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;} return a; }
+function quizRec(key){ return prog&&prog.quiz?prog.quiz[key]:null; }
+function pickDistractors(pool,field,correct,n){
+  var c=shuffle(pool.filter(function(x){return x[field]!==correct;})).slice(0,n).map(function(x){return x[field];});
+  while(c.length<n) c.push('—');
+  return c;
+}
+var quiz=null;
+var QUIZ_WORD_N=8;     // 每单元闯关小测的单词题数量
+var PASS_LINE=0.8;     // 闯关过关线：正确率 ≥ 80% 视为通过
+function buildQuiz(key){
+  var parts=key.split('-'); var g=+parts[0],t=parts[1],u=+parts[2];
+  var ws=shuffle(unitWords(g,t,u));
+  var ps=unitPats(g,t,u);
+  var allW=window.PEP_WORDS||[];
+  var items=[];
+  ws.slice(0,QUIZ_WORD_N).forEach(function(w,idx){
+    var type=idx%3;
+    if(type===0){
+      var oa=shuffle([w.cn].concat(pickDistractors(allW,'cn',w.cn,3)));
+      items.push({q:'选出「'+w.w+'」的中文意思',choices:oa,correct:oa.indexOf(w.cn),explain:w.w+' /'+w.ipa+'/ = '+w.cn});
+    } else if(type===1){
+      var ob=shuffle([w.w].concat(pickDistractors(allW,'w',w.w,3)));
+      items.push({q:'「'+w.cn+'」对应的英文单词是',choices:ob,correct:ob.indexOf(w.w),explain:w.w+' /'+w.ipa+'/ = '+w.cn});
+    } else {
+      var oc=shuffle([w.cn].concat(pickDistractors(allW,'cn',w.cn,3)));
+      items.push({q:'🔊 听音，选出正确的中文意思',audio:w.w,choices:oc,correct:oc.indexOf(w.cn),explain:w.w+' /'+w.ipa+'/ = '+w.cn});
+    }
+  });
+  ps.slice(0,3).forEach(function(p){
+    var ex=p.examples&&p.examples[0]; if(!ex) return;
+    var pool=(window.PEP_PATTERNS||[]).filter(function(x){return x!==p&&x.examples&&x.examples[0];});
+    var distract=shuffle(pool).slice(0,3).map(function(x){return x.examples[0];});
+    var op=shuffle([ex].concat(distract));
+    items.push({q:'「'+p.focus+'」句型的例句是？',choices:op,correct:op.indexOf(ex),explain:'句型：'+p.pattern});
+  });
+  items=shuffle(items);
+  quiz={key:key,g:g,t:t,u:u,items:items,idx:0,score:0,title:bookLabel(g,t)+' Unit '+u};
+}
+function openQuiz(key){
+  if(!prog||!prog.quiz) prog=prog||{done:{},pomo:{},quiz:{}};
+  buildQuiz(key);
+  if(!quiz.items.length){ alert('该单元暂无题目（单词/句型数据缺失）。'); return; }
+  document.getElementById('quizBox').classList.add('show');
+  renderQuiz();
+}
+function closeQuiz(){ quiz=null; var m=document.getElementById('quizBox'); m.classList.remove('show'); document.getElementById('quizBody').innerHTML=''; }
+function renderQuiz(){
+  if(!quiz) return;
+  var total=quiz.items.length;
+  document.getElementById('quizTitle').textContent='📝 '+quiz.title+' 闯关小测';
+  document.getElementById('quizProg').textContent='第 '+(quiz.idx+1)+' / '+total+' 题 · 当前得分 '+quiz.score;
+  var it=quiz.items[quiz.idx];
+  var audioBtn = it.audio ? '<button class="qopt qaudio" onclick="say(\''+String(it.audio).replace(/'/g,'\\\'')+'\')">🔊 再听一次</button>' : '';
+  var h='<div class="qq">'+it.q+'</div>'+audioBtn+'<div class="qopts">';
+  it.choices.forEach(function(c,i){ h+='<button class="qopt" onclick="answerQuiz('+i+')">'+c+'</button>'; });
+  h+='</div><div class="qexp" id="qexp"></div>';
+  document.getElementById('quizBody').innerHTML=h;
+  if(it.audio){ try{ setTimeout(function(){ say(it.audio); }, 250); }catch(e){} }
+}
+function answerQuiz(i){
+  var it=quiz.items[quiz.idx]; if(it._answered) return; it._answered=true;
+  var btns=document.querySelectorAll('#quizBody .qopt');
+  btns.forEach(function(b,bi){ b.disabled=true; if(bi===it.correct) b.classList.add('correct'); else if(bi===i) b.classList.add('wrong'); });
+  var ok=(i===it.correct); if(ok) quiz.score++;
+  var exp=document.getElementById('qexp');
+  var isLast=quiz.idx>=quiz.items.length-1;
+  exp.innerHTML=(ok?'✅ 答对！ ':'❌ 答错。 ')+it.explain+
+    ' <button class="btn sm" onclick="nextQuiz()">'+(isLast?'查看结果':'下一题 →')+'</button>';
+}
+function nextQuiz(){
+  quiz.idx++;
+  if(quiz.idx>=quiz.items.length) finishQuiz();
+  else renderQuiz();
+}
+function finishQuiz(){
+  var total=quiz.items.length, score=quiz.score, pass=total?score/total>=PASS_LINE:false;
+  prog=prog||{done:{},pomo:{},quiz:{}}; prog.quiz=prog.quiz||{};
+  var rec=prog.quiz[quiz.key]||{best:0,total:total,pass:false};
+  if(score>rec.best) rec.best=score;
+  rec.total=total; rec.pass=rec.best/total>=PASS_LINE;
+  prog.quiz[quiz.key]=rec;
+  Accounts.set(APP,ME,'progress',prog);
+  var h='<div class="qresult '+(pass?'pass':'fail')+'">'+(pass?'🎉 闯关成功！':'💪 再练练～')+'</div>'+
+    '<div class="qscore">得分 '+score+' / '+total+'（'+(pass?'达标 ≥'+Math.round(PASS_LINE*100)+'%':'未达 '+Math.round(PASS_LINE*100)+'%，加油')+'）最佳 '+rec.best+'/'+total+'</div>';
+  if(pass&&!isDone(quiz.key)) h+='<button class="btn green" onclick="markDone(\''+quiz.key+'\',true);closeQuiz()">✓ 标记本单元掌握</button> ';
+  h+='<button class="btn ghost" onclick="openQuiz(\''+quiz.key+'\')">🔄 再做一次</button> ';
+  h+='<button class="btn" onclick="closeQuiz()">关闭</button>';
+  document.getElementById('quizBody').innerHTML=h;
+  document.getElementById('quizProg').textContent='完成';
+  renderAll();
+}
+
+/* ---------- 番茄钟 ---------- */
+var CIRC=565.49;
+var phase='focus', running=false, timer=null, remain=30*60;
+var focusMin=30, breakMin=5, pomoPer=2;
+var curUnitKey=null, curUnitTitle='自由选择', unitPomoCount=0;
+function loadSettings(){ focusMin=+document.getElementById('focusMin').value||25; breakMin=+document.getElementById('breakMin').value||5; pomoPer=+document.getElementById('pomoPer').value||2; }
+function setRemain(sec){ remain=sec; var total=(phase==='focus'?focusMin:breakMin)*60; var off=CIRC*(1-remain/total);
+  document.getElementById('ring').setAttribute('stroke-dashoffset',off);
+  var m=Math.floor(remain/60), s=remain%60; document.getElementById('timeText').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }
+function setPhase(p){ phase=p; var box=document.getElementById('pomoBox'); if(p==='break'){ box.classList.add('relax'); document.getElementById('phaseText').textContent='休息'; document.getElementById('ring').setAttribute('stroke','#2b8a3e'); }
+  else { box.classList.remove('relax'); document.getElementById('phaseText').textContent='专注'; document.getElementById('ring').setAttribute('stroke','#e8590c'); } }
+function toggleTimer(){ loadSettings(); if(running){ pauseTimer(); return; } running=true; document.getElementById('startBtn').textContent='暂停';
+  timer=setInterval(function(){ remain--; if(remain<=0){ phaseDone(); } else setRemain(remain); },1000); }
+function pauseTimer(){ running=false; clearInterval(timer); document.getElementById('startBtn').textContent='继续'; }
+function resetTimer(){ running=false; clearInterval(timer); loadSettings(); setPhase('focus'); setRemain(focusMin*60); document.getElementById('startBtn').textContent='开始'; }
+function phaseDone(){
+  clearInterval(timer); running=false;
+  if(phase==='focus'){
+    fanfare();
+    // 记录今日番茄
+    prog=prog||{done:{},pomo:{},quiz:{}}; prog.pomo=prog.pomo||{}; var t=todayStr(); prog.pomo[t]=(prog.pomo[t]||0)+1;
+    document.getElementById('pomoToday').textContent=prog.pomo[t];
+    Accounts.set(APP,ME,'progress',prog);
+    unitPomoCount++; document.getElementById('unitPomo').textContent=unitPomoCount;
+    if(curUnitKey && unitPomoCount>=pomoPer && !isDone(curUnitKey)){ markDone(curUnitKey,true); }
+    // 进入休息
+    setPhase('break'); setRemain(breakMin*60); document.getElementById('startBtn').textContent='开始休息';
+  } else {
+    beep(880,0.2);
+    setPhase('focus'); setRemain(focusMin*60); document.getElementById('startBtn').textContent='开始';
+  }
+}
+
+/* ---------- 翻看日 ---------- */
+function shiftDay(d){ if(!plan) return; viewOffset+=d; if(viewOffset<0)viewOffset=0; if(viewOffset>=plan.days.length)viewOffset=plan.days.length-1; renderToday(); }
+
+/* ---------- 总渲染 ---------- */
+function renderAll(){ renderOverview(); renderToday(); document.getElementById('pomoToday').textContent=pomoTodayCnt(); }
+
+/* ---------- 登录门禁 ---------- */
+function bootstrap(){
+  plan=Accounts.get(APP,ME,'plan',null);
+  prog=Accounts.get(APP,ME,'progress',{done:{},pomo:{},quiz:{}});
+  if(!planScopeSel) planScopeSel=(window.PEP_META||[]).map(function(x){return x.g+'-'+x.term;});
+  document.getElementById('startDate').value=todayStr();
+  renderBookSel(); resetTimer();
+  /* 首次进入无计划：自动生成默认冲刺计划（全部 8 册 · 每天 2 单元 · 今天开始），开箱即用 */
+  if(!plan){
+    var dismissed=Accounts.get(APP,ME,'dismissed',false);
+    if(!dismissed){
+      planScopeSel=(window.PEP_META||[]).map(function(x){return x.g+'-'+x.term;});
+      document.getElementById('pace').value=2;
+      document.getElementById('startDate').value=todayStr();
+      genPlan();
+    }
+  }
+  renderAll();
+  if(typeof Accounts.mountSwitch==='function') Accounts.mountSwitch(APP);
+}
+Accounts.gate(APP,{ onLogin:function(user){ ME=user.id; bootstrap(); } });
+</script>
+</body>
+</html>

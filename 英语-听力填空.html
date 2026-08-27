@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<script src="gloss.js"></script>
+<script src="resume.js"></script>
+<script src="speech.js"></script>
+<script>
+/* 发音统一走 speech.js（优选 Google/Natural/Apple 最标准英文音色，
+ * iOS 稳定性补丁 + 英文嗓音强制指派均已内置于 speech.js，无需本页重复内联） */
+</script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎧 英语听力填空</title>
+<style>
+  :root{
+    --blue:#4895ef; --cyan:#4cc9f0; --pink:#f72585; --orange:#ff9f1c;
+    --green:#06d6a0; --purple:#b292ff; --ink:#243049;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(135deg,#eef5ff,#e9fbf6);color:var(--ink);
+    padding:18px;max-width:560px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  .back{position:fixed;left:14px;top:14px;z-index:30;border:none;background:rgba(255,255,255,.85);
+    border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink)}
+  header{background:linear-gradient(120deg,var(--blue),var(--cyan));color:#fff;
+    border-radius:24px;padding:20px;text-align:center;box-shadow:0 8px 22px rgba(72,149,239,.35)}
+  header h1{font-size:22px}
+  .date{font-size:14px;opacity:.95;margin-top:4px}
+  .stats{display:flex;gap:10px;margin:14px 0}
+  .stat{flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center;
+    box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .stat .num{font-size:24px;font-weight:800;color:var(--blue)}
+  .stat .lbl{font-size:12px;color:#999;margin-top:2px}
+  h2{font-size:17px;margin:18px 4px 10px;display:flex;align-items:center;gap:8px}
+
+  .card{background:#fff;border-radius:22px;box-shadow:0 6px 16px rgba(0,0,0,.07);padding:20px}
+  .qhead{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:#888;margin-bottom:8px}
+  .qhead .badge{background:var(--blue);color:#fff;border-radius:999px;padding:3px 10px;font-weight:700;font-size:12px}
+  .sentence{font-size:21px;font-weight:800;line-height:1.7;text-align:center;margin:10px 0 4px;
+    color:var(--ink);min-height:64px}
+  .sentence .blank{display:inline-block;min-width:70px;border-bottom:3px dotted var(--cyan);
+    color:var(--blue);margin:0 4px}
+  .cn{font-size:14px;color:#888;text-align:center;margin-bottom:10px}
+  .audio-row{display:flex;justify-content:center;gap:10px;margin:8px 0 16px}
+  .audio-row button{border:none;border-radius:14px;padding:11px 18px;font-size:15px;font-weight:700;
+    cursor:pointer;font-family:inherit;color:#fff;background:var(--cyan)}
+  .audio-row .again{background:#dfe7f5;color:var(--blue)}
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .opt{border:2px solid #eef2f9;border-radius:16px;padding:14px;font-size:17px;font-weight:800;
+    text-align:center;cursor:pointer;font-family:inherit;background:#fff;transition:.15s}
+  .opt:active{transform:scale(.97)}
+  .opt.right{background:#e7fbf0;border-color:var(--green);color:#0a8a5f}
+  .opt.wrong{background:#fff0f3;border-color:var(--pink);color:#c8154f}
+  .opt:disabled{cursor:default}
+  .explain{margin-top:14px;font-size:14px;line-height:1.6;color:#555;background:#f3f8ff;
+    border-radius:12px;padding:10px 12px;display:none}
+  .explain.show{display:block}
+  .explain b{color:var(--blue)}
+
+  .progress{height:14px;background:#e3ecfb;border-radius:10px;overflow:hidden;margin:16px 0 4px}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--cyan));
+    border-radius:10px;transition:width .4s}
+  .prog-txt{font-size:13px;color:#888;text-align:center}
+
+  .result{background:#fff;border-radius:22px;box-shadow:0 6px 16px rgba(0,0,0,.07);padding:24px;text-align:center;display:none}
+  .result.show{display:block}
+  .result .stars{font-size:34px;letter-spacing:4px;margin:6px 0}
+  .result h3{font-size:22px;margin-bottom:6px}
+  .result p{color:#777;font-size:14px;line-height:1.6}
+  .result .score{font-size:30px;font-weight:800;color:var(--blue);margin:8px 0}
+  .result .again{margin-top:16px;border:none;background:var(--blue);color:#fff;
+    padding:12px 28px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+
+  .tip{font-size:12px;color:#aaa;text-align:center;margin-top:16px;line-height:1.6}
+  .confetti{position:fixed;top:-40px;font-size:24px;pointer-events:none;z-index:99;
+    animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:.2}}
+  .celebrate{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;
+    align-items:center;justify-content:center;z-index:100}
+  .celebrate .box2{background:#fff;border-radius:24px;padding:28px 34px;text-align:center;animation:pop .4s;max-width:320px}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate h3{font-size:24px;margin-bottom:8px}
+  .celebrate p{color:#888;font-size:14px;line-height:1.6}
+  .celebrate button{margin-top:16px;border:none;background:var(--blue);color:#fff;
+    padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+
+  .grades{display:flex;gap:7px;overflow-x:auto;margin:12px 2px 2px;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+  .grades button{border:2px solid #e3ecfb;background:#fff;color:#666;border-radius:999px;
+    padding:8px 15px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;white-space:nowrap;transition:.15s}
+  .grades button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+</style>
+</head>
+<body>
+
+
+
+<header>
+  <h1>🎧 英语听力填空</h1>
+  <div class="date" id="dateStr">今天</div>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="num" id="idxNum">1</div><div class="lbl">📝 当前题号</div></div>
+  <div class="stat"><div class="num" id="okNum">0</div><div class="lbl">✅ 答对</div></div>
+  <div class="stat"><div class="num" id="pctNum">0%</div><div class="lbl">📈 正确率</div></div>
+</div>
+
+<div class="grades" id="grades"></div>
+
+<div class="card" id="quizBox">
+  <div class="qhead"><span class="badge" id="qBadge">第 1 题</span><span id="qCat">听力</span></div>
+  <div class="sentence" id="sentence"></div>
+  <div class="cn" id="cnTip"></div>
+  <div style="display:flex;justify-content:center;margin:4px 0 12px"><button onclick="toggleGloss('lfGloss')" style="border:none;border-radius:14px;padding:9px 16px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:#fff;background:#ff7a59">🔤 逐字翻译</button></div>
+  <div class="pgloss" id="lfGloss" style="margin:0 0 6px"></div>
+  <div class="audio-row">
+    <button onclick="play()">🔊 播放句子</button>
+    <button class="again" onclick="play()">🔁 再听一次</button>
+    <button class="again" onclick="playSlow()">🐢 慢速听</button>
+  </div>
+  <div class="opts" id="opts"></div>
+  <div id="hwSlot"></div>
+  <div style="display:flex;justify-content:center;margin:8px 0"><button onclick="submitCloze()" style="border:none;border-radius:14px;padding:10px 18px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;color:#fff;background:#3a7bd5">➡️ 下一题（对照答案）</button></div>
+  <div class="explain" id="explain"></div>
+</div>
+
+<div class="progress"><i id="progBar"></i></div>
+<div class="prog-txt" id="progTxt">完成 0 / 0 题</div>
+
+<div class="result" id="result">
+  <h3 id="rTitle">闯关结束</h3>
+  <div class="stars" id="rStars">⭐⭐⭐</div>
+  <div class="score" id="rScore">0 / 0</div>
+  <p id="rMsg"></p>
+  <button class="again" onclick="startQuiz()">🔄 再来一轮</button>
+</div>
+
+<div class="tip">先听完整句子（空里的单词会读出来），再从选项里选出或用手写写出<b>你听到的那个单词</b>。听不清点「🐢 慢速听」。做对 80% 算通关🌟<br>数据按小朋友分别保存，不会上传。</div>
+
+<div class="celebrate" id="celeb">
+  <div class="box2">
+    <h3>🎉 小耳朵真灵！</h3>
+    <p>全部题目都认真听完啦，听力越来越棒！</p>
+    <button onclick="closeCeleb()">继续练习 💪</button>
+  </div>
+</div>
+
+<script>
+var ALLQ=[
+  {s:'I ___ an apple.',ans:'eat',cn:'我____一个苹果。',opt:['eat','drink','see','make'],cat:'食物',g:1},
+  {s:'A dog can ___ .',ans:'run',cn:'狗会____。',opt:['run','fly','swim','read'],cat:'动作',g:1},
+  {s:'The cat is ___ the table.',ans:'on',cn:'猫____桌子____。',opt:['on','in','under','with'],cat:'方位',g:2},
+  {s:'The bird is ___ the tree.',ans:'in',cn:'鸟____树____。',opt:['in','on','under','over'],cat:'方位',g:2},
+  {s:'We go to ___ every day.',ans:'school',cn:'我们每天去____。',opt:['school','park','home','zoo'],cat:'日常',g:3},
+  {s:'I can ___ a book.',ans:'read',cn:'我能____书。',opt:['read','run','sing','sleep'],cat:'动作',g:3},
+  {s:'She has a red ___ .',ans:'ball',cn:'她有一个红色的____。',opt:['ball','book','bag','bed'],cat:'物品',g:4},
+  {s:'My mother is a ___ .',ans:'doctor',cn:'我妈妈是一位____。',opt:['doctor','student','driver','cook'],cat:'职业',g:4},
+  {s:'The sky is ___ .',ans:'blue',cn:'天空是____的。',opt:['blue','green','red','big'],cat:'颜色',g:5},
+  {s:'I like the yellow ___ .',ans:'flower',cn:'我喜欢黄色的____。',opt:['flower','water','cloud','star'],cat:'自然',g:5},
+  {s:'He is my ___ .',ans:'friend',cn:'他是我的____。',opt:['friend','teacher','father','brother'],cat:'人际',g:6},
+  {s:'We ___ in the morning.',ans:'eat',cn:'我们早上____。',opt:['eat','play','sit','cry'],cat:'日常',g:6}
+  ,{s:'I see a ___ .',ans:'cat',cn:'我看见一只____。',opt:['cat','dog','sun','book'],cat:'动物',g:1}
+  ,{s:'The ___ is red.',ans:'apple',cn:'____是红色的。',opt:['apple','car','bag','cup'],cat:'食物',g:1}
+  ,{s:'He is a ___ .',ans:'boy',cn:'他是一个____。',opt:['boy','girl','tree','fish'],cat:'人物',g:1}
+  ,{s:'We ___ to school.',ans:'go',cn:'我们____去学校。',opt:['go','eat','sleep','read'],cat:'动作',g:2}
+  ,{s:'This is my ___ .',ans:'book',cn:'这是我的____。',opt:['book','desk','pen','bag'],cat:'物品',g:2}
+  ,{s:'She can ___ .',ans:'sing',cn:'她会____。',opt:['sing','run','sit','cry'],cat:'动作',g:2}
+  ,{s:'The ___ is sunny today.',ans:'weather',cn:'今天____是晴天。',opt:['weather','water','wind','week'],cat:'自然',g:3}
+  ,{s:'I ___ my teeth in the morning.',ans:'brush',cn:'我早上____牙。',opt:['brush','wash','clean','open'],cat:'日常',g:3}
+  ,{s:'They ___ football after class.',ans:'play',cn:'他们课后____足球。',opt:['play','make','take','give'],cat:'运动',g:3}
+  ,{s:'My father ___ a car to work.',ans:'drives',cn:'我爸爸开车去上班。',opt:['drives','rides','flies','walks'],cat:'交通',g:4}
+  ,{s:'We should ___ water every day.',ans:'drink',cn:'我们每天应该____水。',opt:['drink','eat','cook','buy'],cat:'日常',g:4}
+  ,{s:'The students are ___ in the classroom.',ans:'reading',cn:'学生们正在教室____。',opt:['reading','playing','sleeping','eating'],cat:'动作',g:4}
+  ,{s:'She ___ to music in the evening.',ans:'listens',cn:'她晚上____音乐。',opt:['listens','looks','talks','walks'],cat:'日常',g:5}
+  ,{s:'The library is ___ the park.',ans:'near',cn:'图书馆____公园。',opt:['near','far','under','above'],cat:'方位',g:5}
+  ,{s:'He ___ his homework before dinner.',ans:'finishes',cn:'他晚饭前____作业。',opt:['finishes','starts','makes','takes'],cat:'学习',g:5}
+  ,{s:'We ___ a trip to the museum last week.',ans:'took',cn:'上周我们____了一次博物馆之旅。',opt:['took','make','take','made'],cat:'活动',g:6}
+  ,{s:'The children ___ happy about the news.',ans:'felt',cn:'孩子们对这消息感到____。',opt:['felt','feel','fall','fill'],cat:'情感',g:6}
+  ,{s:'She has ___ the piano for five years.',ans:'played',cn:'她____钢琴五年了。',opt:['played','plays','play','playing'],cat:'才艺',g:6}
+,
+  {
+  s: 'I ___ a cat.',
+  ans: 'see',
+  cn: '我____一只猫。',
+  opt: ['see', 'eat', 'go', 'make'],
+  cat: '动物',
+  g: 1
+  },
+  {
+  s: 'The sun is ___.',
+  ans: 'yellow',
+  cn: '太阳是____的。',
+  opt: ['yellow', 'blue', 'red', 'green'],
+  cat: '颜色',
+  g: 1
+  },
+  {
+  s: 'He ___ an apple.',
+  ans: 'has',
+  cn: '他____一个苹果。',
+  opt: ['has', 'have', 'is', 'eat'],
+  cat: '食物',
+  g: 2
+  },
+  {
+  s: 'She ___ books every day.',
+  ans: 'reads',
+  cn: '她每天____书。',
+  opt: ['reads', 'read', 'reading', 'to read'],
+  cat: '学习',
+  g: 3
+  },
+  {
+  s: 'They ___ in the park.',
+  ans: 'play',
+  cn: '他们在公园____。',
+  opt: ['play', 'plays', 'playing', 'played'],
+  cat: '活动',
+  g: 3
+  },
+  {
+  s: 'My mother ___ dinner now.',
+  ans: 'is cooking',
+  cn: '妈妈现在____晚饭。',
+  opt: ['is cooking', 'cooks', 'cook', 'cooked'],
+  cat: '家庭',
+  g: 4
+  },
+  {
+  s: 'He ___ to music after school.',
+  ans: 'listens',
+  cn: '他放学后____音乐。',
+  opt: ['listens', 'listen', 'listening', 'listened'],
+  cat: '爱好',
+  g: 4
+  },
+  {
+  s: 'We ___ a trip last summer.',
+  ans: 'took',
+  cn: '去年夏天我们____一次旅行。',
+  opt: ['took', 'take', 'taken', 'taking'],
+  cat: '旅行',
+  g: 5
+  },
+  {
+  s: 'She ___ English for three years.',
+  ans: 'has studied',
+  cn: '她____英语三年了。',
+  opt: ['has studied', 'studies', 'studied', 'is studying'],
+  cat: '学习',
+  g: 5
+  },
+  {
+  s: 'If it rains, we ___ stay home.',
+  ans: 'will',
+  cn: '如果下雨，我们____待在家。',
+  opt: ['will', 'would', 'can', 'shall'],
+  cat: '假设',
+  g: 6
+  },
+  {
+  s: 'He suggested ___ early.',
+  ans: 'leaving',
+  cn: '他建议____早点。',
+  opt: ['leaving', 'to leave', 'leave', 'left'],
+  cat: '建议',
+  g: 6
+  },
+  {s:'We ___ to school by bus.',ans:'go',cn:'我们坐公交____去学校。',opt:['go','went','going','gone'],cat:'交通',g:1},
+  {s:'She ___ a red dress today.',ans:'wears',cn:'她今天____一件红裙子。',opt:['wears','wear','wearing','wore'],cat:'穿着',g:2},
+  {s:'I can ___ the piano.',ans:'play',cn:'我会____钢琴。',opt:['play','plays','playing','played'],cat:'才艺',g:2},
+  {s:'They ___ TV in the evening.',ans:'watch',cn:'他们晚上____电视。',opt:['watch','watches','watching','watched'],cat:'休闲',g:3},
+  {s:'He ___ his homework yesterday.',ans:'finished',cn:'他昨天____了作业。',opt:['finished','finishes','finish','finishing'],cat:'作业',g:4},
+  {s:'We will ___ a picnic tomorrow.',ans:'have',cn:'我们明天会____野餐。',opt:['have','has','having','had'],cat:'活动',g:3},
+  {s:'The book ___ very interesting.',ans:'is',cn:'这本书____很有趣。',opt:['is','are','was','be'],cat:'描述',g:2},
+  {s:'She enjoys ___ books.',ans:'reading',cn:'她喜欢____书。',opt:['reading','to read','read','reads'],cat:'爱好',g:5},
+  {s:'If it rains, we ___ at home.',ans:'stay',cn:'如果下雨，我们____在家。',opt:['stay','will stay','stayed','staying'],cat:'条件',g:5},
+  {s:'He has ___ the window.',ans:'opened',cn:'他已经____窗户了。',opt:['opened','open','opening','opens'],cat:'完成',g:6},
+  {"s":"I ___ a book.","ans":"read","cn":"我____一本书。","opt":["read","write","sing","draw"],"cat":"动作","g":1},
+  {"s":"A cat is ___ the box.","ans":"in","cn":"猫____盒子____。","opt":["in","on","under","behind"],"cat":"方位","g":1},
+  {"s":"We ___ with our mouth.","ans":"eat","cn":"我们用嘴____。","opt":["eat","see","hear","walk"],"cat":"身体","g":1},
+  {"s":"In summer the sun is ___.","ans":"hot","cn":"夏天太阳____。","opt":["hot","cold","small","old"],"cat":"感受","g":1},
+  {"s":"She ___ to school.","ans":"goes","cn":"她____去学校。","opt":["goes","go","went","going"],"cat":"动作","g":2},
+  {"s":"My ___ is red.","ans":"bag","cn":"我的____是红色的。","opt":["bag","book","dog","cat"],"cat":"物品","g":2},
+  {"s":"He can ___ a bike.","ans":"ride","cn":"他会____自行车。","opt":["ride","drive","fly","swim"],"cat":"动作","g":2},
+  {"s":"The apples are ___ the tree.","ans":"on","cn":"苹果____树上。","opt":["on","in","under","over"],"cat":"方位","g":3},
+  {"s":"We ___ a test yesterday.","ans":"took","cn":"我们昨天____考试。","opt":["took","take","takes","taking"],"cat":"学校","g":4},
+  {"s":"He ___ to the park last Sunday.","ans":"went","cn":"他上周日____公园。","opt":["went","goes","go","going"],"cat":"过去","g":4},
+  {"s":"I have ___ my homework.","ans":"finished","cn":"我已经____作业。","opt":["finished","finish","finishing","finishes"],"cat":"完成","g":5},
+  {"s":"She ___ a letter to her friend.","ans":"wrote","cn":"她____一封信给朋友。","opt":["wrote","write","writes","writing"],"cat":"过去","g":6}
+,
+  {"s":"The book is ___ the desk.","ans":"on","cn":"书____桌子____。","opt":["on","in","under","behind"],"cat":"方位","g":3},
+  {"s":"We ___ English every day.","ans":"learn","cn":"我们每天____英语。","opt":["learn","eat","run","sleep"],"cat":"学校","g":4}
+  ,{"s":"The ___ is green.","ans":"grass","cn":"____是绿色的。","opt":["grass","sky","snow","moon"],"cat":"自然","g":1}
+  ,{"s":"I have ___ fingers.","ans":"ten","cn":"我有____根手指。","opt":["ten","two","six","nine"],"cat":"数字","g":1}
+  ,{"s":"A ___ has a long neck.","ans":"giraffe","cn":"____有长脖子。","opt":["giraffe","cat","dog","fish"],"cat":"动物","g":2}
+  ,{"s":"We ___ in winter.","ans":"skate","cn":"我们冬天____。","opt":["skate","swim","run","sing"],"cat":"运动","g":2}
+  ,{"s":"She ___ her hair every day.","ans":"washes","cn":"她每天____头发。","opt":["washes","wash","washing","washed"],"cat":"日常","g":3}
+  ,{"s":"The ___ is very cold.","ans":"ice","cn":"____非常冷。","opt":["ice","fire","sun","wind"],"cat":"自然","g":3}
+  ,{"s":"He ___ a letter to his grandma.","ans":"wrote","cn":"他给奶奶____一封信。","opt":["wrote","write","writes","writing"],"cat":"过去","g":4}
+  ,{"s":"We ___ the floor every weekend.","ans":"clean","cn":"我们每周末____地板。","opt":["clean","cook","read","sleep"],"cat":"家务","g":4}
+  ,{"s":"The movie was very ___.","ans":"funny","cn":"那部电影非常____。","opt":["funny","sad","angry","old"],"cat":"情感","g":5}
+  ,{"s":"She ___ to be a doctor.","ans":"wants","cn":"她____当一名医生。","opt":["wants","want","wanting","wanted"],"cat":"愿望","g":5}
+  ,{"s":"They ___ the match at last.","ans":"won","cn":"他们最终____了比赛。","opt":["won","win","wins","winning"],"cat":"比赛","g":6}
+  ,{"s":"He has ___ the book twice.","ans":"read","cn":"他已经把这本书____两遍了。","opt":["read","reads","reading","readed"],"cat":"完成","g":6}
+  ,{"s":"I ___ my teeth at night.","ans":"brush","cn":"我晚上____牙。","opt":["brush","wash","clean","open"],"cat":"日常","g":1}
+  ,{"s":"A rabbit can ___.","ans":"jump","cn":"兔子会____。","opt":["jump","swim","fly","sing"],"cat":"动作","g":1}
+  ,{"s":"The ___ is on the wall.","ans":"picture","cn":"____在墙上。","opt":["picture","book","desk","bag"],"cat":"物品","g":2}
+  ,{"s":"We ___ basketball after school.","ans":"play","cn":"我们放学后____篮球。","opt":["play","plays","playing","played"],"cat":"运动","g":2}
+  ,{"s":"He ___ very fast.","ans":"runs","cn":"他跑得____。","opt":["runs","run","ran","running"],"cat":"动作","g":3}
+  ,{"s":"My sister ___ the piano well.","ans":"plays","cn":"我姐姐____钢琴很好。","opt":["plays","play","playing","played"],"cat":"才艺","g":4}
+  ,{"s":"We ___ a snowman yesterday.","ans":"made","cn":"我们昨天____了一个雪人。","opt":["made","make","makes","making"],"cat":"过去","g":4}
+  ,{"s":"The food ___ delicious.","ans":"tastes","cn":"这食物____很好吃。","opt":["tastes","taste","tasting","tasted"],"cat":"感受","g":5}
+  ,{"s":"She ___ to the park with us.","ans":"went","cn":"她和我们____公园了。","opt":["went","goes","go","going"],"cat":"过去","g":5}
+  ,{"s":"I have ___ my room.","ans":"tidied","cn":"我已经____我的房间了。","opt":["tidied","tidy","tidies","tidying"],"cat":"完成","g":6}
+  ,{"s":"The ___ is singing.","ans":"bird","cn":"____在唱歌。","opt":["bird","fish","dog","cat"],"cat":"动物","g":1}
+  ,{"s":"I ___ blue shoes.","ans":"wear","cn":"我____蓝色的鞋。","opt":["wear","wears","wearing","wore"],"cat":"穿着","g":2}
+  ,{"s":"There ___ two apples on the plate.","ans":"are","cn":"盘子里____两个苹果。","opt":["are","is","be","am"],"cat":"语法","g":3}
+  ,{"s":"He ___ his homework now.","ans":"is doing","cn":"他现在____作业。","opt":["is doing","does","did","do"],"cat":"进行","g":4}
+  ,{"s":"We will ___ the museum tomorrow.","ans":"visit","cn":"我们明天会____博物馆。","opt":["visit","visits","visited","visiting"],"cat":"旅行","g":5}
+  ,{"s":"She has ___ English for years.","ans":"learned","cn":"她____英语好多年了。","opt":["learned","learn","learns","learning"],"cat":"学习","g":5}
+  ,{"s":"If it snows, we ___ make a snowman.","ans":"will","cn":"如果下雪，我们____堆雪人。","opt":["will","would","can","shall"],"cat":"假设","g":6}
+  ,{"s":"He enjoys ___ football.","ans":"playing","cn":"他喜欢____足球。","opt":["playing","to play","play","plays"],"cat":"爱好","g":6}
+,
+
+{"s":"I eat an ___ every morning.","ans":"apple","cn":"我每天早上吃一个____。","opt":["apple","orange","banana","egg"],"cat":"食物","g":1},
+{"s":"We drink ___ after running.","ans":"water","cn":"跑步后我们喝____。","opt":["water","milk","juice","tea"],"cat":"食物","g":2},
+{"s":"The ___ is sweet and red.","ans":"strawberry","cn":"____又甜又红。","opt":["strawberry","lemon","grape","pear"],"cat":"食物","g":3},
+{"s":"Mom cooks ___ for dinner.","ans":"rice","cn":"妈妈做____当晚餐。","opt":["rice","bread","noodle","soup"],"cat":"食物","g":2},
+{"s":"He wants a piece of ___.","ans":"cake","cn":"他想要一块____。","opt":["cake","meat","fish","cheese"],"cat":"食物","g":4},
+{"s":"The baby ___ when he is happy.","ans":"smiles","cn":"宝宝开心时会____。","opt":["smiles","cries","sleeps","eats"],"cat":"动作","g":2},
+{"s":"Please ___ the door behind you.","ans":"close","cn":"请随手____门。","opt":["close","open","clean","paint"],"cat":"动作","g":3},
+{"s":"They ___ football in the park.","ans":"kick","cn":"他们在公园____足球。","opt":["kick","throw","catch","hit"],"cat":"动作","g":4},
+{"s":"She ___ a song to her doll.","ans":"sings","cn":"她给娃娃____歌。","opt":["sings","dances","reads","draws"],"cat":"动作","g":2},
+{"s":"We ___ our hands before meals.","ans":"wash","cn":"饭前我们____手。","opt":["wash","dry","show","hide"],"cat":"动作","g":3},
+{"s":"The shoes are ___ the bed.","ans":"under","cn":"鞋在床____。","opt":["under","on","in","near"],"cat":"方位","g":1},
+{"s":"Put the book ___ the shelf.","ans":"on","cn":"把书放____架子上。","opt":["on","under","behind","below"],"cat":"方位","g":2},
+{"s":"The school is ___ the library.","ans":"near","cn":"学校在图书馆____。","opt":["near","far","above","inside"],"cat":"方位","g":3},
+{"s":"He walked ___ the bridge.","ans":"over","cn":"他走____桥。","opt":["over","under","around","through"],"cat":"方位","g":4},
+{"s":"The ball rolled ___ the bed.","ans":"behind","cn":"球滚到床____。","opt":["behind","front","beside","above"],"cat":"方位","g":3},
+{"s":"I ___ my teeth twice a day.","ans":"brush","cn":"我一天____两次牙。","opt":["brush","wash","comb","clean"],"cat":"日常","g":2},
+{"s":"We go to bed at ___ o'clock.","ans":"nine","cn":"我们____点睡觉。","opt":["nine","two","six","twelve"],"cat":"日常","g":1},
+{"s":"She ___ a shower every morning.","ans":"takes","cn":"她每天早上____澡。","opt":["takes","makes","has","does"],"cat":"日常","g":4},
+{"s":"Let's ___ the room together.","ans":"clean","cn":"我们一起____房间吧。","opt":["clean","paint","open","close"],"cat":"日常","g":3},
+{"s":"He ___ his face with a towel.","ans":"wipes","cn":"他用毛巾____脸。","opt":["wipes","washes","covers","rubs"],"cat":"日常","g":5},
+{"s":"My ___ can tell me the time.","ans":"watch","cn":"我的____能告诉我时间。","opt":["watch","phone","book","key"],"cat":"物品","g":3},
+{"s":"She opened the ___ with a key.","ans":"door","cn":"她用钥匙开了____。","opt":["door","window","box","bag"],"cat":"物品","g":2},
+{"s":"The ___ is full of books.","ans":"shelf","cn":"____装满了书。","opt":["shelf","desk","box","bag"],"cat":"物品","g":4},
+{"s":"I need a ___ to write.","ans":"pencil","cn":"我需要一支____来写字。","opt":["pencil","ruler","eraser","knife"],"cat":"物品","g":1},
+{"s":"A ___ helps sick people.","ans":"doctor","cn":"____帮助生病的人。","opt":["doctor","teacher","farmer","cook"],"cat":"职业","g":2},
+{"s":"The ___ puts out fires.","ans":"firefighter","cn":"____扑灭火灾。","opt":["firefighter","policeman","driver","soldier"],"cat":"职业","g":3},
+{"s":"A ___ grows food on a farm.","ans":"farmer","cn":"____在农场种粮食。","opt":["farmer","worker","builder","sailor"],"cat":"职业","g":2},
+{"s":"The ___ delivers letters.","ans":"postman","cn":"____送信。","opt":["postman","driver","clerk","guard"],"cat":"职业","g":4},
+{"s":"The sky is ___ today.","ans":"blue","cn":"今天天空是____的。","opt":["blue","pink","black","gray"],"cat":"颜色","g":1},
+{"s":"Roses are usually ___.","ans":"red","cn":"玫瑰通常是____的。","opt":["red","white","yellow","green"],"cat":"颜色","g":2},
+{"s":"Oranges are ___ in color.","ans":"orange","cn":"橙子是____色的。","opt":["orange","purple","brown","silver"],"cat":"颜色","g":3},
+{"s":"The leaves turn ___ in autumn.","ans":"yellow","cn":"秋天叶子变____。","opt":["yellow","green","blue","pink"],"cat":"颜色","g":4},
+{"s":"The ___ rises in the east.","ans":"sun","cn":"____从东方升起。","opt":["sun","moon","star","cloud"],"cat":"自然","g":2},
+{"s":"It ___ heavily last night.","ans":"rained","cn":"昨晚____很大。","opt":["rained","snowed","blew","shone"],"cat":"自然","g":4},
+{"s":"We saw many ___ in the sky.","ans":"stars","cn":"我们看到天上很多____。","opt":["stars","birds","planes","kites"],"cat":"自然","g":3},
+{"s":"The ___ is shining brightly.","ans":"moon","cn":"____明亮地照着。","opt":["moon","sun","lamp","light"],"cat":"自然","g":2},
+{"s":"A strong ___ blew the leaves.","ans":"wind","cn":"一阵强____吹落了叶子。","opt":["wind","rain","snow","storm"],"cat":"自然","g":5},
+{"s":"A ___ says woof woof.","ans":"dog","cn":"____汪汪叫。","opt":["dog","cat","duck","cow"],"cat":"动物","g":1},
+{"s":"The ___ has a long neck.","ans":"giraffe","cn":"____有长脖子。","opt":["giraffe","elephant","horse","sheep"],"cat":"动物","g":3},
+{"s":"We saw a ___ at the zoo.","ans":"monkey","cn":"我们在动物园看到____。","opt":["monkey","tiger","lion","bear"],"cat":"动物","g":2},
+{"s":"The ___ lays eggs.","ans":"hen","cn":"____下蛋。","opt":["hen","cow","pig","goat"],"cat":"动物","g":2},
+{"s":"A ___ can swim and fly.","ans":"duck","cn":"____会游也会飞。","opt":["duck","fish","bird","bee"],"cat":"动物","g":1},
+{"s":"My ___ reads me a story.","ans":"mother","cn":"我的____给我读故事。","opt":["mother","father","uncle","aunt"],"cat":"人物","g":1},
+{"s":"The ___ is our class teacher.","ans":"miss","cn":"这位____是我们的班主任。","opt":["miss","mister","king","queen"],"cat":"人物","g":4},
+{"s":"He is a brave ___.","ans":"boy","cn":"他是个勇敢的____。","opt":["boy","girl","man","kid"],"cat":"人物","g":2},
+{"s":"I like to ___ in summer.","ans":"swim","cn":"夏天我喜欢____。","opt":["swim","ski","skate","run"],"cat":"运动","g":2},
+{"s":"They play ___ after school.","ans":"basketball","cn":"放学后他们打____。","opt":["basketball","chess","cards","games"],"cat":"运动","g":4},
+{"s":"She won the ___ race.","ans":"running","cn":"她赢了____比赛。","opt":["running","jumping","swimming","singing"],"cat":"运动","g":3},
+{"s":"We ___ in the pool.","ans":"swim","cn":"我们在泳池里____。","opt":["swim","jump","dive","float"],"cat":"运动","g":3},
+{"s":"We take the ___ to school.","ans":"bus","cn":"我们乘____上学。","opt":["bus","car","bike","train"],"cat":"交通","g":2},
+{"s":"A ___ flies in the sky.","ans":"plane","cn":"____在天上飞。","opt":["plane","bird","kite","balloon"],"cat":"交通","g":1},
+{"s":"He rides a ___ to work.","ans":"bike","cn":"他骑____上班。","opt":["bike","horse","bus","car"],"cat":"交通","g":3},
+{"s":"The ___ goes on the rails.","ans":"train","cn":"____在铁轨上走。","opt":["train","ship","truck","boat"],"cat":"交通","g":4},
+{"s":"I ___ English every day.","ans":"learn","cn":"我每天____英语。","opt":["learn","teach","read","write"],"cat":"学习","g":3},
+{"s":"She ___ a picture for art class.","ans":"draws","cn":"她为美术课____画。","opt":["draws","paints","cuts","makes"],"cat":"学习","g":2},
+{"s":"We ___ a test on Friday.","ans":"take","cn":"我们周五____测验。","opt":["take","make","do","give"],"cat":"学习","g":4},
+{"s":"He ___ the word aloud.","ans":"reads","cn":"他大声____单词。","opt":["reads","writes","spells","says"],"cat":"学习","g":3},
+{"s":"Let's ___ a game!","ans":"play","cn":"我们____游戏吧！","opt":["play","make","do","have"],"cat":"活动","g":1},
+{"s":"They ___ a picnic in the park.","ans":"have","cn":"他们在公园____野餐。","opt":["have","make","do","hold"],"cat":"活动","g":3},
+{"s":"We ___ a movie at home.","ans":"watch","cn":"我们在家____电影。","opt":["watch","see","look","show"],"cat":"活动","g":4},
+{"s":"She ___ an email to her friend.","ans":"sends","cn":"她给朋友____邮件。","opt":["sends","writes","reads","makes"],"cat":"活动","g":5},
+{"s":"I am ___ of the dark.","ans":"afraid","cn":"我____黑暗。","opt":["afraid","happy","tired","glad"],"cat":"情感","g":3},
+{"s":"He was ___ to get a gift.","ans":"happy","cn":"他收到礼物很____。","opt":["happy","sad","angry","calm"],"cat":"情感","g":2},
+{"s":"She felt ___ after the long trip.","ans":"tired","cn":"长途旅行后她觉得____。","opt":["tired","sleepy","hungry","bored"],"cat":"情感","g":4},
+{"s":"She can ___ the piano well.","ans":"play","cn":"她____钢琴很好。","opt":["play","hit","beat","strike"],"cat":"才艺","g":4},
+{"s":"He ___ beautiful pictures.","ans":"paints","cn":"他____漂亮的画。","opt":["paints","draws","makes","prints"],"cat":"才艺","g":3},
+{"s":"My sister ___ the violin.","ans":"plays","cn":"我妹妹____小提琴。","opt":["plays","sings","beats","blows"],"cat":"才艺","g":5},
+{"s":"My ___ is my father's father.","ans":"grandpa","cn":"我的____是爸爸的爸爸。","opt":["grandpa","grandma","uncle","cousin"],"cat":"家庭","g":2},
+{"s":"We visit our ___ on Sunday.","ans":"grandma","cn":"我们周日去看____。","opt":["grandma","aunt","uncle","friend"],"cat":"家庭","g":2},
+{"s":"My little ___ is three.","ans":"brother","cn":"我的小____三岁。","opt":["brother","sister","cousin","friend"],"cat":"家庭","g":1},
+{"s":"His ___ is collecting stamps.","ans":"hobby","cn":"他的____是集邮。","opt":["hobby","habit","job","game"],"cat":"爱好","g":5},
+{"s":"I ___ books in my free time.","ans":"read","cn":"空闲时我____书。","opt":["read","write","make","buy"],"cat":"爱好","g":3},
+{"s":"She likes ___ flowers.","ans":"growing","cn":"她喜欢____花。","opt":["growing","picking","smelling","drawing"],"cat":"爱好","g":4},
+{"s":"We ___ to Beijing by train.","ans":"travel","cn":"我们乘火车____去北京。","opt":["travel","walk","run","fly"],"cat":"旅行","g":5},
+{"s":"They stayed in a ___ by the sea.","ans":"hotel","cn":"他们住在海边的____。","opt":["hotel","house","tent","camp"],"cat":"旅行","g":4},
+{"s":"I took many ___ on the trip.","ans":"photos","cn":"旅途中我拍了很多____。","opt":["photos","notes","gifts","maps"],"cat":"旅行","g":3},
+{"s":"Put on your ___. It is cold.","ans":"coat","cn":"穿上你的____，天冷了。","opt":["coat","hat","shoes","gloves"],"cat":"穿着","g":2},
+{"s":"She wore a red ___ to the party.","ans":"dress","cn":"她穿红____去派对。","opt":["dress","shirt","skirt","sock"],"cat":"穿着","g":4},
+{"s":"The ___ rings at eight.","ans":"bell","cn":"____八点响。","opt":["bell","phone","clock","alarm"],"cat":"学校","g":3},
+{"s":"Our ___ is on the third floor.","ans":"classroom","cn":"我们的____在三楼。","opt":["classroom","library","gym","hall"],"cat":"学校","g":2},
+{"s":"He ___ to the park yesterday.","ans":"went","cn":"他昨天____公园了。","opt":["went","goes","go","gone"],"cat":"过去","g":3},
+{"s":"I ___ a book last night.","ans":"read","cn":"我昨晚____一本书。","opt":["read","write","made","watch"],"cat":"过去","g":4},
+{"s":"They ___ a big cake.","ans":"ate","cn":"他们____一个大蛋糕。","opt":["ate","eat","cook","make"],"cat":"过去","g":3},
+{"s":"She ___ her homework already.","ans":"finished","cn":"她已经____作业了。","opt":["finished","start","do","make"],"cat":"过去","g":5},
+{"s":"We ___ a film together.","ans":"saw","cn":"我们一起____了电影。","opt":["saw","see","watch","look"],"cat":"过去","g":4},
+{"s":"There are ___ days in a week.","ans":"seven","cn":"一周有____天。","opt":["seven","five","six","ten"],"cat":"数字","g":2},
+{"s":"Three plus four is ___.","ans":"seven","cn":"三加四是____。","opt":["seven","six","eight","nine"],"cat":"数字","g":3},
+{"s":"My house number is ___.","ans":"ten","cn":"我家门牌号是____。","opt":["ten","two","six","nine"],"cat":"数字","g":1},
+{"s":"I see with my ___.","ans":"eyes","cn":"我用____看。","opt":["eyes","ears","nose","mouth"],"cat":"身体","g":1},
+{"s":"We listen with our ___.","ans":"ears","cn":"我们用____听。","opt":["ears","eyes","hands","feet"],"cat":"身体","g":1},
+{"s":"The soup is too ___.","ans":"hot","cn":"汤太____了。","opt":["hot","cold","sweet","salty"],"cat":"感受","g":2},
+{"s":"The ice cream is ___.","ans":"cold","cn":"冰淇淋很____。","opt":["cold","warm","soft","hard"],"cat":"感受","g":2},
+{"s":"This bag is very ___.","ans":"heavy","cn":"这个包很____。","opt":["heavy","light","small","big"],"cat":"感受","g":4},
+{"s":"The elephant is very ___.","ans":"big","cn":"大象很____。","opt":["big","small","short","tiny"],"cat":"描述","g":2},
+{"s":"The mouse is ___.","ans":"small","cn":"老鼠很____。","opt":["small","large","huge","tall"],"cat":"描述","g":1},
+{"s":"Her hair is ___ and black.","ans":"long","cn":"她的头发又____又黑。","opt":["long","short","curly","red"],"cat":"描述","g":3},
+{"s":"Can I ___ your pen?","ans":"borrow","cn":"我能____你的笔吗？","opt":["borrow","lend","give","keep"],"cat":"人际","g":4},
+{"s":"Thank you for your ___.","ans":"help","cn":"谢谢你的____。","opt":["help","gift","time","letter"],"cat":"人际","g":3},
+{"s":"Mom asks me to ___ the floor.","ans":"sweep","cn":"妈妈让我____地。","opt":["sweep","mop","wash","clean"],"cat":"家务","g":3},
+{"s":"I ___ the dishes after dinner.","ans":"wash","cn":"饭后我____碗。","opt":["wash","dry","put","wipe"],"cat":"家务","g":4},
+{"s":"I ___ to be a pilot.","ans":"want","cn":"我____当飞行员。","opt":["want","hope","like","wish"],"cat":"愿望","g":4},
+{"s":"He ___ a new bicycle.","ans":"wishes","cn":"他____有一辆新自行车。","opt":["wishes","hopes","likes","needs"],"cat":"愿望","g":5},
+{"s":"If it rains, we ___ inside.","ans":"stay","cn":"如果下雨，我们就____在里面。","opt":["stay","play","go","run"],"cat":"条件","g":5},
+{"s":"Have you ___ your homework?","ans":"finished","cn":"你____作业了吗？","opt":["finished","start","do","make"],"cat":"完成","g":4},
+{"s":"The work is ___.","ans":"done","cn":"工作____了。","opt":["done","make","doing","do"],"cat":"完成","g":3}
+
+,
+
+ {"s":"She ___ to Beijing by train yesterday.","ans":"went","cn":"她昨天坐火车去北京。","opt":["went","drove","flew","walked"],"cat":"旅行","g":6},
+ {"s":"They have ___ the science project.","ans":"finished","cn":"他们已经完成了科学项目。","opt":["finished","started","began","finish"],"cat":"完成","g":6},
+ {"s":"This book is ___ than that one.","ans":"thicker","cn":"这本书比那本更厚。","opt":["thicker","thick","thickest","more thick"],"cat":"描述","g":6},
+ {"s":"We ___ visit grandma next weekend.","ans":"will","cn":"我们下周末会去看奶奶。","opt":["will","did","do","are"],"cat":"将来","g":6},
+ {"s":"You ___ drink more water every day.","ans":"should","cn":"你应该每天多喝水。","opt":["should","must not","can","will"],"cat":"健康","g":6},
+ {"s":"If I ___ rich, I would travel the world.","ans":"were","cn":"如果我有钱，我会环游世界。","opt":["were","am","was","be"],"cat":"假设","g":6},
+ {"s":"___ is good for your health.","ans":"Swimming","cn":"游泳对健康有益。","opt":["Swimming","Swim","Swam","To swim"],"cat":"运动","g":6},
+ {"s":"The letter ___ by Tom yesterday.","ans":"was written","cn":"这封信昨天是汤姆写的。","opt":["was written","wrote","is writing","writes"],"cat":"被动","g":6},
+ {"s":"There are ___ students in our grade.","ans":"forty","cn":"我们年级有四十名学生。","opt":["forty","fourty","four","fourteenth"],"cat":"数量","g":6},
+ {"s":"Our teacher ___ us an interesting story.","ans":"told","cn":"老师给我们讲了一个有趣的故事。","opt":["told","tell","tells","telling"],"cat":"学校","g":6},
+ {"s":"The sun ___ in the east every morning.","ans":"rises","cn":"太阳每天早晨从东方升起。","opt":["rises","raise","rose","rising"],"cat":"自然","g":6},
+ {"s":"He ___ his homework as soon as he got home.","ans":"did","cn":"他一回家就做了作业。","opt":["did","does","do","doing"],"cat":"日常","g":6},
+ {"s":"She has ___ the guitar since 2019.","ans":"played","cn":"她从2019年起就弹吉他了。","opt":["played","playing","plays","play"],"cat":"才艺","g":6},
+ {"s":"We ___ a long journey last summer.","ans":"took","cn":"去年夏天我们进行了一次长途旅行。","opt":["took","take","taken","taking"],"cat":"旅行","g":6},
+ {"s":"He ___ a computer game yesterday.","ans":"designed","cn":"他昨天设计了一款电脑游戏。","opt":["designed","design","designs","designing"],"cat":"科技","g":6},
+ {"s":"I ___ very proud of my brother.","ans":"felt","cn":"我为我哥哥感到非常自豪。","opt":["felt","feel","feeling","feels"],"cat":"情感","g":6},
+ {"s":"You should ___ for an hour each day.","ans":"exercise","cn":"你应该每天锻炼一小时。","opt":["exercise","exercises","exercising","exercised"],"cat":"健康","g":6},
+ {"s":"We ___ the Spring Festival with our family.","ans":"celebrated","cn":"我们和家人一起庆祝了春节。","opt":["celebrated","celebrate","celebrates","celebrating"],"cat":"节日","g":6},
+ {"s":"The movie was ___ than I expected.","ans":"better","cn":"这部电影比我预期的更好。","opt":["better","good","best","well"],"cat":"描述","g":6},
+ {"s":"The bank is ___ the post office.","ans":"next to","cn":"银行在邮局旁边。","opt":["next to","next","near to","nearby"],"cat":"方位","g":6},
+ {"s":"The meeting will start ___ eight o'clock.","ans":"at","cn":"会议将在八点开始。","opt":["at","on","in","by"],"cat":"时间","g":6},
+ {"s":"My mother ___ a delicious cake.","ans":"baked","cn":"我妈妈烤了一个美味的蛋糕。","opt":["baked","bake","bakes","baking"],"cat":"食物","g":6},
+ {"s":"The dog ___ its tail when it was happy.","ans":"wagged","cn":"狗高兴时摇了摇尾巴。","opt":["wagged","wag","wags","wagging"],"cat":"动物","g":6},
+ {"s":"Our team ___ the game yesterday.","ans":"lost","cn":"我们队昨天输了比赛。","opt":["lost","lose","loses","losing"],"cat":"比赛","g":6},
+ {"s":"She advised me ___ careful with the knife.","ans":"to be","cn":"她劝我小心用刀。","opt":["to be","be","being","been"],"cat":"建议","g":6},
+ {"s":"He has ___ his keys somewhere.","ans":"lost","cn":"他把钥匙丢在某处了。","opt":["lost","lose","losing","loses"],"cat":"完成","g":6},
+ {"s":"They ___ a new house last year.","ans":"built","cn":"他们去年建了一栋新房子。","opt":["built","build","builds","building"],"cat":"活动","g":6},
+ {"s":"If it is sunny, we ___ go hiking.","ans":"will","cn":"如果天晴，我们就去徒步。","opt":["will","would","can","do"],"cat":"假设","g":6},
+ {"s":"My sister enjoys ___ pictures in the park.","ans":"drawing","cn":"我妹妹喜欢在公园画画。","opt":["drawing","draw","draws","drew"],"cat":"爱好","g":6},
+ {"s":"He ___ a helpful friend to everyone.","ans":"is","cn":"对大家来说他是个乐于助人的朋友。","opt":["is","are","was","be"],"cat":"人际","g":6}
+
+,
+
+ {"s":"Our class ___ a test yesterday.","ans":"had","cn":"我们班昨天进行了一次测验。","opt":["had","has","have","having"],"cat":"学校","g":5},
+ {"s":"My father ___ the noodles for lunch.","ans":"cooked","cn":"我爸爸午餐做了面条。","opt":["cooked","cooks","cook","cooking"],"cat":"食物","g":5},
+ {"s":"The cat ___ on the sofa all afternoon.","ans":"slept","cn":"猫在沙发上睡了一下午。","opt":["slept","sleep","sleeps","sleeping"],"cat":"动物","g":5},
+ {"s":"They ___ basketball after school.","ans":"played","cn":"他们放学后打了篮球。","opt":["played","play","plays","playing"],"cat":"运动","g":5},
+ {"s":"We ___ many gifts at Christmas.","ans":"got","cn":"圣诞节我们收到了很多礼物。","opt":["got","get","gets","getting"],"cat":"节日","g":5},
+ {"s":"You ___ wash your hands before meals.","ans":"must","cn":"你必须在饭前洗手。","opt":["must","can","may","will"],"cat":"健康","g":5},
+ {"s":"There ___ five apples on the table.","ans":"are","cn":"桌上有五个苹果。","opt":["are","is","were","be"],"cat":"数量","g":5},
+ {"s":"The class ___ at nine in the morning.","ans":"begins","cn":"课在早上九点开始。","opt":["begins","begin","began","beginning"],"cat":"时间","g":5},
+ {"s":"This river is ___ than that one.","ans":"longer","cn":"这条河比那条更长。","opt":["longer","long","longest","more long"],"cat":"描述","g":5},
+ {"s":"He ___ me with my math homework.","ans":"helped","cn":"他帮我做数学作业。","opt":["helped","helps","help","helping"],"cat":"人际","g":5},
+ {"s":"They ___ the game last week.","ans":"won","cn":"他们上周赢了比赛。","opt":["won","win","wins","winning"],"cat":"比赛","g":5},
+ {"s":"I ___ a robot at the science museum.","ans":"saw","cn":"我在科技馆看到了一个机器人。","opt":["saw","see","seen","seeing"],"cat":"科技","g":5},
+ {"s":"My mother ___ dinner for the family.","ans":"makes","cn":"我妈妈为全家做晚饭。","opt":["makes","make","made","making"],"cat":"家庭","g":5},
+ {"s":"It ___ cold yesterday morning.","ans":"was","cn":"昨天早上很冷。","opt":["was","is","were","be"],"cat":"天气","g":5},
+ {"s":"He ___ a postcard to his grandma.","ans":"sent","cn":"他给奶奶寄了一张明信片。","opt":["sent","send","sends","sending"],"cat":"过去","g":5},
+ {"s":"She ___ go to the library tomorrow.","ans":"will","cn":"她明天会去图书馆。","opt":["will","did","does","is"],"cat":"将来","g":5},
+ {"s":"They have ___ the floor.","ans":"cleaned","cn":"他们已经擦了地板。","opt":["cleaned","clean","cleans","cleaning"],"cat":"完成","g":5},
+ {"s":"The birds ___ in the blue sky.","ans":"fly","cn":"鸟儿在蓝天中飞翔。","opt":["fly","flies","flew","flying"],"cat":"自然","g":5},
+ {"s":"We ___ a birthday party for Lily.","ans":"held","cn":"我们为莉莉举办了生日聚会。","opt":["held","hold","holds","holding"],"cat":"活动","g":5},
+ {"s":"He ___ up at seven every day.","ans":"gets","cn":"他每天七点起床。","opt":["gets","get","got","getting"],"cat":"日常","g":5}
+
+,
+
+ {"s":"I ___ a red apple.","ans":"have","cn":"我有一个红苹果。","opt":["have","has","had","having"],"cat":"食物","g":1},
+ {"s":"The dog is ___ the box.","ans":"in","cn":"狗在盒子里面。","opt":["in","on","under","at"],"cat":"方位","g":1},
+ {"s":"We ___ to school every day.","ans":"go","cn":"我们每天去上学。","opt":["go","goes","went","going"],"cat":"学校","g":1},
+ {"s":"He ___ a blue ball.","ans":"has","cn":"他有一个蓝色的球。","opt":["has","have","had","having"],"cat":"玩具","g":1},
+ {"s":"The sky is ___.","ans":"blue","cn":"天空是蓝色的。","opt":["blue","red","yellow","green"],"cat":"自然","g":1},
+ {"s":"My mother ___ me a story.","ans":"reads","cn":"妈妈给我读故事。","opt":["reads","read","reading","readed"],"cat":"活动","g":1},
+ {"s":"A cat has four ___.","ans":"legs","cn":"猫有四条腿。","opt":["legs","leg","leggs","leges"],"cat":"动物","g":1},
+ {"s":"I can ___ with my hand.","ans":"write","cn":"我可以用手写字。","opt":["write","wrote","writing","writ"],"cat":"动作","g":1},
+ {"s":"The bird can ___.","ans":"sing","cn":"小鸟会唱歌。","opt":["sing","sings","sang","singing"],"cat":"动物","g":1},
+ {"s":"She ___ happy today.","ans":"is","cn":"她今天很高兴。","opt":["is","are","am","be"],"cat":"描述","g":1},
+ {"s":"We ___ two eyes.","ans":"have","cn":"我们有两只眼睛。","opt":["have","has","had","having"],"cat":"身体","g":1},
+ {"s":"The pencil is ___ the box.","ans":"in","cn":"铅笔在盒子里。","opt":["in","on","under","at"],"cat":"方位","g":1},
+ {"s":"We ___ games in the park.","ans":"play","cn":"我们在公园里做游戏。","opt":["play","plays","played","playing"],"cat":"活动","g":1},
+ {"s":"A fish can ___ in water.","ans":"swim","cn":"鱼会在水里游。","opt":["swim","swims","swam","swiming"],"cat":"动物","g":1},
+ {"s":"I ___ my face in the morning.","ans":"wash","cn":"我早上洗脸。","opt":["wash","washes","washed","washing"],"cat":"日常","g":1}
+,{"s":"The elephant has a long ___.","ans":"nose","cn":"大象有长长的____。","opt":["nose","tail","ear","leg"],"cat":"动物","g":2}
+,{"s":"Fish can ___ in the river.","ans":"swim","cn":"鱼会在河里____。","opt":["swim","run","fly","jump"],"cat":"动物","g":2}
+,{"s":"The rabbit likes to eat ___.","ans":"carrots","cn":"兔子喜欢吃____。","opt":["carrots","meat","fish","rice"],"cat":"动物","g":3}
+,{"s":"A ___ can fly in the sky.","ans":"bird","cn":"____能在天上飞。","opt":["bird","cat","dog","fish"],"cat":"动物","g":1}
+,{"s":"The panda is black and ___.","ans":"white","cn":"熊猫是黑____的。","opt":["white","blue","green","yellow"],"cat":"动物","g":2}
+,{"s":"There are seven ___ in a week.","ans":"days","cn":"一周有七____。","opt":["days","months","years","hours"],"cat":"数字","g":3}
+,{"s":"___ is the first day of a week.","ans":"Sunday","cn":"____是一周的第一天。","opt":["Sunday","Monday","Friday","Saturday"],"cat":"数字","g":4}
+,{"s":"We have ___ months in a year.","ans":"twelve","cn":"一年有____个月。","opt":["twelve","ten","eleven","twenty"],"cat":"数字","g":3}
+,{"s":"I go to bed ___ nine o'clock.","ans":"at","cn":"我____九点睡觉。","opt":["at","in","on","for"],"cat":"时间","g":3}
+,{"s":"My birthday is ___ May.","ans":"in","cn":"我的生日____五月。","opt":["in","at","on","to"],"cat":"时间","g":4}
+,{"s":"We have an English class ___ Monday morning.","ans":"on","cn":"我们周一早上____英语课。","opt":["on","in","at","of"],"cat":"时间","g":4}
+,{"s":"The hospital is ___ from our school.","ans":"far","cn":"医院离我们学校很____。","opt":["far","near","next","short"],"cat":"地点","g":5}
+,{"s":"You can buy books in a ___.","ans":"bookshop","cn":"你可以在____买书。","opt":["bookshop","hospital","bank","zoo"],"cat":"地点","g":4}
+,{"s":"The doctor works in a ___.","ans":"hospital","cn":"医生在____工作。","opt":["hospital","school","park","farm"],"cat":"地点","g":3}
+,{"s":"I have a cold. I should see a ___.","ans":"doctor","cn":"我感冒了，应该去看____。","opt":["doctor","farmer","driver","waiter"],"cat":"健康","g":5}
+,{"s":"Doing ___ is good for your health.","ans":"exercise","cn":"做____对健康有好处。","opt":["exercise","homework","housework","shopping"],"cat":"健康","g":5}
+,{"s":"I brush my ___ twice a day.","ans":"teeth","cn":"我每天刷两____牙。","opt":["teeth","tooth","tooths","toies"],"cat":"健康","g":4}
+,{"s":"We eat mooncakes at the ___ Festival.","ans":"Mid-Autumn","cn":"我们在____节吃月饼。","opt":["Mid-Autumn","Spring","Dragon Boat","Lantern"],"cat":"节日","g":5}
+,{"s":"Children get lucky money at Chinese New ___.","ans":"Year","cn":"孩子们在 Chinese New ____收到压岁钱。","opt":["Year","Month","Week","Day"],"cat":"节日","g":4}
+,{"s":"We ___ the flag on Monday morning.","ans":"raise","cn":"我们周一早上____旗。","opt":["raise","rise","put","take"],"cat":"学校","g":4}
+,{"s":"Please ___ the lights when you leave.","ans":"turn off","cn":"离开时请____灯。","opt":["turn off","turn on","open","close"],"cat":"日常","g":5}
+,{"s":"The story is very ___. I like it.","ans":"interesting","cn":"这个故事很____，我喜欢它。","opt":["interesting","interested","interest","interests"],"cat":"描述","g":6}
+,{"s":"She sings ___ than me.","ans":"better","cn":"她唱歌比我唱得____。","opt":["better","good","well","best"],"cat":"比较","g":6}
+,{"s":"This box is ___ heavier than that one.","ans":"much","cn":"这个箱子比那个____重得多。","opt":["much","very","more","so"],"cat":"比较","g":6}
+
+];
+var QUESTIONS = ALLQ; // 当前筛选后的列表
+
+var CHILD='user', KEY='', idx=0, ok=0, locked=false, curGrade='all';
+function getStore(){ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; } }
+function setStore(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
+
+function speakSentence(text, rate){
+  /* 统一走 speech.js：优选最标准英文音色（Google/Natural/Apple），杜绝机械音 */
+  if(window.Speech && Speech.speak){ Speech.speak(text, rate||0.85); return; }
+  try{
+    var u=new SpeechSynthesisUtterance(text);
+    u.lang='en-US'; u.rate=rate||0.85; u.pitch=1;
+    window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+/* 朗读完整句子（空格处读出正确单词）——听到的单词一定在选项里 */
+function play(){ speakSentence(QUESTIONS[idx].s.replace('___', QUESTIONS[idx].ans)); }
+function playSlow(){ speakSentence(QUESTIONS[idx].s.replace('___', QUESTIONS[idx].ans), 0.6); }
+
+/* 逐字翻译：读取容器 data-en 懒构建词对词翻译，点击切换显隐 */
+function toggleGloss(id){
+  var el=document.getElementById(id); if(!el || !window.Gloss) return;
+  if(el.getAttribute('data-filled')!=='1'){
+    el.innerHTML=Gloss.buildPGlossHTML(el.getAttribute('data-en')||'');
+    el.setAttribute('data-filled','1');
+  }
+  el.classList.toggle('on');
+}
+
+function renderQuestion(){
+  var q=QUESTIONS[idx];
+  document.getElementById('idxNum').textContent=idx+1;
+  document.getElementById('qBadge').textContent='第 '+(idx+1)+' 题';
+  document.getElementById('qCat').textContent=q.cat;
+  document.getElementById('sentence').innerHTML=q.s.replace('___','<span class="blank">＿＿</span>');
+  document.getElementById('cnTip').textContent=q.cn;
+  var lg=document.getElementById('lfGloss'); if(lg){ lg.setAttribute('data-en', q.s); lg.removeAttribute('data-filled'); lg.classList.remove('on'); }
+  locked=false;
+  var html='';
+  q.opt.forEach(function(o,i){
+    html+='<div class="opt" id="opt-'+i+'" onclick="choose('+i+')">'+o+'</div>';
+  });
+  document.getElementById('opts').innerHTML=html;
+  // 手写区：每题重建一块手写板，写完点「对照答案」看正确单词
+  var _slot=document.getElementById('hwSlot');
+  if(_slot && window.Handwrite){
+    _slot.innerHTML='';
+    var _hw=Handwrite.create({revealText:q.ans, placeholder:'✍️ 用手写写出空里的单词'});
+    _slot.appendChild(_hw.el);
+  }
+  document.getElementById('explain').className='explain';
+  var done=idx, total=QUESTIONS.length;
+  document.getElementById('progBar').style.width=Math.round(done/total*100)+'%';
+  document.getElementById('progTxt').textContent='完成 '+done+' / '+total+' 题';
+  if(window.Resume) Resume.set('english-listen', CHILD, 'idx_'+curGrade, idx);
+  setTimeout(play,250);
+}
+
+function choose(i){
+  if(locked) return;
+  locked=true;
+  var q=QUESTIONS[idx];
+  var chosen=document.getElementById('opt-'+i);
+  var correctIdx=q.opt.indexOf(q.ans);
+  document.getElementById('opt-'+correctIdx).classList.add('right');
+  if(i===correctIdx){ ok++; }
+  else { chosen.classList.add('wrong'); }
+  document.getElementById('okNum').textContent=ok;
+  var total=QUESTIONS.length, pct=total?Math.round(ok/total*100):0;
+  // 正确率按已做累计
+  var doneNow=idx+1;
+  document.getElementById('pctNum').textContent=Math.round(ok/doneNow*100)+'%';
+  // 禁用所有选项
+  q.opt.forEach(function(o,k){ document.getElementById('opt-'+k).setAttribute('disabled',''); });
+  var ex=document.getElementById('explain');
+  ex.innerHTML='<b>'+q.ans+'</b> —— '+q.s.replace('___','<u>'+q.ans+'</u>')+'　（'+q.cn+'）';
+  ex.className='explain show';
+  setTimeout(next,1100);
+}
+
+function next(){
+  idx++;
+  if(idx>=QUESTIONS.length){ finish(); }
+  else { renderQuestion(); }
+}
+
+/* 手写模式：只写不点选项时，也能对照答案并翻到下一题 */
+function submitCloze(){
+  if(locked) return; locked=true;
+  var q=QUESTIONS[idx];
+  var ex=document.getElementById('explain');
+  ex.innerHTML='<b>'+q.ans+'</b> —— '+q.s.replace('___','<u>'+q.ans+'</u>')+'　（'+q.cn+'）';
+  ex.className='explain show';
+  q.opt.forEach(function(o,k){ var b=document.getElementById('opt-'+k); if(b) b.setAttribute('disabled',''); });
+  setTimeout(next,1100);
+}
+
+function finish(){
+  document.getElementById('quizBox').style.display='none';
+  var total=QUESTIONS.length, pct=total?Math.round(ok/total*100):0;
+  document.getElementById('progBar').style.width='100%';
+  document.getElementById('progTxt').textContent='完成 '+total+' / '+total+' 题';
+  document.getElementById('rScore').textContent=ok+' / '+total;
+  var stars = pct>=90?'⭐⭐⭐' : pct>=80?'⭐⭐' : pct>=60?'⭐' : '🌱';
+  document.getElementById('rStars').textContent=stars;
+  document.getElementById('rTitle').textContent= pct>=80?'🏆 通关啦！':'再练练～';
+  document.getElementById('rMsg').textContent='正确率 '+pct+'%'+(pct>=80?'，听力小能手！':'，多听几遍就会更好～');
+  document.getElementById('result').className='result show';
+  if(pct>=80){ celebrate(); }
+}
+
+function startQuiz(){
+  // 断点续学：续到本次年级上次做到的第几题
+  var _sv = (window.Resume ? (Resume.get('english-listen', CHILD, 'idx_'+curGrade) || 0) : 0);
+  if(_sv >= QUESTIONS.length) _sv = 0;
+  idx=_sv; ok=0; locked=false;
+  document.getElementById('okNum').textContent=0;
+  document.getElementById('pctNum').textContent='0%';
+  document.getElementById('result').className='result';
+  document.getElementById('quizBox').style.display='block';
+  renderQuestion();
+}
+
+function celebrate(){
+  var emo=['🎉','✨','🌟','⭐','🎧','💡','🌈','🍎'];
+  for(var k=0;k<26;k++){
+    (function(){
+      var c=document.createElement('div'); c.className='confetti';
+      c.textContent=emo[Math.floor(Math.random()*emo.length)];
+      c.style.left=Math.random()*100+'vw';
+      c.style.animationDuration=(2+Math.random()*2)+'s';
+      document.body.appendChild(c);
+      setTimeout(function(){ c.remove(); },4200);
+    })();
+  }
+  document.getElementById('celeb').style.display='flex';
+}
+function closeCeleb(){ document.getElementById('celeb').style.display='none'; }
+
+function renderGrades(){
+  var labels=[['all','全部'],['1','一年级'],['2','二年级'],['3','三年级'],['4','四年级'],['5','五年级'],['6','六年级']];
+  var html='';
+  labels.forEach(function(l){
+    html+='<button class="'+(curGrade===l[0]?'on':'')+'" onclick="setGradeFilter(\''+l[0]+'\')">'+l[1]+'</button>';
+  });
+  document.getElementById('grades').innerHTML=html;
+}
+function setGradeFilter(g){
+  curGrade=g;
+  QUESTIONS = (g==='all') ? ALLQ : ALLQ.filter(function(q){ return q.g===parseInt(g,10); });
+  renderGrades();
+  startQuiz();
+}
+
+(function(){
+  var s=Portal.getSession();
+  CHILD=(s&&s.child)?s.child:'user';
+  KEY='english-listen-'+CHILD;
+  var d=new Date();
+  var wk=['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+  document.getElementById('dateStr').textContent=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+' '+wk;
+  renderGrades();
+  startQuiz();
+})();
+</script>
+<script src="handwrite.js"></script>
+</body>
+</html>

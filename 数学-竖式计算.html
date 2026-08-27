@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✏️ 竖式计算</title>
+<style>
+  :root{ --c1:#4361ee; --c2:#4cc9f0; --green:#06d6a0; --ink:#1f2a44; }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#eef2ff,#e6f7ff);color:var(--ink);padding:18px;max-width:560px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  .back{position:fixed;left:14px;top:14px;z-index:30;border:none;background:rgba(255,255,255,.85);border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink)}
+  header{background:linear-gradient(120deg,var(--c1),var(--c2));color:#fff;border-radius:24px;padding:20px;text-align:center;box-shadow:0 8px 22px rgba(67,97,238,.4)}
+  header h1{font-size:22px}
+  .date{font-size:14px;opacity:.95;margin-top:4px}
+  .stats{display:flex;gap:10px;margin:14px 0}
+  .stat{flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .stat .num{font-size:26px;font-weight:800;color:var(--c1)}
+  .stat .lbl{font-size:12px;color:#999;margin-top:2px}
+  .screen{display:none}
+  .screen.on{display:block}
+  .btn{display:block;width:100%;border:none;border-radius:16px;padding:14px;font-size:16px;font-family:inherit;cursor:pointer;font-weight:800;color:#fff;background:var(--c1);margin-top:8px}
+  .btn.gh{background:var(--c2)}
+  .btn.sec{background:#eaf0ff;color:var(--c1)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 8px}
+  .chip{border:none;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;background:#eaf0ff;color:var(--c1)}
+  .chip.on{background:var(--c1);color:#fff}
+  .lbl2{font-size:13px;color:#667;font-weight:700;margin:8px 2px 2px}
+  .prog-wrap{margin:6px 0 14px}
+  .progress{height:14px;background:#e1e9ff;border-radius:10px;overflow:hidden}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--c1),var(--c2));border-radius:10px;transition:width .4s}
+  .prog-txt{font-size:13px;color:#888;text-align:center;margin-top:4px}
+  .q{background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.06);padding:14px;margin-bottom:12px;border:3px solid transparent;transition:border-color .2s}
+  .q.done-ok{border-color:var(--green)}
+  .q.done-no{border-color:#ff6b6b}
+  .q .qt{font-size:20px;font-weight:800;margin-bottom:8px;letter-spacing:1px}
+  .q .qt .qn{color:var(--c1);margin-right:8px;font-size:15px}
+  .q .calc{font-size:13px;color:#667;background:#f4f7ff;border-radius:10px;padding:8px;line-height:1.7;margin-bottom:10px;white-space:pre-wrap;font-family:"Courier New",monospace}
+  .ansrow{display:flex;gap:8px;align-items:center}
+  .ansrow input{flex:1;font-size:18px;font-weight:700;padding:10px 12px;border:2px solid #d8e0ff;border-radius:12px;font-family:inherit;color:var(--ink);outline:none}
+  .ansrow input:focus{border-color:var(--c1)}
+  .ansrow button{border:none;background:var(--c1);color:#fff;border-radius:12px;padding:10px 18px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer}
+  .ansrow button:disabled{opacity:.5}
+  .why{font-size:13px;color:#888;margin-top:10px;background:#f6f9ff;border-radius:10px;padding:9px;line-height:1.6;display:none}
+  .why.on{display:block}
+  .why b{color:var(--green)}
+  .report{background:#fff;border-radius:24px;box-shadow:0 8px 22px rgba(0,0,0,.08);padding:24px;text-align:center;margin-top:14px}
+  .report .stars{font-size:34px;letter-spacing:4px;margin:6px 0}
+  .report .score{font-size:30px;font-weight:800;color:var(--c1)}
+  .report .sub{font-size:14px;color:#888;margin-top:4px}
+  .report .line{font-size:15px;color:var(--ink);margin-top:10px}
+  .report .pass{color:var(--green);font-weight:800}
+  .report .fail{color:#ff6b6b;font-weight:800}
+  .reset{background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;text-decoration:underline;display:block;margin:10px auto 0;font-family:inherit}
+  .tip{font-size:12px;color:#aaa;text-align:center;margin-top:14px;line-height:1.6}
+  .celebrate{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:100}
+  .celebrate .box2{background:#fff;border-radius:24px;padding:28px 34px;text-align:center;animation:pop .4s;max-width:320px}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate h3{font-size:24px;margin-bottom:8px}
+  .celebrate p{color:#888;font-size:14px;line-height:1.6}
+  .celebrate button{margin-top:16px;border:none;background:var(--c2);color:#fff;padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+</style>
+</head>
+<body>
+
+<header><h1>✏️ 竖式计算</h1><div class="date" id="dateStr">今天</div></header>
+<div class="stats">
+  <div class="stat"><div class="num" id="bestNum">0</div><div class="lbl">🏆 最佳对题</div></div>
+  <div class="stat"><div class="num" id="totalNum">10</div><div class="lbl">📝 本轮题数</div></div>
+  <div class="stat"><div class="num" id="passNum">80%</div><div class="lbl">✅ 通关线</div></div>
+</div>
+<div class="screen on" id="scrMenu">
+  <h2 style="font-size:17px;margin:6px 4px 8px">🎯 加减乘除·笔算练习</h2>
+  <div class="lbl2">选运算</div>
+  <div class="chips" id="typeChips"></div>
+  <div class="lbl2">选难度</div>
+  <div class="chips" id="lvChips"></div>
+  <div class="tip" style="margin:4px 0 12px">点「开始」生成 10 道竖式题（入门 / 进阶 / 挑战），填答案点检查。全对 80% 通关！</div>
+  <button class="btn" onclick="start()">🚀 开始练习</button>
+  <button class="btn sec" onclick="resetBest()">↺ 清空最佳记录</button>
+</div>
+<div class="screen" id="scrQuiz">
+  <div class="prog-wrap"><div class="progress"><i id="progBar"></i></div><div class="prog-txt" id="progTxt">已答 0 / 10</div></div>
+  <div id="quizArea"></div>
+  <button class="btn gh" id="finishBtn" onclick="finish()" style="display:none">🏁 查看战报</button>
+</div>
+<div class="screen" id="scrReport">
+  <div class="report">
+    <div class="stars" id="rStars">⭐⭐⭐</div>
+    <div class="score" id="rScore">0 / 10</div>
+    <div class="sub" id="rPct">正确率 0%</div>
+    <div class="line" id="rPass"></div>
+  </div>
+  <button class="btn" onclick="start()">🔄 再来一轮</button>
+  <button class="btn sec" onclick="goMenu()">🏠 回到首页</button>
+</div>
+<div class="tip">数据按小朋友分别保存，不会上传。</div>
+<div class="celebrate" id="celeb"><div class="box2"><h3>🎉 笔算小能手！</h3><p>竖式写对，计算又快又准！</p><button onclick="closeCeleb()">继续练习 💪</button></div></div>
+<script>
+var CHILD='user', KEY='', store={};
+var TYPES=[['加法','add'],['减法','sub'],['乘法','mul'],['除法','div']];
+var LEVELS=[['入门','easy'],['进阶','hard'],['挑战','challenge'],['题集','bank']];
+/* 笔算题集：固定题目来源（与生成逻辑 genOne 互补，不改动原生成逻辑） */
+var BANK=[
+  {a:37,b:45,sym:'+',ans:82,step:'  37\n+ 45\n----\n= 82'},
+  {a:58,b:27,sym:'+',ans:85,step:'  58\n+ 27\n----\n= 85'},
+  {a:146,b:235,sym:'+',ans:381,step:' 146\n+235\n----\n= 381'},
+  {a:489,b:376,sym:'+',ans:865,step:' 489\n+376\n----\n= 865'},
+  {a:64,b:29,sym:'−',ans:35,step:'  64\n− 29\n----\n= 35'},
+  {a:82,b:47,sym:'−',ans:35,step:'  82\n− 47\n----\n= 35'},
+  {a:503,b:278,sym:'−',ans:225,step:' 503\n−278\n----\n= 225'},
+  {a:720,b:458,sym:'−',ans:262,step:' 720\n−458\n----\n= 262'},
+  {a:56,b:8,sym:'×',ans:448,step:'  8\n×56\n----\n= 448'},
+  {a:78,b:6,sym:'×',ans:468,step:'  6\n×78\n----\n= 468'},
+  {a:210,b:15,sym:'×',ans:3150,step:' 15\n×210\n----\n= 3150'},
+  {a:108,b:12,sym:'×',ans:1296,step:' 12\n×108\n----\n= 1296'},
+  {a:42,b:6,sym:'÷',ans:7,step:' 6 ) 42\n商 = 7  （因为 6 × 7 = 42）'},
+  {a:65,b:5,sym:'÷',ans:13,step:' 5 ) 65\n商 = 13  （因为 5 × 13 = 65）'},
+  {a:187,b:8,sym:'÷',ans:23,step:' 8 ) 187\n商 = 23 余 3  （因为 8 × 23 + 3 = 187）'},
+  {a:62,b:4,sym:'÷',ans:15,step:' 4 ) 62\n商 = 15 余 2  （因为 4 × 15 + 2 = 62）'}
+];
+var curType='add', curLv='easy';
+var list=[];
+function rnd(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+function genOne(type,lv){
+  if(type==='add'){
+    var a,b;
+    if(lv==='easy'){ do{ a=rnd(10,89); b=rnd(10,89); }while((a%10+b%10)>=10 || (Math.floor(a/10)+Math.floor(b/10))>=10 || a+b>=100); }
+    else if(lv==='hard'){ do{ a=rnd(15,98); b=rnd(12,89); }while((a%10+b%10)<10 && (Math.floor(a/10)+Math.floor(b/10))<10); }
+    else { do{ a=rnd(105,989); b=rnd(105,989); }while((a%10+b%10)<10); }
+    var ans=a+b;
+    var step='  '+String(a).padStart(2,' ')+'\n+ '+String(b).padStart(2,' ')+'\n----\n= '+ans;
+    return {a:a,b:b,sym:'+',ans:ans,step:step};
+  }
+  if(type==='sub'){
+    var a,b;
+    if(lv==='easy'){ do{ a=rnd(20,98); b=rnd(10,Math.floor(a/10)*10+ (a%10)); }while(b>=a || (a%10)<(b%10) || (Math.floor(a/10))<(Math.floor(b/10)) ); }
+    else if(lv==='hard'){ do{ a=rnd(25,98); b=rnd(12,89); }while(b>=a || !((a%10)<(b%10) || (Math.floor(a/10))<=(Math.floor(b/10)))); }
+    else { do{ a=rnd(205,999); b=rnd(105,899); }while(b>=a || (a%10)<(b%10)); }
+    var ans=a-b;
+    var step='  '+String(a).padStart(2,' ')+'\n- '+String(b).padStart(2,' ')+'\n----\n= '+ans;
+    return {a:a,b:b,sym:'−',ans:ans,step:step};
+  }
+  if(type==='mul'){
+    var a,b;
+    if(lv==='easy'){ a=rnd(2,9); b=rnd(2,9); }
+    else if(lv==='hard'){ a=rnd(3,9); b=rnd(11,19); }
+    else { a=rnd(11,19); b=rnd(11,19); }
+    var ans=a*b;
+    var step='  '+String(b).padStart(2,' ')+'\n× '+String(a).padStart(2,' ')+'\n----\n= '+ans;
+    return {a:a,b:b,sym:'×',ans:ans,step:step};
+  }
+  // div
+  var d,q,r=0;
+  if(lv==='easy'){ d=rnd(2,9); q=rnd(2,9); }
+  else if(lv==='hard'){ d=rnd(2,9); q=rnd(11,19); }
+  else { d=rnd(2,9); q=rnd(20,49); r=rnd(1,d-1); }
+  var dividend=d*q+r;
+  var step= r? (' '+d+' ) '+dividend+'\n商 = '+q+' 余 '+r+'  （因为 '+d+' × '+q+' + '+r+' = '+dividend+'）') : (' '+d+' ) '+dividend+'\n商 = '+q+'  （因为 '+d+' × '+q+' = '+dividend+'）');
+  return {a:dividend,b:d,sym:'÷',ans:q,step:step};
+}
+function getStore(){ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; } }
+function setStore(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
+function setScreen(id){ document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('on');}); document.getElementById(id).classList.add('on'); }
+var score=0, answered=0, hwList=[];
+function renderChips(){
+  var h=''; TYPES.forEach(function(t){ h+='<button class="chip'+(t[1]===curType?' on':'')+'" onclick="pickType(\''+t[1]+'\')">'+t[0]+'</button>'; });
+  document.getElementById('typeChips').innerHTML=h;
+  var h2=''; LEVELS.forEach(function(t){ h2+='<button class="chip'+(t[1]===curLv?' on':'')+'" onclick="pickLv(\''+t[1]+'\')">'+t[0]+'</button>'; });
+  document.getElementById('lvChips').innerHTML=h2;
+}
+function pickType(t){ curType=t; renderChips(); }
+function pickLv(l){ curLv=l; renderChips(); }
+function start(){
+  score=0; answered=0;
+  list=[];
+  if(curLv==='bank'){
+    var pool=BANK.slice();
+    for(var i=pool.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=pool[i]; pool[i]=pool[j]; pool[j]=t; }
+    list=pool;
+  } else {
+    for(var i=0;i<10;i++) list.push(genOne(curType,curLv));
+  }
+  setScreen('scrQuiz'); renderQuiz();
+}
+function renderQuiz(){
+  var html='';
+  list.forEach(function(it,idx){
+    html+='<div class="q" id="q'+idx+'"><div class="qt"><span class="qn">'+(idx+1)+'.</span>'+it.a+' '+it.sym+' '+it.b+' = ?</div>';
+    html+='<div class="calc">竖式：'+it.step+'</div>';
+    html+='<div class="ansrow"><div class="hw-slot" id="hw-'+idx+'"></div><button id="btn'+idx+'" onclick="revealAns('+idx+')">对照答案</button></div>';
+    html+='<div class="why" id="w'+idx+'"></div></div>';
+  });
+  document.getElementById('quizArea').innerHTML=html;
+  hwList=[];
+  if(window.Handwrite){
+    list.forEach(function(it,idx){
+      var slot=document.getElementById('hw-'+idx);
+      var hw=Handwrite.create({revealText:String(it.ans), placeholder:'✍️ 写竖式与答案', height:160, onReveal:function(){ markDone(idx); }});
+      slot.appendChild(hw.el);
+      hwList[idx]=hw;
+    });
+  }
+  document.getElementById('finishBtn').style.display='none';
+  updateProg();
+}
+function revealAns(idx){
+  var it=list[idx]; var q=document.getElementById('q'+idx);
+  if(q.dataset.hw) return;
+  if(hwList[idx]) hwList[idx].reveal();
+  markDone(idx);
+  document.getElementById('w'+idx).innerHTML='<b>✅ 对照：</b>'+it.a+' '+it.sym+' '+it.b+' = <b>'+it.ans+'</b>。竖式注意对齐数位、进位退位别漏。';
+  document.getElementById('w'+idx).classList.add('on');
+  document.getElementById('btn'+idx).disabled=true;
+}
+function markDone(idx){
+  var q=document.getElementById('q'+idx);
+  if(q.dataset.hw) return;
+  q.dataset.hw='1';
+  answered++; updateProg();
+  if(answered>=list.length) document.getElementById('finishBtn').style.display='block';
+}
+function updateProg(){
+  document.getElementById('progBar').style.width=(answered/list.length*100)+'%';
+  document.getElementById('progTxt').textContent='已答 '+answered+' / '+list.length;
+}
+function finish(){
+  var done=answered;
+  var pct=Math.round(done/list.length*100);
+  document.getElementById('rScore').textContent=done+' / '+list.length;
+  document.getElementById('rPct').textContent='完成率 '+pct+'%';
+  var stars = pct>=90?'⭐⭐⭐':pct>=70?'⭐⭐':'⭐';
+  document.getElementById('rStars').textContent=stars;
+  var pass = done/list.length>=0.8;
+  document.getElementById('rPass').innerHTML = pass?'<span class="pass">🎊 通关！笔算小能手</span>':'<span class="fail">再练练，争取通关 80%</span>';
+  var key=curType+'_'+curLv;
+  if(done>(store[key]||0)){ store[key]=done; setStore(store); }
+  if(done>(store.best||0)){ store.best=done; setStore(store); }
+  if(pass) showCeleb();
+  setScreen('scrReport');
+}
+function resetBest(){ if(confirm('确定清空最佳记录？')){ setStore({}); store={}; document.getElementById('bestNum').textContent='0'; } }
+function goMenu(){ setScreen('scrMenu'); }
+function showCeleb(){ var c=document.getElementById('celeb'); c.style.display='flex'; }
+function closeCeleb(){ document.getElementById('celeb').style.display='none'; }
+(function init(){
+  var s=Portal.getSession(); CHILD=(s&&s.child)?s.child:'user'; KEY='vert-'+CHILD; store=getStore();
+  document.getElementById('dateStr').textContent=new Date().toLocaleDateString('zh-CN');
+  document.getElementById('bestNum').textContent=store.best||0;
+  renderChips();
+})();
+</script>
+<script src="handwrite.js"></script>
+</body>
+</html>

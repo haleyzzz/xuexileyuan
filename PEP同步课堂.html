@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<script src="util.js"></script>
+<script src="speech.js"></script>
+<script src="pep-data.js"></script>
+<script src="accounts.js"></script>
+<script src="study-time.js"></script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PEP 同步课堂</title>
+<style>
+  :root{
+    --bg:#f3f7ff; --card:#ffffff; --ink:#1f2a44; --sub:#6b7794;
+    --brand:#2f6fed; --brand2:#7c5cff; --ok:#27ae60; --warn:#e67e22;
+    --hl:#fff3bf; --line:#e6ebf5; --shadow:0 10px 30px rgba(40,70,160,.12);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--ink);padding:14px;max-width:780px;margin:0 auto}
+  .top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .top h1{font-size:20px;margin:0;flex:1}
+  .top .ico{font-size:24px}
+  .bar{background:var(--card);border-radius:14px;padding:12px;box-shadow:var(--shadow);margin-bottom:12px}
+  .selrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  select{padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:15px;background:#fff;color:var(--ink)}
+  .tabs{display:flex;gap:6px;margin-top:10px}
+  .tab{flex:1;text-align:center;padding:9px 4px;border-radius:10px;background:#eef2fb;color:var(--sub);
+    font-size:15px;cursor:pointer;font-weight:600;transition:.15s}
+  .tab.on{background:var(--brand);color:#fff}
+  .pgwrap{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--sub)}
+  .pgbar{flex:1;height:8px;background:#e9eefb;border-radius:6px;overflow:hidden}
+  .pgbar>i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--brand2));width:0}
+  .card{background:var(--card);border-radius:14px;padding:14px;box-shadow:var(--shadow);margin-bottom:10px}
+  .utitle{font-size:17px;font-weight:700;margin:0 0 4px}
+  .usub{font-size:12px;color:var(--sub);margin:0 0 12px}
+  /* 单词 */
+  .wrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line)}
+  .wrow:last-child{border-bottom:none}
+  .wspk{flex:none;width:38px;height:38px;border-radius:50%;border:none;background:#eaf1ff;color:var(--brand);font-size:17px;cursor:pointer}
+  .wmain{flex:1;min-width:0}
+  .wen{font-size:17px;font-weight:600}
+  .wipa{font-size:13px;color:var(--sub);margin-left:8px;font-style:italic}
+  .wcn{font-size:14px;color:var(--ink)}
+  .wcat{flex:none;font-size:11px;color:var(--brand);background:#eef3ff;padding:3px 8px;border-radius:20px}
+  /* 课文 */
+  .line{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed var(--line)}
+  .line:last-child{border-bottom:none}
+  .lspk{flex:none;width:34px;height:34px;border-radius:50%;border:none;background:#eaf1ff;color:var(--brand);font-size:15px;cursor:pointer;margin-top:2px}
+  .lbody{flex:1}
+  .lrole{font-size:12px;color:var(--brand2);font-weight:700}
+  .len{font-size:16px;font-weight:600}
+  .lcn{font-size:14px;color:var(--sub)}
+  /* 句型 */
+  .pblock{padding:11px 0;border-bottom:1px dashed var(--line)}
+  .pblock:last-child{border-bottom:none}
+  .pfocus{font-size:12px;color:var(--warn);font-weight:700;margin-bottom:4px}
+  .ppat{font-size:16px;font-weight:600;background:var(--hl);padding:6px 10px;border-radius:8px;display:inline-block}
+  .pex{margin:8px 0 0;padding:0;list-style:none}
+  .pex li{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:15px}
+  .pexp{flex:none;width:30px;height:30px;border-radius:50%;border:none;background:#eaf1ff;color:var(--brand);font-size:14px;cursor:pointer}
+  .pcn{font-size:14px;color:var(--sub);margin-top:6px}
+  .empty{text-align:center;color:var(--sub);padding:30px 0;font-size:15px}
+  .voice{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub)}
+  #voiceSel{padding:5px 8px;border:1px solid var(--line);border-radius:8px;font-size:12px;max-width:120px}
+  .toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:rgba(31,42,68,.92);
+    color:#fff;padding:9px 16px;border-radius:20px;font-size:14px;opacity:0;transition:.25s;pointer-events:none;z-index:99}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+  <div class="top">
+    <span class="ico">📚</span>
+    <h1>PEP 同步课堂</h1>
+    <div class="voice">语音<select id="voiceSel"></select></div>
+  </div>
+
+  <div class="bar">
+    <div class="selrow">
+      <select id="termSel" onchange="onTermChange()"></select>
+      <select id="unitSel" onchange="renderAll()"></select>
+    </div>
+    <div class="tabs">
+      <div class="tab on" id="tabW" onclick="switchTab('w')">📝 单词</div>
+      <div class="tab" id="tabT" onclick="switchTab('t')">📖 课文</div>
+      <div class="tab" id="tabP" onclick="switchTab('p')">💡 句型</div>
+    </div>
+    <div class="pgwrap">
+      <span id="pgText">已学 0 / 46 单元</span>
+      <div class="pgbar"><i id="pgBar"></i></div>
+    </div>
+  </div>
+
+  <div id="content"></div>
+  <div class="toast" id="toast"></div>
+
+<script>
+var APP = 'pep';
+var ME = null;
+var META = (window.PEP_META && window.PEP_META.length) ? window.PEP_META : [];
+var WORDS = (window.PEP_WORDS && window.PEP_WORDS.length) ? window.PEP_WORDS : [];
+var TEXTS = (window.PEP_TEXTS && window.PEP_TEXTS.length) ? window.PEP_TEXTS : [];
+var PATTERNS = (window.PEP_PATTERNS && window.PEP_PATTERNS.length) ? window.PEP_PATTERNS : [];
+var TOTAL_UNITS = META.reduce(function(s,m){ return s + m.units.length; }, 0);
+var curTerm = 0, curUnit = 1, curTab = 'w';
+var progress = {};   // { "3上1":true, ... }
+
+/* 发音（复用 speech.js） */
+function speak(text){
+  if(!window.speechSynthesis || !ensureEnVoice()){ return; }
+  speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance(text); u.lang = Speech.lang(); u.rate = 0.9;
+  var v = pickVoice(); if(v) u.voice = v;
+  speechSynthesis.speak(u);
+}
+function toast(msg){
+  var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); },1500);
+}
+
+/* ============ 选择 ============ */
+function renderTermSel(){
+  var sel=document.getElementById('termSel'); sel.innerHTML='';
+  META.forEach(function(m,i){
+    var o=document.createElement('option'); o.value=i;
+    o.textContent = m.g+'年级'+m.term+'（'+m.label+'）';
+    sel.appendChild(o);
+  });
+  sel.value=curTerm;
+}
+function renderUnitSel(){
+  var term=META[curTerm]; var sel=document.getElementById('unitSel'); sel.innerHTML='';
+  term.units.forEach(function(u){
+    var o=document.createElement('option'); o.value=u.n;
+    o.textContent='Unit '+u.n+' '+u.title;
+    sel.appendChild(o);
+  });
+  sel.value=curUnit;
+}
+function onTermChange(){
+  curTerm = parseInt(document.getElementById('termSel').value,10);
+  curUnit = META[curTerm].units[0].n;
+  renderUnitSel(); renderAll();
+}
+
+/* ============ 渲染 ============ */
+function unitKey(){ return META[curTerm].g + META[curTerm].term + curUnit; }
+function curMetaUnit(){ return META[curTerm].units.filter(function(u){return u.n==curUnit;})[0]; }
+
+function switchTab(t){ curTab=t;
+  document.getElementById('tabW').className='tab'+(t=='w'?' on':'');
+  document.getElementById('tabT').className='tab'+(t=='t'?' on':'');
+  document.getElementById('tabP').className='tab'+(t=='p'?' on':'');
+  renderContent();
+}
+
+function markStudied(){
+  var k=unitKey();
+  if(!progress[k]){ progress[k]=true; save(); updateProgress(); toast('已记录本单元学习 ✓'); }
+}
+function renderAll(){
+  markStudied();
+  renderContent();
+}
+function renderContent(){
+  var box=document.getElementById('content');
+  if(curTab=='w') box.innerHTML = renderWords();
+  else if(curTab=='t') box.innerHTML = renderTexts();
+  else box.innerHTML = renderPatterns();
+}
+
+function renderWords(){
+  var list=WORDS.filter(function(x){return x.g==META[curTerm].g && x.term==META[curTerm].term && x.u==curUnit;});
+  var mu=curMetaUnit();
+  var h='<div class="card"><p class="utitle">Unit '+curUnit+' '+mu.title+'</p>'
+       +'<p class="usub">单词 '+list.length+' 个 · 点 🔊 跟读</p>';
+  if(!list.length){ h+='<div class="empty">本单元暂无单词数据</div>'; return h+'</div>'; }
+  list.forEach(function(w){
+    h+='<div class="wrow"><button class="wspk" onclick="speak(\''+esc(w.w)+'\')">🔊</button>'
+      +'<div class="wmain"><span class="wen">'+esc(w.w)+'</span><span class="wipa">'+esc(w.ipa||'')+'</span>'
+      +'<div class="wcn">'+esc(w.cn)+'</div></div>'
+      +'<span class="wcat">'+esc(w.cat||'')+'</span></div>';
+  });
+  return h+'</div>';
+}
+
+function renderTexts(){
+  var list=TEXTS.filter(function(x){return x.g==META[curTerm].g && x.term==META[curTerm].term && x.u==curUnit;});
+  var mu=curMetaUnit();
+  var h='<div class="card"><p class="utitle">Unit '+curUnit+' '+mu.title+'</p>'
+       +'<p class="usub">'+esc((list[0]&&list[0].title)||'Let’s talk')+' · 点 🔊 听句子</p>';
+  if(!list.length){ h+='<div class="empty">本单元暂无课文数据</div>'; return h+'</div>'; }
+  list.forEach(function(t){
+    t.lines.forEach(function(l){
+      h+='<div class="line"><button class="lspk" onclick="speak(\''+esc(l.en)+'\')">🔊</button>'
+        +'<div class="lbody"><div class="lrole">'+esc(l.role)+'</div>'
+        +'<div class="len">'+esc(l.en)+'</div><div class="lcn">'+esc(l.cn)+'</div></div></div>';
+    });
+  });
+  return h+'</div>';
+}
+
+function renderPatterns(){
+  var list=PATTERNS.filter(function(x){return x.g==META[curTerm].g && x.term==META[curTerm].term && x.u==curUnit;});
+  var mu=curMetaUnit();
+  var h='<div class="card"><p class="utitle">Unit '+curUnit+' '+mu.title+'</p>'
+       +'<p class="usub">重点句型 '+list.length+' 条</p>';
+  if(!list.length){ h+='<div class="empty">本单元暂无句型数据</div>'; return h+'</div>'; }
+  list.forEach(function(p){
+    h+='<div class="pblock"><div class="pfocus">'+esc(p.focus)+'</div>'
+      +'<div class="ppat">'+esc(p.pattern)+'</div>'
+      +'<ul class="pex">';
+    (p.examples||[]).forEach(function(ex){
+      h+='<li><button class="pexp" onclick="speak(\''+esc(ex)+'\')">🔊</button><span>'+esc(ex)+'</span></li>';
+    });
+    h+='</ul><div class="pcn">'+esc(p.cn)+'</div></div>';
+  });
+  return h+'</div>';
+}
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>'"]/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]; }); }
+
+/* ============ 进度 ============ */
+function save(){ if(ME) Accounts.set(APP, ME, 'progress', progress); }
+function updateProgress(){
+  var n=Object.keys(progress).filter(function(k){return progress[k];}).length;
+  var pct = TOTAL_UNITS? Math.round(n/TOTAL_UNITS*100):0;
+  document.getElementById('pgText').textContent='已学 '+n+' / '+TOTAL_UNITS+' 单元';
+  document.getElementById('pgBar').style.width=pct+'%';
+}
+
+/* ============ 启动 ============ */
+function bootstrap(){
+  progress = (ME && Accounts.get(APP, ME, 'progress')) || {};
+  renderTermSel(); renderUnitSel(); updateProgress();
+  renderAll();
+}
+function enableSwitchReload(fn){
+  if(Accounts.mountSwitch && Accounts.mountSwitch._withReload) return;
+  var orig = Accounts.mountSwitch;
+  Accounts.mountSwitch = function(app){
+    var r = orig ? orig.apply(Accounts, arguments) : null;
+    if(Accounts.mountSwitch._withReload) return r;
+    Accounts.mountSwitch._withReload = true;
+    return r;
+  };
+  Accounts.mountSwitch._withReload = false;
+  // 重新登录后刷新
+  var _gate = Accounts.gate;
+}
+Accounts.gate(APP, { onLogin: function(user){
+  ME = user;
+  if(window.StudyTime) StudyTime.track(ME, 'pep');
+  bootstrap();
+  Accounts.mountSwitch(APP);
+}});
+</script>
+</body>
+</html>

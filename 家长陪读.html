@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<meta charset="utf-8">
+<title>家长陪读 · 亲子共读</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#ffd6a5">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#f4f7fb; --card:#ffffff; --ink:#1f2a44; --sub:#7b87a3;
+    --line:#e6ecf5; --blue:#4cc9f0; --pink:#ff8fab; --gold:#ffd166;
+    --green:#06d6a0; --purple:#b292ff; --radius:18px; --shadow:0 8px 24px rgba(31,42,68,.08);
+  }
+  html,body{min-height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(160deg,#eaf6ff 0%,#fff6ec 60%,#fdeef6 100%);
+    color:var(--ink);padding:0 0 40px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .top{
+    position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;
+    padding:14px 16px;background:rgba(255,255,255,.82);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .top .brand{font-size:18px;font-weight:800;display:flex;align-items:center;gap:8px}
+  .top .back{margin-left:auto;border:none;background:linear-gradient(135deg,#6a5ae0,#5b4bd6);color:#fff;border-radius:14px;padding:11px 18px;font-size:16px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 4px 12px rgba(91,75,214,.45)}
+  .top .back:active{transform:scale(.95)}
+  main{max-width:560px;margin:0 auto;padding:22px 16px}
+  .hero{text-align:center;margin:10px 0 14px}
+  .hero .big{font-size:52px;line-height:1}
+  .hero h1{font-size:22px;margin-top:8px}
+  .hero p{color:var(--sub);font-size:14px;line-height:1.7;margin-top:8px}
+  /* 孩子切换 */
+  .child-switch{display:flex;gap:10px;margin:6px 0 4px}
+  .child-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
+    background:#fff;border:3px solid #eee;border-radius:18px;padding:12px 8px;cursor:pointer;
+    font-weight:800;font-size:15px;transition:.15s;color:#9a9a9a}
+  .child-tab .ava{font-size:26px}
+  .child-tab .rl{font-size:12px;color:#bbb;font-weight:700}
+  .child-tab.zachary.active{border-color:#ff8c42;color:#3d3a4b;background:#fff6ef;box-shadow:0 6px 16px rgba(255,140,66,.18)}
+  .child-tab.zoran.active{border-color:#4cc9f0;color:#3d3a4b;background:#eef9ff;box-shadow:0 6px 16px rgba(76,201,240,.18)}
+  .child-tab:active{transform:scale(.98)}
+  .sec-title{font-size:15px;font-weight:800;margin:22px 4px 12px;display:flex;align-items:center;gap:6px}
+  .grid{display:grid;grid-template-columns:1fr;gap:14px}
+  .entry{
+    display:flex;align-items:center;gap:16px;background:var(--card);border-radius:var(--radius);
+    padding:18px 16px;box-shadow:var(--shadow);cursor:pointer;border:1px solid var(--line);
+    text-decoration:none;color:var(--ink);transition:transform .12s;
+  }
+  .entry:active{transform:translateY(2px) scale(.99)}
+  .entry .e-ico{font-size:42px;line-height:1;width:64px;text-align:center;
+    background:#f3f7ff;border-radius:16px;padding:10px 0}
+  .entry .e-main{flex:1;min-width:0}
+  .entry .e-name{font-size:17px;font-weight:800}
+  .entry .e-ds{font-size:13px;color:var(--sub);margin-top:4px;line-height:1.5}
+  .entry .e-go{font-size:22px;color:var(--pink);font-weight:800;flex:0 0 auto}
+  /* 陪读指引 */
+  .tips{margin-top:14px;background:#fff;border-radius:var(--radius);padding:18px 16px;
+    box-shadow:var(--shadow);border:1px solid var(--line)}
+  .tips h3{font-size:15px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+  .tips ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+  .tips li{font-size:13px;color:var(--ink);line-height:1.6;display:flex;gap:8px;align-items:flex-start}
+  .tips li .tk{font-size:16px;line-height:1.2;flex:0 0 auto}
+  /* 共读记录 */
+  .rec{background:#fff;border-radius:var(--radius);padding:18px 16px;box-shadow:var(--shadow);border:1px solid var(--line)}
+  .rec .rh{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;margin-bottom:6px}
+  .rec .rstreak{font-size:13px;color:var(--sub);margin-bottom:12px}
+  .rec .rstreak b{color:var(--orange,#ff9f1c);font-size:16px}
+  .rec .dots{display:flex;gap:8px;justify-content:space-between;margin-bottom:14px}
+  .rec .dot{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .rec .dot .c{width:100%;aspect-ratio:1;border-radius:14px;background:#f1f3f7;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;transition:.2s}
+  .rec .dot.on .c{background:linear-gradient(135deg,#4cc9f0,#06d6a0);box-shadow:0 4px 12px rgba(6,214,160,.3)}
+  .rec .dot.today .c{outline:3px solid #ffd166;outline-offset:2px}
+  .rec .dot .d{font-size:11px;color:var(--sub);font-weight:700}
+  .rec .btns{display:flex;gap:10px}
+  .rec .btn{border:none;border-radius:14px;padding:13px 16px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;flex:1}
+  .rec .btn:active{transform:scale(.97)}
+  .rec .btn.done{background:#e8fbf1;color:#06a37a;border:2px solid #b8eccf}
+  .rec .btn.idle{background:linear-gradient(135deg,#ff9f1c,#ff8fab);color:#fff;box-shadow:0 6px 16px rgba(255,143,171,.35)}
+  .rec .btn.ghost{background:#fff;color:#7b87a3;border:2px solid var(--line);flex:0 0 auto}
+  /* 亲子互动题 */
+  .games{display:flex;flex-direction:column;gap:12px}
+  .gcard{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--line);
+    padding:16px;cursor:pointer;transition:.15s}
+  .gcard:active{transform:scale(.99)}
+  .gcard .gq{font-size:15px;font-weight:800;display:flex;gap:8px;align-items:flex-start}
+  .gcard .gq .gn{font-size:13px;color:#fff;background:var(--purple);border-radius:8px;padding:2px 8px;font-weight:800;flex:0 0 auto}
+  .gcard .ga{font-size:13px;color:#3a6;line-height:1.6;margin-top:10px;background:#f3fbf6;border-radius:12px;padding:10px 12px;display:none}
+  .gcard.open .ga{display:block;animation:slideIn .25s}
+  @keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+  .gmore{text-align:center;margin-top:4px}
+  .gmore button{border:none;background:var(--purple);color:#fff;border-radius:14px;padding:11px 20px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;box-shadow:0 4px 12px rgba(178,146,255,.35)}
+  .gmore button:active{transform:scale(.97)}
+  .foot{text-align:center;color:var(--sub);font-size:12px;margin-top:28px;line-height:1.7}
+  .banner{position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(20px);
+    background:linear-gradient(120deg,#ff9f1c,#ff8fab);color:#fff;padding:14px 22px;border-radius:18px;
+    font-size:15px;font-weight:700;box-shadow:0 10px 28px rgba(255,143,171,.5);z-index:95;opacity:0;
+    transition:.4s;max-width:92vw;text-align:center;pointer-events:none}
+  .banner.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><span>🤝</span> 家长陪读</div>
+  <button class="back" onclick="location.href='门户.html'">↩ 返回</button>
+</header>
+
+<main>
+  <div class="child-switch" id="childSwitch"></div>
+  <div class="hero" id="hero"></div>
+
+  <div class="sec-title"><span>📚</span> 陪读应用</div>
+  <div class="grid" id="apps"></div>
+
+  <div class="sec-title"><span>📖</span> 共读打卡记录</div>
+  <div class="rec">
+    <div class="rh"><span>🌟 亲子共读</span></div>
+    <div class="rstreak" id="recStreak"></div>
+    <div class="dots" id="recDots"></div>
+    <div class="btns">
+      <button class="btn idle" id="recBtn" onclick="toggleRead()">📖 今天陪读打卡</button>
+      <button class="btn ghost" onclick="clearRead()" title="清空本孩记录">清空</button>
+    </div>
+  </div>
+
+  <div class="sec-title"><span>🤱</span> 陪读小建议</div>
+  <div class="tips" id="tips"></div>
+
+  <div class="sec-title"><span>🎲</span> 亲子互动题 <span style="font-size:12px;color:var(--sub);font-weight:600">（点开看陪玩建议）</span></div>
+  <div class="games" id="games"></div>
+  <div class="gmore"><button onclick="rotateGames()">🔄 换一批 ➡️</button></div>
+
+  <div class="foot" id="foot"></div>
+</main>
+
+<div class="banner" id="banner"></div>
+
+<script>
+/* ===== 孩子配置（与全站 Accounts.USERS 一致，uid: zachary / zoran） ===== */
+var KIDS = (window.Accounts && Accounts.USERS) ? Accounts.USERS :
+  [{id:'zachary',name:'Zachary',role:'哥哥',emoji:'🦊',color:'#ff8c42'},
+   {id:'zoran',name:'Zoran',role:'弟弟',emoji:'🐰',color:'#4cc9f0'}];
+var CUR = 'zoran'; // 默认弟弟（原页即弟弟陪读），家长可一键切换
+
+var PROFILE = {
+  zachary:{
+    name:'Zachary', role:'哥哥', emoji:'🦊', color:'#ff8c42', stage:'小学四年级 (9-10岁)',
+    hero:'和 Zachary 一起读吧',
+    sub:'哥哥四年级，可正式开展分级阅读、听写与单词冲刺。<br>每次 15–25 分钟，重在坚持与语音语感，别压成任务。',
+    apps:[
+      {e:'📚',n:'分级阅读',d:'选 L2–L3（小学段），一起讨论故事大意、人物和生词。',url:'分级阅读.html'},
+      {e:'📝',n:'英语阅读理解',d:'读短文、做问答，培养提取信息与推断能力。',url:'英语-阅读理解.html'},
+      {e:'✍️',n:'听写默写',d:'听一句写一句，写完对照答案，错的再跟读一遍。',url:'英语-听写默写.html'},
+      {e:'🔤',n:'自然拼读串记卡',d:'和家长一起拼读 CVC 词、找发音规律，每天 5 分钟练语感。',url:'自然拼读串记卡.html'},
+      {e:'🎤',n:'口语跟读',d:'听原音、跟读打分，家长陪着练，发音更自然更敢说。',url:'英语-口语跟读.html'},
+      {e:'🔤',n:'PEP 单词冲刺',d:'每天 5 个四年级单词，陪娃拼读 + 造句。',url:'PEP冲刺计划.html'},
+      {e:'📖',n:'查字典练习',d:'部首查字法闯关，点汉字能发声，陪娃动手练查字典。',url:'语文-查字典.html'}
+    ],
+    tips:[
+      ['🌟','每次 15–25 分钟，单 App 不超 20 分钟，一天屏幕总时长 ≤1.5 小时。'],
+      ['👂','先听原音，再让孩子跟读 / 复述，重点练语音语调而非逐字背诵。'],
+      ['📖','阅读理解先做"说了什么"，再抠生词；错题一起看解析，别急着给答案。'],
+      ['✍️','听写默写写完点"对照答案"，对的打勾、错的用红笔改，改完再读一遍。'],
+      ['🏆','用积分商城做正向激励：攒够分换一次小奖励，比唠叨管用。']
+    ],
+    games:[
+      {q:'今天学了哪个新单词？用英文说 3 遍，再造 1 个句子',a:'让孩子大声说出来，家长纠正发音或补充例句，给贴纸🏅'},
+      {q:'用英语说说今天学校 / 家里发生的一件事',a:'不纠错、只鼓励，能说 2–3 句就鼓掌👏'},
+      {q:'指读一篇短文，读到不认识的词就停，一起猜意思',a:'用图片 / 上下文猜词，比查字典更练阅读策略🧠'},
+      {q:'听写 5 个词，全对就盖一个"听写小达人"章',a:'错词当晚再听写一次，连续 3 天全对有小奖励⭐'},
+      {q:'用一个学过的句型编 1 个搞笑句子',a:'越搞笑越记得住，家长一起编，气氛轻松😄'},
+      {q:'把今天读的故事用 3 句话讲给家长听',a:'练复述与逻辑，讲完问"最喜欢哪部分"，引导表达💬'},
+      {q:'用 3 个今天学的词编一个 mini story（3 句话）',a:'家长当听众，故事越离谱越好笑，结尾让孩子自己收尾📚'},
+      {q:'玩"我说你拼"：家长说词，孩子快速说出首字母',a:'拼对 3 个盖一个章，错的光拼不罚，轻松练拼写直觉✏️'},
+      {q:'挑 2 个同类词（如水果）做英语快问快答',a:'家长说中文孩子抢答英文，计时加分，像小竞赛🍎🍌'}
+    ]
+  },
+  zoran:{
+    name:'Zoran', role:'弟弟', emoji:'🐰', color:'#4cc9f0', stage:'幼儿园中班 (4-5岁)',
+    hero:'和 Zoran 一起读吧',
+    sub:'弟弟（中班）还不需要认字或拼读。<br>这里只放最适合亲子共读的小应用，每天一小会儿就好～',
+    apps:[
+      {e:'📚',n:'分级阅读 · L1 启蒙',d:'图片 + emoji + 逐词跟读，听看即可，无需认字。选 L1（3-4岁）最合适。',url:'分级阅读.html'},
+      {e:'🔤',n:'听音识图 · 单词',d:'点小喇叭听词、点对的图图，全程无字母无拼写，答对送贴纸。',url:'单词训练.html'},
+      {e:'✅',n:'每日听读打卡（幼儿版）',d:'听一听 → 我听完啦，简单打卡 + 集贴纸，培养听读习惯。',url:'英语每日打卡.html'},
+      {e:'🎵',n:'英语儿歌听唱',d:'点歌词听标准发音，跟唱 + 做动作，零压力练语感。',url:'英语儿歌听唱.html'}
+    ],
+    tips:[
+      ['🌟','每次 5–8 分钟就够，用 App 底部的"我完成啦"收集贴纸，正向鼓励代替连续打卡压力。'],
+      ['👂','先一起听，再轻轻跟读，不求准确，重点是语感和兴趣。'],
+      ['📖','分级阅读选 L1（3-4岁），从图多词短的书开始，别急着往上跳。'],
+      ['🚫','拼写、短文、跳绳这类超龄应用先不碰，免得挫败；哥哥 Zachary 才用得到。']
+    ],
+    games:[
+      {q:'听到 "apple"，指指家里哪个是苹果🍎',a:'指对就击掌，指错笑笑再指一次，零压力👏'},
+      {q:'跟着音频学动物叫：cat / dog / cow',a:'比谁叫得像，孩子最买账，顺便练发音🐱🐶🐮'},
+      {q:'找出书里红色的东西，用英文说 "red"',a:'找颜色游戏，边玩边记颜色词🔴'},
+      {q:'一起唱一首英文儿歌，做动作',a:'TPR 全身反应法，动起来比坐着念有效💃'},
+      {q:'把今天的贴纸数一数，用英文报数 1–10',a:'数贴纸练数字，自然不刻意🔢'},
+      {q:'指认五官并说英文：eye / nose / mouth',a:'边指边说，照镜子更好玩🪞'},
+      {q:'找家里 5 样东西，挨个用英文说名字',a:'数到 5 击掌，说不出家长给提示，零压力练词汇🔢'},
+      {q:'家长做动作（跑/跳/吃），孩子喊英文指令',a:'TPR 反应游戏，动作越快越好玩，练动词💃'},
+      {q:'家长说中文颜色，孩子抢答英文，做快问快答',a:'红黄蓝绿轮流来，答对有贴纸奖励🌈'},
+      {q:'唱一首英文儿歌（Twinkle / ABC），边唱边做动作',a:'家长一起唱，唱完说出一个学到的词，气氛最轻松🎵'}
+    ]
+  }
+};
+
+/* ===== 工具 ===== */
+function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayStr(){ return ymd(new Date()); }
+function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function readKey(uid){ return 'parent_read_'+uid; }
+function getReads(uid){ try{ return JSON.parse(localStorage.getItem(readKey(uid)))||[]; }catch(e){ return []; } }
+function setReads(uid,arr){ localStorage.setItem(readKey(uid), JSON.stringify(arr)); }
+function showBanner(t){ var b=document.getElementById('banner'); b.textContent=t; b.classList.add('show'); clearTimeout(b._t); b._t=setTimeout(function(){ b.classList.remove('show'); },3800); }
+
+/* ===== 共读记录 ===== */
+function toggleRead(){
+  var uid=CUR, t=todayStr(), arr=getReads(uid);
+  var i=arr.indexOf(t);
+  if(i>=0){ arr.splice(i,1); showBanner('已取消今天陪读记录（积分同步回退）'); }
+  else { arr.push(t); arr.sort(); showBanner('📖 今天陪读打卡完成！+3 积分 💝'); }
+  setReads(uid,arr); renderRead();
+}
+function clearRead(){
+  if(!confirm('确定清空 '+PROFILE[CUR].name+' 的全部共读记录？')) return;
+  localStorage.removeItem(readKey(CUR)); renderRead();
+}
+function computeStreak(arr){
+  var set={}; arr.forEach(function(d){ set[d]=1; });
+  var cur=new Date(); cur.setHours(0,0,0,0);
+  if(!set[ymd(cur)]) cur.setDate(cur.getDate()-1); // 今天没打则从昨天起算
+  var n=0;
+  for(var g=0; g<2000; g++){
+    if(set[ymd(cur)]){ n++; cur.setDate(cur.getDate()-1); } else break;
+  }
+  return n;
+}
+function renderRead(){
+  var p=PROFILE[CUR], arr=getReads(CUR), set={};
+  arr.forEach(function(d){ set[d]=1; });
+  var streak=computeStreak(arr);
+  document.getElementById('recStreak').innerHTML='已累计共读 <b>'+arr.length+'</b> 天 · 当前连续 <b>'+streak+'</b> 天 🔥';
+  // 最近 7 天
+  var today=new Date(); today.setHours(0,0,0,0);
+  var wd=['日','一','二','三','四','五','六'], dots='';
+  for(var i=6;i>=0;i--){
+    var d=new Date(today); d.setDate(d.getDate()-i);
+    var k=ymd(d), on=!!set[k], isToday=(i===0);
+    dots+='<div class="dot'+(on?' on':'')+(isToday?' today':'')+'">'+
+      '<div class="c">'+(on?'✓':'')+'</div>'+
+      '<div class="d">'+(isToday?'今天':wd[d.getDay()])+'</div></div>';
+  }
+  document.getElementById('recDots').innerHTML=dots;
+  var btn=document.getElementById('recBtn');
+  if(set[todayStr()]){ btn.className='btn done'; btn.textContent='✓ 今天已打卡（点此取消）'; }
+  else { btn.className='btn idle'; btn.textContent='📖 今天陪读打卡'; }
+}
+
+/* ===== 亲子互动题（轮换） ===== */
+var GAME_OFF=0;
+function renderGames(){
+  var list=PROFILE[CUR].games, n=list.length;
+  var html='';
+  for(var i=0;i<3;i++){
+    var idx=(GAME_OFF+i)%n;
+    var g=list[idx];
+    html+='<div class="gcard" id="gc-'+idx+'" onclick="flipGame('+idx+')">'+
+      '<div class="gq"><span class="gn">Q'+(i+1)+'</span><span>'+esc(g.q)+'</span></div>'+
+      '<div class="ga">💡 陪玩建议：'+esc(g.a)+'</div></div>';
+  }
+  document.getElementById('games').innerHTML=html;
+}
+function flipGame(idx){
+  var el=document.getElementById('gc-'+idx); if(el) el.classList.toggle('open');
+}
+function rotateGames(){ GAME_OFF=(GAME_OFF+3)%PROFILE[CUR].games.length; renderGames(); }
+
+/* ===== 孩子切换 ===== */
+function renderSwitch(){
+  document.getElementById('childSwitch').innerHTML=KIDS.map(function(u){
+    var on=(u.id===CUR);
+    return '<div class="child-tab '+u.id+(on?' active':'')+'" onclick="setChild(\''+u.id+'\')">'+
+      '<span class="ava">'+u.emoji+'</span><span>'+u.name+'</span><span class="rl">'+u.role+'</span></div>';
+  }).join('');
+}
+function setChild(id){
+  if(!PROFILE[id]) return; CUR=id;
+  renderSwitch(); renderAll();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function renderAll(){
+  var p=PROFILE[CUR];
+  document.getElementById('hero').innerHTML='<div class="big">'+p.emoji+'👨‍👩‍👧</div>'+
+    '<h1>'+esc(p.hero)+'</h1><p>'+p.sub+'</p>';
+  document.getElementById('apps').innerHTML=p.apps.map(function(a){
+    return '<a class="entry" href="'+a.url+'">'+
+      '<div class="e-ico">'+a.e+'</div>'+
+      '<div class="e-main"><div class="e-name">'+esc(a.n)+'</div><div class="e-ds">'+esc(a.d)+'</div></div>'+
+      '<div class="e-go">➡️</div></a>';
+  }).join('');
+  document.getElementById('tips').innerHTML='<h3>🤱 陪读小建议 · '+esc(p.stage)+'</h3><ul>'+
+    p.tips.map(function(t){ return '<li><span class="tk">'+t[0]+'</span><span>'+esc(t[1])+'</span></li>'; }).join('')+'</ul>';
+  document.getElementById('foot').innerHTML='家长陪读 · 数据按孩子独立存储（'+esc(p.name)+'）'+
+    '<br>哥哥 Zachary / 弟弟 Zoran 切换查看，互不影响';
+  renderRead(); renderGames();
+}
+
+/* 启动 */
+renderSwitch();
+renderAll();
+</script>
+<script>
+if('serviceWorker' in navigator){var _h=location.hostname;if(_h!=='localhost'&&_h!=='127.0.0.1'){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}}
+</script>
+<script src="sync.js"></script>
+</body>
+</html>

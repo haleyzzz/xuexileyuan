@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>🌞 统一打卡中心</title>
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<script src="accounts.js"></script>
+<script src="rewards.js"></script>
+<style>
+:root{--e:#4cc9f0;--c:#ff8fab;--m:#06d6a0;--s:#b292ff;--o:#ff9f1c;--ink:#3d3a4b;--mut:#8a8a93;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#fff8ef,#eef6ff);color:var(--ink);padding:14px;max-width:680px;margin:0 auto;min-height:100vh}
+header{background:linear-gradient(120deg,#ff8fab,#ff9f1c);color:#fff;border-radius:24px;padding:18px;box-shadow:0 8px 22px rgba(255,143,171,.35)}
+header h1{font-size:21px;display:flex;align-items:center;gap:8px}
+.cur{font-size:14px;margin-top:6px;font-weight:700}
+.wrange{font-size:12px;margin-top:4px;opacity:.92}
+.wbar{height:10px;background:rgba(255,255,255,.35);border-radius:99px;margin-top:10px;overflow:hidden}
+.wbar i{display:block;height:100%;background:#fff;border-radius:99px;transition:width .4s}
+.wtxt{font-size:13px;font-weight:800;margin-top:6px}
+.tabs{display:flex;gap:8px;margin:14px 2px}
+.tab{flex:1;text-align:center;padding:11px;border-radius:16px;background:#fff;color:#7a8aa0;font-weight:800;font-size:15px;cursor:pointer;border:2px solid transparent}
+.tab.on{color:var(--o);border-color:var(--o);background:#fff3e0}
+.sec{background:#fff;border-radius:20px;padding:16px;margin-top:14px;box-shadow:0 6px 16px rgba(0,0,0,.06)}
+.sec h2{font-size:16px;font-weight:900;display:flex;align-items:center;gap:6px}
+.sec h2 .cnt{margin-left:auto;font-size:13px;color:var(--mut);font-weight:800}
+.tcard{display:flex;align-items:center;gap:10px;background:#f7f9fc;border-radius:16px;padding:12px;margin-top:10px;border-left:8px solid var(--e);transition:opacity .2s}
+.tcard.done{background:#f0fbf5;border-left-color:var(--m)}
+.tcard .big{font-size:28px}
+.tcard .mid{flex:1;min-width:0}
+.tcard .name{font-size:16px;font-weight:800}
+.tcard .subj{display:inline-block;font-size:11px;font-weight:800;color:#fff;border-radius:8px;padding:2px 8px;margin-top:4px}
+.tcard .btns{display:flex;flex-direction:column;gap:6px}
+.tcard .go{font-size:13px;font-weight:800;color:#fff;background:var(--o);border:none;border-radius:12px;padding:7px 12px;cursor:pointer;white-space:nowrap}
+.tcard .ok{font-size:13px;font-weight:800;border:none;border-radius:12px;padding:7px 12px;cursor:pointer;white-space:nowrap;background:#eef1f6;color:var(--mut)}
+.tcard .ok.did{background:var(--m);color:#fff}
+.wrow{display:flex;align-items:center;gap:10px;padding:10px 8px;border-bottom:1px dashed #edf0f5}
+.wrow:last-child{border-bottom:none}
+.wrow.future{opacity:.62}
+.wrow.today{background:#fff8ef;border-radius:14px}
+.wday{width:52px;flex-shrink:0;text-align:center}
+.wday .d1{font-size:14px;font-weight:900}
+.wday .d2{font-size:11px;color:var(--mut);margin-top:1px}
+.wday.today .d1{color:var(--o)}
+.wchips{flex:1;display:flex;flex-wrap:wrap;gap:5px}
+.chip{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:700;background:#f1f4f9;color:#7a8aa0;border-radius:10px;padding:4px 8px;text-decoration:none;cursor:pointer}
+.chip.did{background:#e2f7ec;color:#087f5b}
+.chip .ce{font-size:14px}
+.wcnt{width:38px;flex-shrink:0;text-align:right;font-size:13px;font-weight:900;color:var(--mut)}
+.hist{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.hcell{background:#f7f9fc;border-radius:10px;padding:6px 10px;font-size:12px;font-weight:800;color:var(--mut)}
+.hcell b{color:var(--ink)}
+.more{margin-top:16px;text-align:center}
+.more a{display:inline-block;background:#fff;border:2px solid var(--e);color:var(--e);border-radius:14px;padding:10px 18px;font-weight:800;text-decoration:none;font-size:14px}
+.note{font-size:12px;color:#aaa;text-align:center;margin-top:14px;line-height:1.7}
+#iframeWrap{margin-top:12px}
+iframe{width:100%;height:78vh;border:0;border-radius:16px;background:#fff}
+.fallback{text-align:center;margin-top:10px}
+.fallback a{color:var(--o);font-weight:800;text-decoration:none;font-size:14px}
+.empty{text-align:center;color:var(--mut);font-size:14px;padding:18px 0;font-weight:700}
+.grp{margin:14px 0 8px;font-size:13px;font-weight:900;color:#5c4400;background:#ffd43b;border-radius:10px;padding:6px 12px;display:inline-block}
+.grp.rot{color:#1d3557;background:#d0e7ff}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:10px}
+.pick{display:flex;align-items:center;justify-content:space-between;gap:6px;background:#f7f9fc;border-radius:12px;padding:8px 10px;border:1px solid #edf0f5}
+.pick.did{background:#e2f7ec;border-color:#bfe9d5}
+.pick .pname{font-size:13px;font-weight:800;color:var(--ink);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick .ptog{flex-shrink:0;font-size:12px;font-weight:800;border:none;border-radius:10px;padding:5px 10px;background:#eef1f6;color:var(--mut);cursor:pointer}
+.pick.did .ptog{background:var(--m);color:#fff}
+.termnotice{background:linear-gradient(120deg,#fff3bf,#ffe8cc);border:2px dashed #ffa94d;border-radius:14px;padding:10px 12px;margin-bottom:12px;font-size:13px;font-weight:800;color:#b45309;line-height:1.6}
+.termnotice b{color:#d9480f}
+.themebox{display:inline-block;font-size:11px;font-weight:900;color:#fff;border-radius:8px;padding:2px 8px;margin-left:6px;background:var(--o)}
+.wday .d3{font-size:10px;color:var(--o);font-weight:900;margin-top:2px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🌞 统一打卡中心</h1>
+  <div class="cur" id="cur">加载中…</div>
+  <div class="wrange" id="wrange"></div>
+  <div class="wbar"><i id="wbarFill" style="width:0%"></i></div>
+  <div class="wtxt" id="wtxt"></div>
+</header>
+<div class="tabs">
+  <div class="tab on" id="tabCheckinBtn" onclick="switchTab('checkin')">📅 本周打卡</div>
+  <div class="tab" id="tabProgressBtn" onclick="switchTab('progress')">📊 学习进度</div>
+</div>
+
+<div id="tabCheckin">
+  <div class="sec">
+    <h2>📍 今日任务 <span class="cnt" id="todayCnt"></span></h2>
+    <div id="todayCards"></div>
+  </div>
+  <div class="sec">
+    <h2>🗓️ 本周安排 <span class="cnt" id="weekRule"></span></h2>
+    <div id="weekRows"></div>
+  </div>
+  <div class="sec">
+    <h2>📈 近几周完成率</h2>
+    <div class="hist" id="histRow"></div>
+  </div>
+  <div class="more"><a href="打卡中心.html">☁️ 更多工具 · 云同步</a></div>
+  <div class="note" id="planNote"></div>
+</div>
+
+<div id="tabProgress" style="display:none">
+  <div id="iframeWrap"><iframe src="进度看板.html" title="学习进度看板"></iframe></div>
+  <div class="fallback"><a href="进度看板.html" target="_blank">↗ 在新页面打开学习进度看板</a></div>
+</div>
+
+<script>
+var APP='unified-checkin';
+var ME=null;
+var GRADE_NAMES={0:'幼儿园',1:'一年级',2:'二年级',3:'三年级',4:'四年级',5:'五年级',6:'六年级'};
+var DAY_NAMES=['周一','周二','周三','周四','周五','周六','周日'];
+var DAY_THEME=['英语','语文','数学','科学','综合','轻松','轻松'];   // 周一~周日 主题日，给任务加结构感
+var SUBJ_COLOR={'英语':'var(--e)','语文':'var(--c)','数学':'var(--m)','科学':'var(--s)','通用':'var(--o)'};
+
+/* ===== 周计划模块清单（全部应用，不含本页自身） =====
+ * 学期模式（2026-08-31 起，小学孩子，见 TERM_* 常量）：每日核心=跳绳+单词训练，
+ *   上学日加英语听说 1 项轮换 + 语数英科任选 1 项，周末 3 项兴趣轮换；PEP 冲刺暂停。
+ * 暑期/中班轮换（本注释以下分配）：打卡类应用不参与轮换，
+ *   其余模块按序号 i 循环落到星期 (i % 7)，每个模块每周恰好出现一次。 */
+var WEEK_MODULES=[
+  /* 英语 11 */
+  {id:'wordtrain',      name:'单词训练',     emoji:'🔤', url:'单词训练.html',      subject:'英语'},
+  {id:'read',           name:'英语阅读',     emoji:'📚', url:'英语阅读.html',      subject:'英语'},
+  {id:'grammar',        name:'英语语法学习卡',emoji:'📘', url:'英语语法学习卡.html', subject:'英语'},
+  {id:'pep-sprint',     name:'PEP 冲刺计划', emoji:'🍅', url:'PEP冲刺计划.html',   subject:'英语'},
+  {id:'english-listen', name:'听力填空',     emoji:'🎧', url:'英语-听力填空.html', subject:'英语'},
+  {id:'english-read',   name:'阅读理解',     emoji:'📖', url:'英语-阅读理解.html', subject:'英语'},
+  {id:'phonics',        name:'自然拼读',     emoji:'🔤', url:'自然拼读串记卡.html', subject:'英语'},
+  {id:'oral',           name:'口语跟读',     emoji:'🎤', url:'英语-口语跟读.html', subject:'英语'},
+  {id:'engci',          name:'英语每日打卡', emoji:'📋', url:'英语每日打卡.html',  subject:'英语'},
+  {id:'en-dictation',   name:'听写默写',     emoji:'✍️', url:'英语-听写默写.html', subject:'英语'},
+  /* 语文 10 */
+  {id:'chinese-dictation',name:'字词听写',   emoji:'✍️', url:'语文-字词听写.html', subject:'语文'},
+  {id:'chinese-poem',   name:'古诗词诵读',   emoji:'📜', url:'语文-古诗词.html',   subject:'语文'},
+  {id:'chinese-text',   name:'课文背诵',     emoji:'📝', url:'语文-课文背诵.html', subject:'语文'},
+  {id:'chinese-dict',   name:'查字典练习',   emoji:'📕', url:'语文-查字典.html',   subject:'语文'},
+  {id:'idiom',          name:'成语闯关',     emoji:'🀄', url:'语文-成语闯关.html', subject:'语文'},
+  {id:'synant',         name:'近反义词',     emoji:'🔗', url:'语文-近反义词.html', subject:'语文'},
+  {id:'essay',          name:'作文起步',     emoji:'✍️', url:'语文-作文起步.html', subject:'语文'},
+  {id:'cnread',         name:'阅读理解',     emoji:'📖', url:'语文-阅读理解.html', subject:'语文'},
+  {id:'sentence-fix',   name:'语句诊治',     emoji:'🩺', url:'语文-语句诊治.html', subject:'语文'},
+  {id:'chinese-checkin',name:'语文每日打卡', emoji:'📖', url:'语文打卡.html',      subject:'语文'},
+  /* 数学 8 */
+  {id:'math-apply',     name:'应用题闯关',   emoji:'🎯', url:'数学-应用题闯关.html', subject:'数学'},
+  {id:'math-mental',    name:'口算挑战',     emoji:'🧮', url:'数学-口算挑战.html', subject:'数学'},
+  {id:'math-checkin',   name:'数学每日打卡', emoji:'🧮', url:'数学打卡.html',      subject:'数学'},
+  {id:'math-apply2',    name:'应用题进阶',   emoji:'🧠', url:'数学-应用题进阶.html', subject:'数学'},
+  {id:'units',          name:'单位换算',     emoji:'📏', url:'数学-单位换算.html', subject:'数学'},
+  {id:'vert',           name:'竖式计算',     emoji:'✏️', url:'数学-竖式计算.html', subject:'数学'},
+  {id:'geom',           name:'几何图形',     emoji:'📐', url:'数学-几何图形.html', subject:'数学'},
+  {id:'solveguide',     name:'解题引导',     emoji:'🧩', url:'数学-解题引导.html', subject:'数学'},
+  /* 科学 5 */
+  {id:'science-exp',    name:'科学小实验',   emoji:'🧪', url:'科学-小实验.html',   subject:'科学'},
+  {id:'science-observe',name:'自然观察',     emoji:'🔭', url:'科学-自然观察记录.html', subject:'科学'},
+  {id:'science-checkin',name:'科学每日打卡', emoji:'🔬', url:'科学打卡.html',      subject:'科学'},
+  {id:'science-quiz',   name:'科学小问答',   emoji:'🔬', url:'科学-科学问答.html', subject:'科学'},
+  {id:'science-inquiry',name:'探究记录',     emoji:'🔍', url:'科学-探究记录.html', subject:'科学'},
+  /* 通用 2 */
+  {id:'rope',           name:'跳绳打卡',     emoji:'🏃', url:'跳绳打卡.html',      subject:'通用'}
+];
+
+/* ===== 不参与轮换的打卡类应用（仅作排除清单，@日期键记录） ===== */
+var DAILY_IDS=['engci','chinese-checkin','math-checkin','science-checkin','rope'];
+/* ===== 每日必打卡：每天出现在今日任务置顶（按孩子课程过滤） ===== */
+var MUST_DAILY=['rope'];
+
+/* 当前孩子的每日必打卡模块（中班课程不含跳绳则自动隐藏） */
+function mustFor(uid){
+  var cur=null;
+  try{ cur=Accounts.curriculumFor(uid); }catch(e){}
+  return WEEK_MODULES.filter(function(m){
+    return MUST_DAILY.indexOf(m.id)>=0 && (!cur || cur.indexOf(m.id)>=0);
+  });
+}
+
+/* ===== 每日必打卡真实完成判定（读各子页面真实存储，避免与总中心 weekplan 双标记） =====
+ * rope：存于 weekplan 的 rope@日期（与跳绳子页同源，可在总中心勾选）；
+ * 四科每日打卡：读各自子页面记录（英语 history / 语数科 CheckIn records），总中心只展示+跳转，不重复写。 */
+function dailyRealDone(id, dStr){
+  if(id==='rope'){ return !!doneMap()[id+'@'+dStr]; }
+  if(id==='engci'){ var h=Accounts.get('engci', ME, 'history', {}); return !!(h && h[dStr]>0); }
+  var pre={'chinese-checkin':'chineseCheckIn_','math-checkin':'mathCheckIn_','science-checkin':'scienceCheckIn_'}[id];
+  if(!pre) return false;
+  try{ var d=JSON.parse(localStorage.getItem(pre+ME+'_v1')||'{}'); return !!(d.records && d.records[dStr] && Object.keys(d.records[dStr]).length>0); }catch(e){ return false; }
+}
+/* 每日必打卡卡片：rope 可勾选（写 weekplan）；四科读真实状态 + 跳转子页面打卡（不双标记） */
+function mustCard(m){
+  var tStr=ymd(new Date());
+  var d=dailyRealDone(m.id, tStr);
+  var col=SUBJ_COLOR[m.subject]||'var(--o)';
+  var btn = m.id==='rope'
+    ? '<button class="ok'+(d?' did':'')+'" onclick="toggleDone(\'rope\')">'+(d?'已完成 ✓':'打卡')+'</button>'
+    : '<button class="go" onclick="location.href=\''+m.url+'\'">去打卡 →</button>';
+  return '<div class="tcard'+(d?' done':'')+'" style="border-left-color:'+col+'">'+
+    '<span class="big">'+m.emoji+'</span>'+
+    '<div class="mid"><div class="name">'+esc(m.name)+(d?' <span style="color:#087f5b">✓</span>':'')+'</div>'+
+    '<span class="subj" style="background:'+col+'">'+m.subject+'</span></div>'+
+    '<div class="btns">'+btn+'</div></div>';
+}
+
+/* ===== 学期模式（2026-08-31 周一开学起自动生效；仅小学阶段孩子，中班沿用轮换） =====
+ * 每日核心（天天）：跳绳 + 单词训练；
+ * 上学日（周一~五）：+ 英语听说 1 项轮换（听力填空/听写默写/口语跟读/自然拼读）+ 语数英科任选 1 项；
+ * 周末（六/日）：+ 兴趣轮换 3 项；
+ * 暂停：PEP 冲刺计划（暑期专用）、积分商城（奖励页不作任务）。 */
+var TERM_START=new Date(2026,7,31);                                   // 8/31 周一
+var TERM_CORE=['rope','wordtrain'];
+var TERM_EN=['english-listen','en-dictation','oral','phonics'];
+var TERM_PAUSE=['pep-sprint','rewards'];
+function isTerm(uid){
+  if(new Date()<TERM_START) return false;
+  var u=uid||ME; if(!u) return false;
+  var cur=null;
+  try{ cur=Accounts.curriculumFor(u); }catch(e){}
+  return !cur;                                                        // 有课程过滤（中班）= 沿用暑期轮换
+}
+function modOf(id){ return WEEK_MODULES.filter(function(m){ return m.id===id; })[0]||null; }
+function termPool(){
+  return WEEK_MODULES.filter(function(m){
+    if(DAILY_IDS.indexOf(m.id)>=0) return false;
+    if(TERM_CORE.indexOf(m.id)>=0) return false;
+    if(TERM_EN.indexOf(m.id)>=0) return false;
+    if(TERM_PAUSE.indexOf(m.id)>=0) return false;
+    return true;
+  });
+}
+function termWeeksSince(){ return Math.floor((mondayOf(new Date())-TERM_START)/604800000); }
+/* i: 0=周一 … 6=周日；seed=开学至今周数（周末兴趣轮换每周换 6 个） */
+function termDayPlan(i, seed){
+  var pool=termPool();
+  var core=TERM_CORE.map(modOf).filter(Boolean);
+  if(i<=4){
+    var en=modOf(TERM_EN[i%TERM_EN.length]);
+    return { fixed: en? core.concat([en]) : core, en:en, picks:null, weekday:true, pool:pool };
+  }
+  var d=i-5, picks=[];
+  for(var j=0;j<3;j++){ picks.push(pool[((seed*6+d*3+j)%pool.length+pool.length)%pool.length]); }
+  return { fixed: core.concat(picks), en:null, picks:picks, weekday:false, pool:pool };
+}
+
+function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function mondayOf(d){ var m=new Date(d); m.setHours(0,0,0,0); m.setDate(m.getDate()-((m.getDay()+6)%7)); return m; }
+function weekKeyOf(d){ return ymd(mondayOf(d)); }
+function todayIdx(){ return (new Date().getDay()+6)%7; } // 0=周一
+/* 打卡存储键：学期模式全部按天；暑期轮换模块每周一条用模块 id。 */
+function dayKey(id, dstr){
+  if(isTerm()) return id+'@'+dstr;
+  return DAILY_IDS.indexOf(id)>=0 ? id+'@'+dstr : id;
+}
+
+/* 按孩子课程设置生成周计划：
+ * 打卡类应用（DAILY_IDS）不参与轮换；其余模块循环分配 i%7，每模块每周恰好出现一次。 */
+function planFor(uid){
+  var cur=null;
+  try{ cur=Accounts.curriculumFor(uid); }catch(e){}
+  var list=WEEK_MODULES.filter(function(m){
+    if(DAILY_IDS.indexOf(m.id)>=0) return false;         // 打卡类应用不参与轮换
+    return !cur || cur.indexOf(m.id)>=0;
+  });
+  var days=[[],[],[],[],[],[],[]];
+  list.forEach(function(m,i){ days[i%7].push(m); });
+  return days;
+}
+
+/* 哥哥(小学)周二游泳日豁免：周二不安排任何任务，周二轮换模块挪到周六补做（保持每模块每周 1 次不漏） */
+function isPrimary(uid){ try{ return !Accounts.curriculumFor(uid||ME); }catch(e){ return false; } }
+function planForView(uid, idx){
+  var base=planFor(uid)[idx]||[];
+  if(!isPrimary(uid)) return base;            // 弟弟中班：原样
+  if(idx===1) return [];                       // 周二游泳休息，无任务
+  if(idx===5) return base.concat(planFor(uid)[1]||[]); // 周六补做周二模块
+  return base;
+}
+
+/* ===== 周打卡数据（按孩子隔离）：{ 周一起始日: { 模块id: 完成日期 } } ===== */
+function getWeeks(){ return Accounts.get('weekplan', ME, 'weeks', {}) || {}; }
+function saveWeeks(w){
+  var keys=Object.keys(w).sort();
+  while(keys.length>12){ delete w[keys.shift()]; }   // 只保留近 12 周
+  Accounts.set('weekplan', ME, 'weeks', w);
+}
+function doneMap(){ var w=getWeeks(); return w[weekKeyOf(new Date())] || {}; }
+
+/* ===== 亲子共读：与家长陪读页共用 parent_read_<uid> 日期数组（同源同步） ===== */
+function readDoneToday(uid){
+  var t=ymd(new Date());
+  try{ var a=JSON.parse(localStorage.getItem('parent_read_'+uid)); return Array.isArray(a)&&a.indexOf(t)>=0; }catch(e){ return false; }
+}
+function toggleReadToday(uid){
+  var t=ymd(new Date());
+  var arr=[]; try{ var a=JSON.parse(localStorage.getItem('parent_read_'+uid)); if(Array.isArray(a)) arr=a; }catch(e){}
+  var i=arr.indexOf(t);
+  if(i>=0) arr.splice(i,1); else arr.push(t);
+  arr.sort();
+  try{ localStorage.setItem('parent_read_'+uid, JSON.stringify(arr)); }catch(e){}
+}
+function cardCompanion(){
+  var d=readDoneToday(ME);
+  return '<div class="grp">💝 亲子共读 · 每天陪娃读一会</div>'+
+    '<div class="tcard'+(d?' done':'')+'" style="border-left-color:var(--o)">'+
+      '<span class="big">💝</span>'+
+      '<div class="mid"><div class="name">亲子共读打卡'+(d?' <span style="color:#087f5b">✓</span>':'')+'</div>'+
+      '<span class="subj" style="background:var(--o)">亲子</span></div>'+
+      '<div class="btns">'+
+        '<button class="go" onclick="location.href=\'家长陪读.html\'">去陪读 →</button>'+
+        '<button class="ok'+(d?' did':'')+'" onclick="toggleDone(\'companion\')">'+(d?'已完成 ✓':'打卡')+'</button>'+
+      '</div></div>';
+}
+function toggleDone(id){
+  if(id==='companion'){                     // 亲子共读：家长在陪读页打卡，总打卡可同步勾选
+    toggleReadToday(ME);
+    render();
+    if(window.Accounts && Accounts.toddler){ Accounts.toddler.flash('亲子共读已完成，+3 积分 💝'); }
+    return;
+  }
+  var w=getWeeks(), k=weekKeyOf(new Date());
+  var pk=dayKey(id, ymd(new Date()));       // 跳绳按天，其余按周
+  w[k]=w[k]||{};
+  var wasCancel=!!w[k][pk];
+  if(wasCancel){ delete w[k][pk]; }
+  else{ w[k][pk]=ymd(new Date()); }
+  saveWeeks(w);
+  render();
+  if(id==='rope' && !wasCancel && window.Rewards && Rewards.ropeStreak){
+    var st=Rewards.ropeStreak(ME);
+    if(st>0 && (st%7===0 || st===30 || st===100) && window.Accounts && Accounts.toddler){
+      Accounts.toddler.burst();
+      if(st===100){
+        Accounts.toddler.flash('连续跳绳 100 天，终极百天大奖 +50 分！👑🏆🎉');
+      }else if(st===30){
+        Accounts.toddler.flash('连续跳绳 30 天，满月大奖 +20 分！🏆🎉');
+      }else{
+        Accounts.toddler.flash('连续跳绳 '+st+' 天，积分奖励 +10 分！🎉');
+      }
+    }
+  }
+  if(allTodayDone() && window.Accounts && Accounts.toddler){
+    Accounts.toddler.burst();
+    Accounts.toddler.flash('今日任务全部完成，太棒啦 🎉');
+  }
+}
+function allTodayDone(){
+  if(isTerm()){
+    if(isPrimary(ME) && todayIdx()===1) return true;   // 哥哥周二游泳日：学期模式也无任务
+    var dmT=doneMap(), tT=ymd(new Date());
+    var tp=termDayPlan(todayIdx(), termWeeksSince());
+    if(!tp.fixed.every(function(m){ return dmT[m.id+'@'+tT]; })) return false;
+    if(tp.weekday && !termPickSel(tT)) return false;
+    return true;
+  }
+  if(isPrimary(ME) && todayIdx()===1) return true;     // 哥哥周二游泳日：无任务，视为已完成
+  var plan=planFor(ME), dm=doneMap();
+  var must=mustFor(ME);
+  if(must.length){
+    var t0=ymd(new Date());
+    var allMust=must.every(function(m){ return dailyRealDone(m.id, t0); });
+    if(!allMust) return false;
+  }
+  var today=planForView(ME, todayIdx());
+  if(!today.length && !must.length) return false;
+  var tStr=ymd(new Date());
+  return today.every(function(m){ return dm[dayKey(m.id, tStr)]; });
+}
+
+/* ===== 旧打卡记录一次性清零（2026-08-23 重构）
+ * 写空值 + 更新云同步时间戳（而非直接删键），确保 GitHub Gist 云端旧记录
+ * 在下次拉取合并（last-write-win）时不会复活；原始数据备份到 *__arch260823 键。 */
+function clearLegacyRecords(){
+  var FLAG='weekplan_cleared_v1';
+  var done=false;
+  try{ done=!!localStorage.getItem(FLAG); }catch(e){}
+  if(done) return;
+  var EMPTY='{"records":{}}';
+  var now=String(Date.now());
+  var ts={}; try{ ts=JSON.parse(localStorage.getItem('gist_ts_v1')||'{}')||{}; }catch(e){ ts={}; }
+  function wipe(key, emptyVal){
+    try{
+      var raw=localStorage.getItem(key);
+      if(raw!==null && raw!==emptyVal){ localStorage.setItem(key+'__arch260823', raw); }
+      localStorage.setItem(key, emptyVal||EMPTY);
+      ts[key]=now;                                    // 云同步时间戳置为最新 → 空值胜出
+    }catch(e){}
+  }
+  Accounts.USERS.forEach(function(u){
+    wipe('chineseCheckIn_'+u.id+'_v1');
+    wipe('mathCheckIn_'+u.id+'_v1');
+    wipe('scienceCheckIn_'+u.id+'_v1');
+    var h=Accounts.get('engci', u.id, 'history', null);
+    if(h && Object.keys(h).length){
+      try{ localStorage.setItem('engci_'+u.id+'_history__arch260823', JSON.stringify(h)); }catch(e){}
+      Accounts.set('engci', u.id, 'history', {});
+      ts['engci_'+u.id+'_history']=now;
+    }
+  });
+  /* 跳绳/旧版打卡记录一并清零（同步键内） */
+  wipe('skip_rope_checkin_v1', EMPTY);
+  wipe('rise3to4_checkin_v1', EMPTY);
+  wipe('daily_eng_checkin_v1', EMPTY);
+  wipe('daily_eng_history_v1', '{}');
+  try{ localStorage.setItem('gist_ts_v1', JSON.stringify(ts)); }catch(e){}
+  try{ localStorage.setItem(FLAG, '1'); }catch(e){}
+}
+
+/* ===== 旧周记录迁移（2026-08-25 每日必打卡改造）
+ * 四科每日打卡 + 跳绳改为「按天」记录（id@YYYY-MM-DD）；
+ * 旧结构里按周存的记录（key=模块id）一次性转成当天日期形式，昨天的打卡不丢标记。 */
+function migrateDailyKeys(){
+  var FLAG='weekplan_daily_v2';
+  var done=false;
+  try{ done=!!localStorage.getItem(FLAG); }catch(e){}
+  if(done) return;
+  var w=getWeeks();
+  Object.keys(w).forEach(function(wk){
+    var day=w[wk]; if(!day) return;
+    DAILY_IDS.forEach(function(id){
+      if(day[id]){                                  // 旧周记录：值=完成日期
+        var d=day[id];
+        day[id+'@'+d]=d;
+        delete day[id];
+      }
+    });
+  });
+  saveWeeks(w);
+  try{ localStorage.setItem(FLAG,'1'); }catch(e){}
+}
+
+/* ===== 学期模式「自选 1 项」：记录具体选了哪个模块（单一来源，避免凑数且不记项） =====
+ * 键 term_pick_<日期> 存选中的模块 id；与 weekplan 的 id@日期完成标记同步增删。 */
+function termPickSel(dStr){ try{ return localStorage.getItem('term_pick_'+dStr); }catch(e){ return null; } }
+function termSetPick(id,dStr){ try{ if(id) localStorage.setItem('term_pick_'+dStr,id); else localStorage.removeItem('term_pick_'+dStr); }catch(e){} }
+function pickTerm(id){
+  var tStr=ymd(new Date());
+  var cur=termPickSel(tStr);
+  var w=getWeeks(), k=weekKeyOf(new Date());
+  w[k]=w[k]||{};
+  if(cur===id){                                  // 再次点击 = 取消选定
+    termSetPick(null,tStr);
+    delete w[k][id+'@'+tStr];
+  }else{
+    if(cur) delete w[k][cur+'@'+tStr];           // 清掉上次选的（只保留 1 项）
+    termSetPick(id,tStr);
+    w[k][id+'@'+tStr]=tStr;
+  }
+  saveWeeks(w);
+  render();
+  if(termPickSel(tStr) && window.Accounts && Accounts.toddler){
+    Accounts.toddler.flash('已选定今日自选：'+(modOf(id)?modOf(id).name:id)+' ✓');
+  }
+}
+
+/* ===== 学期模式渲染 ===== */
+function renderTerm(){
+  var dm=doneMap();
+  var pool=termPool();
+  var seed=termWeeksSince();
+  var must=mustFor(ME);
+  var mon=mondayOf(new Date()), sun=new Date(mon); sun.setDate(sun.getDate()+6);
+  var range=(mon.getMonth()+1)+'/'+mon.getDate()+' ~ '+(sun.getMonth()+1)+'/'+sun.getDate();
+  var ti=todayIdx(), tStr=ymd(new Date());
+  var tp=termDayPlan(ti,seed);
+
+  /* 本周统计：上学日=核心2+听说1+自选1；周末=核心2+兴趣3 */
+  var total=0, done=0;
+  for(var i=0;i<7;i++){
+    if(i===1 && isPrimary(ME)) continue;          // 哥哥周二游泳日：跳过统计（无任务）
+    var dd=new Date(mon); dd.setDate(dd.getDate()+i);
+    var dStr=ymd(dd), dpl=termDayPlan(i,seed);
+    var dc=dpl.fixed.filter(function(m){ return dm[m.id+'@'+dStr]; }).length;
+    if(dpl.weekday){
+      total+=dpl.fixed.length+1;
+      if(termPickSel(dStr)) dc+=1;
+    }else{ total+=dpl.fixed.length; }
+    done+=dc;
+  }
+  total+=must.length*7 - (isPrimary(ME)? must.length : 0);   // 哥哥周二游泳日减 1 天必打卡
+  for(var mi2=0; mi2<7; mi2++){ if(mi2===1 && isPrimary(ME)) continue; var mdd2=new Date(mon); mdd2.setDate(mdd2.getDate()+mi2); var mds2=ymd(mdd2); must.forEach(function(m){ if(dailyRealDone(m.id, mds2)) done++; }); }
+
+  document.getElementById('wrange').textContent='🎒 学期模式 · '+range+'（周一至周日）';
+  document.getElementById('wbarFill').style.width=total?Math.round(done/total*100)+'%':'0%';
+  document.getElementById('wtxt').textContent='本周已完成 '+done+' / '+total+' 项任务';
+
+  function hit(m,s){ return !!dm[m.id+'@'+s]; }
+  function card(m){
+    var d=hit(m,tStr), col=SUBJ_COLOR[m.subject]||'var(--o)';
+    return '<div class="tcard'+(d?' done':'')+'" style="border-left-color:'+col+'">'+
+      '<span class="big">'+m.emoji+'</span>'+
+      '<div class="mid"><div class="name">'+esc(m.name)+(d?' <span style="color:#087f5b">✓</span>':'')+'</div>'+
+      '<span class="subj" style="background:'+col+'">'+m.subject+'</span></div>'+
+      '<div class="btns">'+
+        '<button class="go" onclick="location.href=\''+m.url+'\'">去完成 →</button>'+
+        '<button class="ok'+(d?' did':'')+'" onclick="toggleDone(\''+m.id+'\')">'+(d?'已完成 ✓':'打卡')+'</button>'+
+      '</div></div>';
+  }
+
+  /* 今日任务 */
+  if(ti===1 && isPrimary(ME)){
+    var swimHtml='<div class="tcard" style="border-left-color:var(--o);background:#fff8ef"><span class="big">🏊</span><div class="mid"><div class="name">周二游泳日 · 今日休息</div><span class="subj" style="background:var(--o)">游泳</span></div><div class="btns"><span class="ok did">不打卡</span></div></div>';
+    swimHtml+='<div class="grp rot">📋 今日任务已挪到周末补做</div>';
+    swimHtml+=cardCompanion();
+    document.getElementById('todayCards').innerHTML=swimHtml;
+    document.getElementById('todayCnt').textContent='🏊 游泳日 · 休息';
+  }else{
+    var mustHtml = must.length? ('<div class="grp">🏃 每日必打卡 · 天天都要做</div>'+must.map(mustCard).join('')) : '';
+    var core=tp.fixed.slice(0,2);
+    var html=mustHtml+'<div class="grp">⭐ 每日核心 · 天天都要做</div>'+core.map(card).join('');
+    var tdone=core.filter(function(m){ return hit(m,tStr); }).length + must.filter(function(m){ return dailyRealDone(m.id, tStr); }).length;
+    var tcnt=core.length + must.length;
+    if(tp.weekday){
+      if(tp.en){
+        html+='<div class="grp rot">🎧 今日英语听说</div>'+card(tp.en);
+        tcnt++; if(hit(tp.en,tStr)) tdone++;
+      }
+      var pickedId=termPickSel(tStr);
+      var pickedName = pickedId ? (function(){ var m=modOf(pickedId); return m?m.name:'已选项'; })() : '';
+      html+='<div class="grp rot">🎯 今日自选 · 语数英科任选 1 项'+(pickedId?'（已选：'+pickedName+' ✓）':'（点下方选 1 项）')+'</div>'+
+        '<div class="pgrid">'+pool.map(function(m){
+          var d=hit(m,tStr);
+          return '<div class="pick'+(d?' did':'')+'">'+
+            '<a class="pname" href="'+m.url+'">'+m.emoji+' '+esc(m.name)+'</a>'+
+            '<button class="ptog" onclick="pickTerm(\''+m.id+'\')">'+(d?'✓ 已选':'选它')+'</button></div>';
+        }).join('')+'</div>';
+      tcnt++;
+      if(pickedId) tdone++;
+    }else{
+      html+='<div class="grp rot">🎨 周末充电 · 今日 3 项兴趣</div>'+tp.picks.map(card).join('');
+      tcnt+=tp.picks.length;
+      tdone+=tp.picks.filter(function(m){ return hit(m,tStr); }).length;
+      html+='<div class="empty" style="padding:10px 0 2px">想加餐或补本周欠账？点「本周安排」里的模块去学完打卡即可～</div>';
+    }
+    document.getElementById('todayCnt').textContent=tdone+' / '+tcnt;
+    html+=cardCompanion();
+    document.getElementById('todayCards').innerHTML=html;
+  }
+
+  /* 本周安排 */
+  document.getElementById('weekRule').textContent='上学日：核心 2 + 听说 1 + 自选 1 · 周末：核心 2 + 兴趣 3';
+  var rows='';
+  for(var i2=0;i2<7;i2++){
+    var dd2=new Date(mon); dd2.setDate(dd2.getDate()+i2);
+    var ds=ymd(dd2), dpl2=termDayPlan(i2,seed);
+    var isToday=(i2===ti), isFuture=(dd2>new Date()&&!isToday);
+    if(i2===1 && isPrimary(ME)){
+      rows+='<div class="wrow'+(isToday?' today':(isFuture?' future':''))+'">'+
+        '<div class="wday'+(isToday?' today':'')+'"><div class="d1">'+DAY_NAMES[i2]+'</div><div class="d2">'+(dd2.getMonth()+1)+'/'+dd2.getDate()+'</div><div class="d3">'+DAY_THEME[i2]+'</div></div>'+
+        '<div class="wchips"><span class="chip did">🏊 游泳 · 休息（任务挪周末）</span></div>'+
+        '<div class="wcnt">—</div></div>';
+      continue;
+    }
+    var dc2=dpl2.fixed.filter(function(m){ return hit(m,ds); }).length + must.filter(function(m){ return dailyRealDone(m.id, ds); }).length;
+    var tc2=dpl2.fixed.length+(dpl2.weekday?1:0)+must.length;
+    var mustChips=must.map(function(m){
+      var h=dailyRealDone(m.id, ds);
+      return '<a class="chip'+(h?' did':'')+'" href="'+m.url+'" title="'+esc(m.name)+'">'+(m.id==='rope'?'🏃 跳绳':m.emoji+' '+esc(m.name))+(h?' ✓':'')+'</a>';
+    }).join('');
+    var chips=dpl2.fixed.map(function(m){
+      var h=hit(m,ds);
+      return '<a class="chip'+(h?' did':'')+'" href="'+m.url+'" title="'+esc(m.name)+'" style="border:2px solid '+(SUBJ_COLOR[m.subject]||'#ff9f1c')+'">'+
+        '<span class="ce">'+m.emoji+'</span>'+esc(m.name)+(h?' ✓':'')+'</a>';
+    }).join('');
+    if(dpl2.weekday){
+      var pkId=termPickSel(ds);
+      if(pkId){ var pm=modOf(pkId); chips+='<a class="chip did" href="'+(pm?pm.url:'#')+'">'+(pm?pm.emoji+' '+pm.name:'已选项')+' ✓</a>'; dc2+=1; }
+      else { chips+='<span class="chip">🎯 待选 1 项</span>'; }
+    }
+    rows+='<div class="wrow'+(isToday?' today':(isFuture?' future':''))+'">'+
+      '<div class="wday'+(isToday?' today':'')+'"><div class="d1">'+DAY_NAMES[i2]+'</div><div class="d2">'+(dd2.getMonth()+1)+'/'+dd2.getDate()+'</div><div class="d3">'+DAY_THEME[i2]+'</div></div>'+
+      '<div class="wchips">'+((mustChips+chips)||'<span class="chip">—</span>')+'</div>'+
+      '<div class="wcnt">'+dc2+'/'+tc2+'</div></div>';
+  }
+  document.getElementById('weekRows').innerHTML=rows;
+
+  /* 近几周完成率：学期周按 @键/本周应做，暑期周沿用轮换口径 */
+  var w=getWeeks(), curWK=weekKeyOf(new Date());
+  var termStartStr=ymd(TERM_START);
+  var pastKeys=Object.keys(w).sort().filter(function(k){ return k<curWK; }).slice(-6);
+  var rotTotal=planFor(ME).reduce(function(n,d){ return n+d.length; },0);
+  var hist=pastKeys.map(function(k){
+    var pct=0;
+    if(k>=termStartStr){
+      var n=Object.keys(w[k]).filter(function(x){ return x.indexOf('@')>=0; }).length;
+      pct=total?Math.min(100,Math.round(n/total*100)):0;
+    }else{
+      var n2=Object.keys(w[k]).filter(function(x){ return x.indexOf('@')<0; }).length;
+      pct=rotTotal?Math.min(100,Math.round(n2/rotTotal*100)):0;
+    }
+    var ym=k.split('-'); var m1=new Date(parseInt(ym[0],10),parseInt(ym[1],10)-1,parseInt(ym[2],10));
+    return '<div class="hcell">'+(m1.getMonth()+1)+'/'+m1.getDate()+'周 · <b>'+pct+'%</b></div>';
+  }).join('');
+  document.getElementById('histRow').innerHTML=hist||'<div class="hcell">学期模式从 8/31 开始，加油！💪</div>';
+
+  document.getElementById('planNote').innerHTML=
+    '🎒 学期模式（2026-08-31 开学起自动切换）：每天固定「跳绳 + 英语单词」两项核心；'+
+    '上学日（周一~五）加 1 项英语听说（听力填空 / 听写默写 / 口语跟读 / 自然拼读轮换）和语数英科任选 1 项；'+
+    '周末每天 3 项兴趣轮换充电。PEP 冲刺计划为暑期专用，学期内已暂停。完成后点「打卡」记入本周成绩。';
+}
+
+/* ===== 开学倒计时预告条（P1-3：学期切换提前预告） ===== */
+function termCountdownHtml(){
+  var diff=Math.ceil((TERM_START-new Date())/86400000);
+  if(diff<=0 || diff>7) return '';
+  return '<div class="termnotice">⏰ 距 <b>'+TERM_START.getMonth()+1+'/'+TERM_START.getDate()+' 开学</b> 还有 <b>'+diff+'</b> 天 · '+
+    TERM_START.getMonth()+1+'/'+TERM_START.getDate()+' 起自动切换「学期模式」：每天核心 = 跳绳 + 单词；上学日加 听说 1 + 自选 1；周末 兴趣 3 项</div>';
+}
+
+/* ===== 渲染 ===== */
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function render(){
+  if(isTerm()){ renderTerm(); return; }
+  var plan=planFor(ME);
+  var dm=doneMap();
+  var must=mustFor(ME);                         // 每日必打卡
+  var swimExempt=isPrimary(ME);                 // 哥哥周二游泳日：必打卡也休息，周二任务挪周末
+  /* 统计口径：轮换模块每周 1 条 + 每日必打卡每天 1 条（哥哥周二游泳日减 1 天必打卡） */
+  var rotTotal=plan.reduce(function(n,d){ return n+d.length; },0);
+  var rotDone=Object.keys(dm).filter(function(k){ return k.indexOf('@')<0; }).length;
+  var total=rotTotal+must.length*7 - (swimExempt? must.length : 0);
+  var done=rotDone;
+
+  /* 头部 */
+  var mon=mondayOf(new Date()), sun=new Date(mon); sun.setDate(sun.getDate()+6);
+  var mustDoneCount=0;
+  for(var mi=0; mi<7; mi++){ if(mi===1 && swimExempt) continue; var mdd=new Date(mon); mdd.setDate(mdd.getDate()+mi); var mds=ymd(mdd); must.forEach(function(m){ if(dailyRealDone(m.id, mds)) mustDoneCount++; }); }
+  done+=mustDoneCount;
+  var range=(mon.getMonth()+1)+'/'+mon.getDate()+' ~ '+(sun.getMonth()+1)+'/'+sun.getDate();
+  document.getElementById('wrange').textContent='📅 本周期：'+range+'（周一至周日）';
+  document.getElementById('wbarFill').style.width=total?Math.round(done/total*100)+'%':'0%';
+  document.getElementById('wtxt').textContent='本周已完成 '+done+' / '+total+' 项任务';
+
+  /* 今日任务：每日必打卡置顶 + 轮换模块（哥哥周二游泳休息） */
+  var ti=todayIdx();
+  var todayList=planForView(ME, ti);
+  var tStr=ymd(new Date());
+  var swimToday=(ti===1 && swimExempt);
+  var tdone=must.filter(function(m){ return dailyRealDone(m.id, tStr); }).length
+           + todayList.filter(function(m){ return dm[dayKey(m.id, tStr)]; }).length;
+  var tcnt=must.length+todayList.length;
+  if(swimToday){ tdone=0; tcnt=0; }
+  document.getElementById('todayCnt').textContent=swimToday?'🏊 游泳日 · 休息':(tcnt?(tdone+' / '+tcnt):'');
+  function card(m){
+    var d=!!dm[dayKey(m.id, tStr)];
+    var col=SUBJ_COLOR[m.subject]||'var(--o)';
+    return '<div class="tcard'+(d?' done':'')+'" style="border-left-color:'+col+'">'+
+      '<span class="big">'+m.emoji+'</span>'+
+      '<div class="mid"><div class="name">'+esc(m.name)+(d?' <span style="color:#087f5b">✓</span>':'')+'</div>'+
+      '<span class="subj" style="background:'+col+'">'+m.subject+'</span></div>'+
+      '<div class="btns">'+
+        '<button class="go" onclick="location.href=\''+m.url+'\'">去完成 →</button>'+
+        '<button class="ok'+(d?' did':'')+'" onclick="toggleDone(\''+m.id+'\')">'+(d?'已完成 ✓':'打卡')+'</button>'+
+      '</div></div>';
+  }
+  var html=termCountdownHtml();
+  if(swimToday){
+    html+='<div class="tcard" style="border-left-color:var(--o);background:#fff8ef">'+
+      '<span class="big">🏊</span>'+
+      '<div class="mid"><div class="name">周二游泳日 · 今日休息</div>'+
+      '<span class="subj" style="background:var(--o)">游泳</span></div>'+
+      '<div class="btns"><span class="ok did">不打卡</span></div></div>';
+    html+='<div class="grp rot">📋 今日任务已挪到周末补做</div>';
+    html+=cardCompanion();
+    document.getElementById('todayCards').innerHTML=html;
+  }else{
+    if(must.length){
+      html+='<div class="grp">🏃 每日必打卡 · 天天都要做</div>'+must.map(mustCard).join('');
+    }
+    html+='<div class="grp rot">📅 今日主题 · '+DAY_THEME[ti]+'</div>';
+    if(todayList.length){
+      html+='<div class="grp rot">📋 今日任务 · 每模块每周安排 1 次</div>'+todayList.map(card).join('');
+    }
+    html+=cardCompanion();
+    document.getElementById('todayCards').innerHTML=html;
+  }
+
+  /* 本周安排 */
+  document.getElementById('weekRule').textContent='每天 '+(rotTotal? Math.floor(rotTotal/7)+'~'+Math.ceil(rotTotal/7):0)+' 项轮换'+(must.length?'+ '+must.length+' 项每日必打卡':'')+' · 每模块每周 1 次';
+  var rows='';
+  for(var i=0;i<7;i++){
+    var dd=new Date(mon); dd.setDate(dd.getDate()+i);
+    var dStr=ymd(dd);
+    var isToday=(i===ti), isFuture=(dd>new Date()&&!isToday);
+    var viewList=planForView(ME, i);
+    var swimRow=(i===1 && swimExempt);
+    var dayDone=must.filter(function(m){ return dailyRealDone(m.id, dStr); }).length
+              + viewList.filter(function(m){ return dm[dayKey(m.id, dStr)]; }).length;
+    if(swimRow){
+      rows+='<div class="wrow'+(isToday?' today':(isFuture?' future':''))+'">'+
+        '<div class="wday'+(isToday?' today':'')+'"><div class="d1">'+DAY_NAMES[i]+'</div><div class="d2">'+(dd.getMonth()+1)+'/'+dd.getDate()+'</div><div class="d3">'+DAY_THEME[i]+'</div></div>'+
+        '<div class="wchips"><span class="chip did">🏊 游泳 · 休息（任务挪周末）</span></div>'+
+        '<div class="wcnt">—</div></div>';
+      continue;
+    }
+    var mustChips=must.map(function(m){
+      var hit=!!dm[dayKey(m.id, dStr)];
+      return '<a class="chip'+(hit?' did':'')+'" href="'+m.url+'" title="'+esc(m.name)+'" style="border:2px solid '+(SUBJ_COLOR[m.subject]||'#ff9f1c')+'">'+
+        '<span class="ce">'+m.emoji+'</span>'+esc(m.name)+(hit?' ✓':'')+'</a>';
+    }).join('');
+    var chips=viewList.map(function(m){
+      var hit=!!dm[dayKey(m.id, dStr)];
+      return '<a class="chip'+(hit?' did':'')+'" href="'+m.url+'" title="'+esc(m.name)+'">'+
+        '<span class="ce">'+m.emoji+'</span>'+esc(m.name)+(hit?' ✓':'')+'</a>';
+    }).join('');
+    rows+='<div class="wrow'+(isToday?' today':(isFuture?' future':''))+'">'+
+      '<div class="wday'+(isToday?' today':'')+'"><div class="d1">'+DAY_NAMES[i]+'</div><div class="d2">'+(dd.getMonth()+1)+'/'+dd.getDate()+'</div><div class="d3">'+DAY_THEME[i]+'</div></div>'+
+      '<div class="wchips">'+((mustChips+chips)||'<span class="chip">—</span>')+'</div>'+
+      '<div class="wcnt">'+((viewList.length+must.length)?(dayDone+'/'+(viewList.length+must.length)):'—')+'</div>'+
+    '</div>';
+  }
+  document.getElementById('weekRows').innerHTML=rows;
+
+  /* 近几周完成率：轮换模块口径（@日期键不计入） */
+  var w=getWeeks();
+  var curWK=weekKeyOf(new Date());
+  var pastKeys=Object.keys(w).sort().filter(function(k){ return k<curWK; }).slice(-6);
+  var hist=pastKeys.map(function(k){
+    var n=Object.keys(w[k]).filter(function(x){ return x.indexOf('@')<0; }).length;
+    var t=rotTotal||1;
+    var pct=t?Math.min(100,Math.round(n/t*100)):0;
+    var ym=k.split('-'); var m1=new Date(parseInt(ym[0],10),parseInt(ym[1],10)-1,parseInt(ym[2],10));
+    return '<div class="hcell">'+(m1.getMonth()+1)+'/'+m1.getDate()+'周 · <b>'+pct+'%</b></div>';
+  }).join('');
+  document.getElementById('histRow').innerHTML=hist||'<div class="hcell">新计划从本周开始，加油！💪</div>';
+
+  /* 说明 */
+  document.getElementById('planNote').innerHTML=
+    '规则：以周一至周日为一个完整周期，'+rotTotal+' 个功能模块循环分配到 7 天，每个模块每周安排且仅安排一次，不遗漏、不重复'+
+    (must.length?'；另有'+must.map(function(m){return m.name;}).join('、')+'每天都要完成':'')+'。'+
+    '今天该做什么看「今日任务」，完成学习后点「打卡」记入本周成绩。';
+}
+
+function switchTab(t){
+  document.getElementById('tabCheckin').style.display = t==='checkin'?'block':'none';
+  document.getElementById('tabProgress').style.display = t==='progress'?'block':'none';
+  document.getElementById('tabCheckinBtn').classList.toggle('on', t==='checkin');
+  document.getElementById('tabProgressBtn').classList.toggle('on', t==='progress');
+}
+
+function bootstrap(){
+  var u=Accounts.byId(ME);
+  if(!u) return;
+  var gn=(window.GRADE_NAMES&&GRADE_NAMES[Accounts.gradeOf(ME)])||'';
+  if(isTerm()){
+    document.getElementById('cur').innerHTML=u.emoji+' '+u.name+' <span style="opacity:.9">'+gn+' · 🎒 学期模式</span> · 每日核心 2 项 · 上学日共 4 项';
+  }else{
+    var rN=planFor(ME).reduce(function(n,d){ return n+d.length; },0);
+    var must=mustFor(ME);
+    document.getElementById('cur').innerHTML=u.emoji+' '+u.name+' <span style="opacity:.9">'+gn+'</span> · '+rN+' 模块周轮换'+(must.length?'+ '+must.map(function(m){return m.name;}).join('、')+'每日':'');
+  }
+  render();
+}
+
+Accounts.gate(APP, {
+  onLogin:function(user){
+    ME=user;
+    clearLegacyRecords();
+    migrateDailyKeys();
+    bootstrap();
+    Accounts.mountSwitch(APP);
+  }
+});
+</script>
+</body>
+</html>

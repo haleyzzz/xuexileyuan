@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔗 近反义词</title>
+<style>
+  :root{ --c1:#f15bb5; --c2:#9b5de5; --green:#06d6a0; --ink:#3d3a4b; }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#fff0f7,#f6f0ff);color:var(--ink);padding:18px;max-width:560px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  .back{position:fixed;left:14px;top:14px;z-index:30;border:none;background:rgba(255,255,255,.85);border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink)}
+  header{background:linear-gradient(120deg,var(--c1),var(--c2));color:#fff;border-radius:24px;padding:20px;text-align:center;box-shadow:0 8px 22px rgba(241,91,181,.4)}
+  header h1{font-size:22px}
+  .date{font-size:14px;opacity:.95;margin-top:4px}
+  .stats{display:flex;gap:10px;margin:14px 0}
+  .stat{flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .stat .num{font-size:26px;font-weight:800;color:var(--c1)}
+  .stat .lbl{font-size:12px;color:#999;margin-top:2px}
+  .screen{display:none}
+  .screen.on{display:block}
+  .btn{display:block;width:100%;border:none;border-radius:16px;padding:14px;font-size:16px;font-family:inherit;cursor:pointer;font-weight:800;color:#fff;background:var(--c1);margin-top:8px}
+  .btn.gh{background:var(--c2)}
+  .btn.sec{background:#fff0f7;color:var(--c1)}
+  .prog-wrap{margin:6px 0 14px}
+  .progress{height:14px;background:#ffe3f3;border-radius:10px;overflow:hidden}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--c1),var(--c2));border-radius:10px;transition:width .4s}
+  .prog-txt{font-size:13px;color:#888;text-align:center;margin-top:4px}
+  .q{background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.06);padding:14px;margin-bottom:12px;border:3px solid transparent;transition:border-color .2s}
+  .q.done-ok{border-color:var(--green)}
+  .q.done-no{border-color:#ff6b6b}
+  .q .qt{font-size:15px;font-weight:700;margin-bottom:10px;line-height:1.6}
+  .q .qt .qn{color:var(--c1);margin-right:6px}
+  .q .qt .spk{border:none;background:#fff0f7;color:var(--c1);border-radius:10px;padding:2px 9px;font-size:13px;cursor:pointer;font-family:inherit;margin-left:6px}
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{border:none;border-radius:12px;padding:11px 14px;font-size:14px;text-align:left;font-family:inherit;cursor:pointer;background:#fff0f7;color:var(--ink);transition:.15s}
+  .opt:active{transform:scale(.98)}
+  .opt.ok{background:var(--green);color:#fff}
+  .opt.no{background:#ff6b6b;color:#fff}
+  .opt.dim{opacity:.45;pointer-events:none}
+  .why{font-size:13px;color:#888;margin-top:10px;background:#f6f8fb;border-radius:10px;padding:9px;line-height:1.6;display:none}
+  .why.on{display:block}
+  .report{background:#fff;border-radius:24px;box-shadow:0 8px 22px rgba(0,0,0,.08);padding:24px;text-align:center;margin-top:14px}
+  .report .stars{font-size:34px;letter-spacing:4px;margin:6px 0}
+  .report .score{font-size:30px;font-weight:800;color:var(--c1)}
+  .report .sub{font-size:14px;color:#888;margin-top:4px}
+  .report .line{font-size:15px;color:var(--ink);margin-top:10px}
+  .report .pass{color:var(--green);font-weight:800}
+  .report .fail{color:#ff6b6b;font-weight:800}
+  .reset{background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;text-decoration:underline;display:block;margin:10px auto 0;font-family:inherit}
+  .tip{font-size:12px;color:#aaa;text-align:center;margin-top:14px;line-height:1.6}
+  .confetti{position:fixed;top:-40px;font-size:24px;pointer-events:none;z-index:99;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:.2}}
+  .celebrate{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:100}
+  .celebrate .box2{background:#fff;border-radius:24px;padding:28px 34px;text-align:center;animation:pop .4s;max-width:320px}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate h3{font-size:24px;margin-bottom:8px}
+  .celebrate p{color:#888;font-size:14px;line-height:1.6}
+  .celebrate button{margin-top:16px;border:none;background:var(--c2);color:#fff;padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+</style>
+<script>
+/* iOS 朗读稳定性补丁：保留 utterance 全局引用防 GC 静音 + 朗读前 resume()（与 speech.js 同逻辑，本页未引 speech.js 故内联） */
+(function(){ if(window.__ttsPatched) return; window.__ttsPatched=true;
+  if(!window.speechSynthesis) return;
+  var _sp=window.speechSynthesis.speak.bind(window.speechSynthesis);
+  window.speechSynthesis.speak=function(u){ try{window.speechSynthesis.resume();}catch(e){} window.__ttsUtt=u; return _sp(u); };
+})();
+</script>
+</head>
+<body>
+
+<header><h1>🔗 近反义词</h1><div class="date" id="dateStr">今天</div></header>
+<div class="stats">
+  <div class="stat"><div class="num" id="bestNum">0</div><div class="lbl">🏆 最佳对题</div></div>
+  <div class="stat"><div class="num" id="totalNum">0</div><div class="lbl">📝 题目总数</div></div>
+  <div class="stat"><div class="num" id="passNum">80%</div><div class="lbl">✅ 通关线</div></div>
+</div>
+<div class="screen on" id="scrMenu">
+  <h2 style="font-size:17px;margin:6px 4px 10px">🎯 近义词·反义词辨析</h2>
+  <div class="tip" style="margin:0 0 12px">读懂词义选近义或反义，点 🔊 听发音。选对 80% 通关！</div>
+  <button class="btn" onclick="start()">🚀 开始闯关</button>
+  <button class="btn sec" onclick="resetBest()">↺ 清空最佳记录</button>
+</div>
+<div class="screen" id="scrQuiz">
+  <div class="prog-wrap"><div class="progress"><i id="progBar"></i></div><div class="prog-txt" id="progTxt">已答 0 / 0</div></div>
+  <div id="quizArea"></div>
+  <button class="btn gh" id="finishBtn" onclick="finish()" style="display:none">🏁 查看战报</button>
+</div>
+<div class="screen" id="scrReport">
+  <div class="report">
+    <div class="stars" id="rStars">⭐⭐⭐</div>
+    <div class="score" id="rScore">0 / 0</div>
+    <div class="sub" id="rPct">正确率 0%</div>
+    <div class="line" id="rPass"></div>
+  </div>
+  <button class="btn" onclick="start()">🔄 再来一轮</button>
+  <button class="btn sec" onclick="goMenu()">🏠 回到首页</button>
+</div>
+<div class="tip">数据按小朋友分别保存，不会上传。</div>
+<div class="celebrate" id="celeb"><div class="box2"><h3>🎉 词语小博士！</h3><p>近义反义全分清，用词更准啦！</p><button onclick="closeCeleb()">继续闯关 💪</button></div></div>
+<script>
+var CHILD='user', KEY='', store={};
+var QUIZ=[
+  {"q":"「高兴」的近义词是（ ）。","opts":["开心","难过","生气","平静"],"ans":0,"why":"高兴和开心意思相近。","word":"高兴"},
+  {"q":"「美丽」的近义词是（ ）。","opts":["漂亮","丑陋","难看","矮小"],"ans":0,"why":"美丽和漂亮都指好看。","word":"美丽"},
+  {"q":"「快乐」的近义词是（ ）。","opts":["高兴","悲伤","痛苦","烦恼"],"ans":0,"why":"快乐和高兴意思相近。","word":"快乐"},
+  {"q":"「温暖」的近义词是（ ）。","opts":["暖和","寒冷","冰凉","冷冻"],"ans":0,"why":"温暖和暖和都指不冷。","word":"温暖"},
+  {"q":"「赶快」的近义词是（ ）。","opts":["赶紧","缓慢","拖延","懒惰"],"ans":0,"why":"赶快和赶紧都指抓紧时间。","word":"赶快"},
+  {"q":"「认真」的近义词是（ ）。","opts":["仔细","马虎","粗心","随意"],"ans":0,"why":"认真和仔细都指不马虎。","word":"认真"},
+  {"q":"「喜欢」的近义词是（ ）。","opts":["喜爱","讨厌","厌恶","反感"],"ans":0,"why":"喜欢和喜爱意思相近。","word":"喜欢"},
+  {"q":"「难过」的近义词是（ ）。","opts":["伤心","开心","高兴","快乐"],"ans":0,"why":"难过和伤心都指心里不舒服。","word":"难过"},
+  {"q":"「朋友」的近义词是（ ）。","opts":["伙伴","敌人","对手","仇人"],"ans":0,"why":"朋友和伙伴都指同伴。","word":"朋友"},
+  {"q":"「帮忙」的近义词是（ ）。","opts":["帮助","捣乱","破坏","阻碍"],"ans":0,"why":"帮忙和帮助意思相近。","word":"帮忙"},
+  {"q":"「非常」的近义词是（ ）。","opts":["十分","稍微","略微","一点点"],"ans":0,"why":"非常和十分都表示程度深。","word":"非常"},
+  {"q":"「突然」的近义词是（ ）。","opts":["忽然","渐渐","慢慢","逐渐"],"ans":0,"why":"突然和忽然都指出乎意料。","word":"突然"},
+  {"q":"「明白」的近义词是（ ）。","opts":["清楚","糊涂","迷糊","困惑"],"ans":0,"why":"明白和清楚都指懂了。","word":"明白"},
+  {"q":"「著名」的近义词是（ ）。","opts":["有名","无名","平凡","普通"],"ans":0,"why":"著名和有名都指出名。","word":"著名"},
+  {"q":"「办法」的近义词是（ ）。","opts":["方法","难题","麻烦","困惑"],"ans":0,"why":"办法和方法意思相近。","word":"办法"},
+  {"q":"「立刻」的近义词是（ ）。","opts":["马上","缓慢","迟疑","拖延"],"ans":0,"why":"立刻和马上都指紧接着做。","word":"立刻"},
+  {"q":"「表扬」的近义词是（ ）。","opts":["称赞","批评","指责","训斥"],"ans":0,"why":"表扬和称赞都指肯定优点。","word":"表扬"},
+  {"q":"「疲劳」的近义词是（ ）。","opts":["疲倦","精神","兴奋","活跃"],"ans":0,"why":"疲劳和疲倦都指累。","word":"疲劳"},
+  {"q":"「安静」的近义词是（ ）。","opts":["寂静","喧闹","吵闹","嘈杂"],"ans":0,"why":"安静和寂静都指没有声音。","word":"安静"},
+  {"q":"「干净」的近义词是（ ）。","opts":["整洁","肮脏","污浊","杂乱"],"ans":0,"why":"干净和整洁都指整洁无污。","word":"干净"},
+  {"q":"「保护」的近义词是（ ）。","opts":["爱护","破坏","伤害","损害"],"ans":0,"why":"保护和爱护都指爱惜不伤害。","word":"保护"},
+  {"q":"「大」的反义词是（ ）。","opts":["小","多","高","长"],"ans":0,"why":"大对小。","word":"大"},
+  {"q":"「高」的反义词是（ ）。","opts":["矮","胖","长","远"],"ans":0,"why":"高对矮。","word":"高"},
+  {"q":"「多」的反义词是（ ）。","opts":["少","大","高","长"],"ans":0,"why":"多对少。","word":"多"},
+  {"q":"「快」的反义词是（ ）。","opts":["慢","急","早","远"],"ans":0,"why":"快对慢。","word":"快"},
+  {"q":"「冷」的反义词是（ ）。","opts":["热","凉","冰","寒"],"ans":0,"why":"冷对热。","word":"冷"},
+  {"q":"「黑」的反义词是（ ）。","opts":["白","暗","灰","深"],"ans":0,"why":"黑对白。","word":"黑"},
+  {"q":"「哭」的反义词是（ ）。","opts":["笑","喊","叫","闹"],"ans":0,"why":"哭对笑。","word":"哭"},
+  {"q":"「早」的反义词是（ ）。","opts":["晚","快","先","前"],"ans":0,"why":"早对晚。","word":"早"},
+  {"q":"「进」的反义词是（ ）。","opts":["出","入","来","上"],"ans":0,"why":"进对出。","word":"进"},
+  {"q":"「开」的反义词是（ ）。","opts":["关","合","闭","锁"],"ans":0,"why":"开对关。","word":"开"},
+  {"q":"「前」的反义词是（ ）。","opts":["后","左","上","里"],"ans":0,"why":"前对后。","word":"前"},
+  {"q":"「左」的反义词是（ ）。","opts":["右","上","下","中"],"ans":0,"why":"左对右。","word":"左"},
+  {"q":"「上」的反义词是（ ）。","opts":["下","高","大","前"],"ans":0,"why":"上对下。","word":"上"},
+  {"q":"「胖」的反义词是（ ）。","opts":["瘦","高","大","重"],"ans":0,"why":"胖对瘦。","word":"胖"},
+  {"q":"「新」的反义词是（ ）。","opts":["旧","好","美","亮"],"ans":0,"why":"新对旧。","word":"新"},
+  {"q":"「买」的反义词是（ ）。","opts":["卖","借","拿","要"],"ans":0,"why":"买对卖。","word":"买"},
+  {"q":"「借」的反义词是（ ）。","opts":["还","给","拿","要"],"ans":0,"why":"借对还。","word":"借"},
+  {"q":"「甜」的反义词是（ ）。","opts":["苦","酸","辣","咸"],"ans":0,"why":"甜对苦。","word":"甜"},
+  {"q":"「轻」的反义词是（ ）。","opts":["重","小","少","薄"],"ans":0,"why":"轻对重。","word":"轻"},
+  {"q":"「害羞」的反义词是（ ）。","opts":["大方","胆怯","腼腆","拘束"],"ans":0,"why":"害羞对大方。","word":"害羞"},
+  {"q":"「谦虚」的反义词是（ ）。","opts":["骄傲","虚心","谦让","礼让"],"ans":0,"why":"谦虚对骄傲。","word":"谦虚"},
+  {"q":"「马虎」的反义词是（ ）。","opts":["认真","粗心","大意","草率"],"ans":0,"why":"马虎对认真。","word":"马虎"},
+  {"q":"「节约」的反义词是（ ）。","opts":["浪费","节省","爱惜","珍惜"],"ans":0,"why":"节约对浪费。","word":"节约"},
+  {"q":"「成功」的反义词是（ ）。","opts":["失败","胜利","达成","实现"],"ans":0,"why":"成功对失败。","word":"成功"},
+  {"q":"「开始」的反义词是（ ）。","opts":["结束","开头","起步","启动"],"ans":0,"why":"开始对结束。","word":"开始"},
+  {"q":"「寒冷」的反义词是（ ）。","opts":["炎热","凉爽","温暖","冰冷"],"ans":0,"why":"寒冷对炎热。","word":"寒冷"},
+  {"q":"「柔软」的反义词是（ ）。","opts":["坚硬","松软","柔顺","绵软"],"ans":0,"why":"柔软对坚硬。","word":"柔软"},
+  {"q":"「容易」的反义词是（ ）。","opts":["困难","简单","轻松","方便"],"ans":0,"why":"容易对困难。","word":"容易"},
+  {"q":"「安全」的反义词是（ ）。","opts":["危险","平安","安稳","保险"],"ans":0,"why":"安全对危险。","word":"安全"},
+  {"q":"「出现」的反义词是（ ）。","opts":["消失","显现","露面","呈现"],"ans":0,"why":"出现对消失。","word":"出现"},
+  {"q":"「集合」的反义词是（ ）。","opts":["分散","聚集","集中","汇合"],"ans":0,"why":"集合对分散。","word":"集合"},
+  {"q":"「热闹」的反义词是（ ）。","opts":["冷清","喧闹","繁华","红火"],"ans":0,"why":"热闹对冷清。","word":"热闹"},
+  {"q":"「光明」的反义词是（ ）。","opts":["黑暗","明亮","光亮","辉煌"],"ans":0,"why":"光明对黑暗。","word":"光明"},
+  {"q":"「胜利」的反义词是（ ）。","opts":["失败","成功","获胜","取胜"],"ans":0,"why":"胜利对失败。","word":"胜利"},
+  {"q":"「热闹」的近义词是（ ）。","opts":["喧闹","安静","冷清","寂静"],"ans":0,"why":"热闹和喧闹都指人多活跃。","word":"热闹"},
+  {"q":"「美丽」的反义词是（ ）。","opts":["丑陋","漂亮","好看","秀丽"],"ans":0,"why":"美丽对丑陋。","word":"美丽"},
+  {"q":"「高兴」的反义词是（ ）。","opts":["难过","开心","快乐","欢喜"],"ans":0,"why":"高兴对难过。","word":"高兴"},
+  {"q":"「巨大」的近义词是（ ）。","opts":["庞大","微小","细小","渺小"],"ans":0,"why":"巨大和庞大都指很大。","word":"巨大"},
+  {"q":"「轻视」的近义词是（ ）。","opts":["小看","重视","看重","尊重"],"ans":0,"why":"轻视和小看都指看不起。","word":"轻视"},
+  {"q":"「宽敞」的近义词是（ ）。","opts":["宽阔","狭窄","窄小","狭小"],"ans":0,"why":"宽敞和宽阔都指空间大。","word":"宽敞"},
+  {"q":"「清楚」的近义词是（ ）。","opts":["清晰","模糊","糊涂","混沌"],"ans":0,"why":"清楚和清晰都指明白。","word":"清楚"},
+  {"q":"「果断」的近义词是（ ）。","opts":["坚决","犹豫","迟疑","踌躇"],"ans":0,"why":"果断和坚决都指不犹豫。","word":"果断"},
+  {"q":"「镇定」的近义词是（ ）。","opts":["冷静","慌张","惊慌","慌乱"],"ans":0,"why":"镇定和冷静都指不慌。","word":"镇定"},
+  {"q":"「灵敏」的近义词是（ ）。","opts":["敏捷","迟钝","笨拙","呆板"],"ans":0,"why":"灵敏和敏捷都指反应快。","word":"灵敏"},
+  {"q":"「鼓励」的近义词是（ ）。","opts":["激励","打击","批评","压制"],"ans":0,"why":"鼓励和激励都指给信心。","word":"鼓励"},
+  {"q":"「勤奋」的近义词是（ ）。","opts":["勤劳","懒惰","懒散","懈怠"],"ans":0,"why":"勤奋和勤劳都指努力。","word":"勤奋"},
+  {"q":"「坚强」的近义词是（ ）。","opts":["刚强","软弱","脆弱","柔弱"],"ans":0,"why":"坚强和刚强都指不屈服。","word":"坚强"},
+  {"q":"「吸引」的近义词是（ ）。","opts":["招引","排斥","推开","驱赶"],"ans":0,"why":"吸引和招引都指把注意力拉来。","word":"吸引"},
+  {"q":"「缩短」的近义词是（ ）。","opts":["减短","延长","拉长","伸长"],"ans":0,"why":"缩短和减短都指变短。","word":"缩短"},
+  {"q":"「浅显」的近义词是（ ）。","opts":["通俗","深奥","晦涩","难懂"],"ans":0,"why":"浅显和通俗都指容易懂。","word":"浅显"},
+  {"q":"「密切」的近义词是（ ）。","opts":["紧密","疏远","冷淡","疏离"],"ans":0,"why":"密切和紧密都指关系近。","word":"密切"},
+  {"q":"「显现」的近义词是（ ）。","opts":["呈现","消失","隐没","埋没"],"ans":0,"why":"显现和呈现都指显露出来。","word":"显现"},
+  {"q":"「采纳」的反义词是（ ）。","opts":["拒绝","接受","采纳","听取"],"ans":0,"why":"采纳对拒绝。","word":"采纳"},
+  {"q":"「信任」的反义词是（ ）。","opts":["怀疑","相信","信赖","确信"],"ans":0,"why":"信任对怀疑。","word":"信任"},
+  {"q":"「拥护」的反义词是（ ）。","opts":["反对","支持","赞成","拥戴"],"ans":0,"why":"拥护对反对。","word":"拥护"},
+  {"q":"「加入」的反义词是（ ）。","opts":["退出","参加","进入","参与"],"ans":0,"why":"加入对退出。","word":"加入"},
+  {"q":"「仰望」的反义词是（ ）。","opts":["俯视","仰望","平视","环视"],"ans":0,"why":"仰望对俯视。","word":"仰望"},
+  {"q":"「延长」的反义词是（ ）。","opts":["缩短","拉长","伸长","伸展"],"ans":0,"why":"延长对缩短。","word":"延长"},
+  {"q":"「深奥」的反义词是（ ）。","opts":["浅显","深奥","晦涩","难懂"],"ans":0,"why":"深奥对浅显。","word":"深奥"},
+  {"q":"「疏远」的反义词是（ ）。","opts":["密切","冷淡","疏离","生疏"],"ans":0,"why":"疏远对密切。","word":"疏远"},
+  {"q":"「宽敞」的反义词是（ ）。","opts":["狭窄","宽阔","广大","开阔"],"ans":0,"why":"宽敞对狭窄。","word":"宽敞"},
+  {"q":"「果断」的反义词是（ ）。","opts":["犹豫","坚决","果断","坚定"],"ans":0,"why":"果断对犹豫。","word":"果断"},
+  {"q":"「镇定」的反义词是（ ）。","opts":["慌张","冷静","沉着","安稳"],"ans":0,"why":"镇定对慌张。","word":"镇定"},
+  {"q":"「灵敏」的反义词是（ ）。","opts":["迟钝","敏捷","机灵","迅速"],"ans":0,"why":"灵敏对迟钝。","word":"灵敏"},
+  {"q":"「鼓励」的反义词是（ ）。","opts":["打击","激励","鼓舞","鞭策"],"ans":0,"why":"鼓励对打击。","word":"鼓励"},
+  {"q":"「勤奋」的反义词是（ ）。","opts":["懒惰","勤劳","刻苦","努力"],"ans":0,"why":"勤奋对懒惰。","word":"勤奋"},
+  {"q":"「坚强」的反义词是（ ）。","opts":["软弱","刚强","坚定","顽强"],"ans":0,"why":"坚强对软弱。","word":"坚强"},
+  {"q":"「迅速」的近义词是（ ）。","opts":["快速","缓慢","迟钝","拖拉"],"ans":0,"why":"迅速和快速都指速度快。","word":"迅速"},
+  {"q":"「迅速」的反义词是（ ）。","opts":["缓慢","快速","敏捷","飞快"],"ans":0,"why":"迅速指快，反义是缓慢。","word":"迅速"},
+  {"q":"「清楚」的反义词是（ ）。","opts":["模糊","清晰","明白","透彻"],"ans":0,"why":"清楚指明白，反义是模糊。","word":"清楚"},
+  {"q":"「保护」的反义词是（ ）。","opts":["破坏","爱护","守护","保全"],"ans":0,"why":"保护指维护，反义是破坏。","word":"保护"},
+  {"q":"「诚实」的近义词是（ ）。","opts":["老实","虚伪","狡猾","虚假"],"ans":0,"why":"诚实和老实都指不说谎。","word":"诚实"},
+  {"q":"「诚实」的反义词是（ ）。","opts":["虚伪","老实","真诚","坦率"],"ans":0,"why":"诚实指真实，反义是虚伪。","word":"诚实"},
+  {"q":"「高大」的近义词是（ ）。","opts":["魁梧","矮小","低矮","瘦小"],"ans":0,"why":"高大和魁梧都指又高又大。","word":"高大"},
+  {"q":"「高大」的反义词是（ ）。","opts":["矮小","魁梧","巨大","粗壮"],"ans":0,"why":"高大指又高又大，反义是矮小。","word":"高大"},
+  {"q":"「寒冷」的近义词是（ ）。","opts":["冰冷","温暖","炎热","酷热"],"ans":0,"why":"寒冷和冰冷都指冷。","word":"寒冷"},
+  {"q":"「出发」的反义词是（ ）。","opts":["到达","开始","起步","启程"],"ans":0,"why":"出发指离开起点，反义是到达。","word":"出发"},
+  {"q":"「困难」的反义词是（ ）。","opts":["容易","艰难","艰苦","复杂"],"ans":0,"why":"困难指不容易，反义是容易。","word":"困难"},
+  {"q":"「复杂」的反义词是（ ）。","opts":["简单","繁杂","困难","深奥"],"ans":0,"why":"复杂指头绪多，反义是简单。","word":"复杂"},
+  {"q":"「骄傲」的反义词是（ ）。","opts":["谦虚","自豪","得意","神气"],"ans":0,"why":"骄傲指自满看不起人，反义是谦虚。","word":"骄傲"},
+  {"q":"「吵闹」的反义词是（ ）。","opts":["安静","喧哗","热闹","大声"],"ans":0,"why":"吵闹指声音杂乱，反义是安静。","word":"吵闹"},
+  {"q":"「冷清」的反义词是（ ）。","opts":["热闹","寒冷","清静","冷落"],"ans":0,"why":"冷清指不热闹，反义是热闹。","word":"冷清"},
+  {"q":"「失败」的反义词是（ ）。","opts":["成功","失误","挫折","落后"],"ans":0,"why":"失败指没有成功，反义是成功。","word":"失败"},
+  {"q":"「结束」的近义词是（ ）。","opts":["完结","开始","启动","开幕"],"ans":0,"why":"结束和完结都指事情告一段落。","word":"结束"},
+  {"q":"「浪费」的反义词是（ ）。","opts":["节约","节省","花费","奢侈"],"ans":0,"why":"浪费指不珍惜，反义是节约。","word":"浪费"},
+  {"q":"「明亮」的近义词是（ ）。","opts":["光亮","黑暗","昏暗","模糊"],"ans":0,"why":"明亮和光亮都指光线充足。","word":"明亮"},
+  {"q":"「黑暗」的反义词是（ ）。","opts":["光明","漆黑","阴暗","深夜"],"ans":0,"why":"黑暗指没有光，反义是光明。","word":"黑暗"},
+  {"q":"「潮湿」的反义词是（ ）。","opts":["干燥","湿润","淋湿","湿透"],"ans":0,"why":"潮湿指含水分多，反义是干燥。","word":"潮湿"},
+  {"q":"「坚硬」的反义词是（ ）。","opts":["柔软","结实","牢固","刚硬"],"ans":0,"why":"坚硬指硬，反义是柔软。","word":"坚硬"},
+  {"q":"「陌生」的反义词是（ ）。","opts":["熟悉","生疏","认识","见过"],"ans":0,"why":"陌生指不认识，反义是熟悉。","word":"陌生"},
+  {"q":"「慌张」的反义词是（ ）。","opts":["镇静","慌忙","紧张","着急"],"ans":0,"why":"慌张指不沉着，反义是镇静。","word":"慌张"},
+  {"q":"「粗心」的近义词是（ ）。","opts":["马虎","细心","认真","仔细"],"ans":0,"why":"粗心和马虎都指不细心。","word":"粗心"},
+  {"q":"「聚集」的近义词是（ ）。","opts":["集合","分散","散开","离去"],"ans":0,"why":"聚集和集合都指聚在一起。","word":"聚集"},
+  {"q":"「扩大」的反义词是（ ）。","opts":["缩小","放大","扩展","扩充"],"ans":0,"why":"扩大指使变大，反义是缩小。","word":"扩大"}
+];/*opts-shuffle:QUIZ*/(function(){for(var i=0;i<QUIZ.length;i++){var it=QUIZ[i];if(!it||!it.opts||!it.opts.length)continue;var ok=it.opts[it.ans];for(var j=it.opts.length-1;j>0;j--){var r=Math.floor(Math.random()*(j+1));var t=it.opts[j];it.opts[j]=it.opts[r];it.opts[r]=t;}it.ans=it.opts.indexOf(ok);}})();
+;
+function speak(t){ try{ if(!('speechSynthesis'in window))return; window.speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance(t); u.lang='zh-CN'; u.rate=.9; window.speechSynthesis.speak(u); }catch(e){} }
+function getStore(){ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; } }
+function setStore(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
+function setScreen(id){ document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('on');}); document.getElementById(id).classList.add('on'); }
+var score=0, answered=0;
+function start(){ score=0; answered=0; setScreen('scrQuiz'); renderQuiz(); }
+function renderQuiz(){
+  var html='';
+  QUIZ.forEach(function(it,idx){
+    html+='<div class="q" id="q'+idx+'"><div class="qt"><span class="qn">'+(idx+1)+'.</span>'+it.q+'<button class="spk" onclick="speak(\''+it.word+'\')">🔊</button></div><div class="opts">';
+    it.opts.forEach(function(op,oi){ html+='<button class="opt" onclick="choose('+idx+','+oi+')" id="o'+idx+'_'+oi+'">'+op+'</button>'; });
+    html+='</div><div class="why" id="w'+idx+'"></div><div id="hw'+idx+'" class="hw-slot"></div></div>';
+  });
+  document.getElementById('quizArea').innerHTML=html;
+  document.getElementById('finishBtn').style.display='none';
+  updateProg();
+  if(window.Handwrite){
+    QUIZ.forEach(function(it, idx){
+      var hw=Handwrite.create({revealText: it.opts[it.ans], placeholder:'✍️ 在这里用手写答案'});
+      document.getElementById('hw'+idx).appendChild(hw.el);
+      var rb=hw.el.querySelector('.hw-tools .hw-btn:last-child');
+      if(rb) rb.addEventListener('click', function(){ markHW(it, idx, QUIZ.length); });
+    });
+  }
+}
+function choose(idx,oi){
+  var it=QUIZ[idx]; var q=document.getElementById('q'+idx);
+  if(q.classList.contains('done-ok')||q.classList.contains('done-no')) return;
+  answered++;
+  var ok = (oi===it.ans);
+  var opts=q.querySelectorAll('.opt');
+  opts.forEach(function(b,i){ b.classList.add('dim'); if(i===it.ans) b.classList.add('ok'); });
+  if(ok){ q.classList.add('done-ok'); score++; } else { q.classList.add('done-no'); opts[oi].classList.add('no'); }
+  var w=document.getElementById('w'+idx); w.textContent='💡 '+it.why; w.classList.add('on');
+  updateProg();
+  if(answered>=QUIZ.length) document.getElementById('finishBtn').style.display='block';
+}
+function markHW(it, idx, total){
+  var q=document.getElementById('q'+idx);
+  if(q.classList.contains('done-ok')||q.classList.contains('done-no')||q.classList.contains('done-hw')) return;
+  answered++;
+  q.classList.add('done-hw');
+  var w=document.getElementById('w'+idx);
+  if(w){ w.innerHTML='💡 '+it.why; w.classList.add('on'); }
+  updateProg();
+  if(answered>=total) document.getElementById('finishBtn').style.display='block';
+}
+function updateProg(){
+  document.getElementById('progBar').style.width=(answered/QUIZ.length*100)+'%';
+  document.getElementById('progTxt').textContent='已答 '+answered+' / '+QUIZ.length;
+}
+function finish(){
+  var pct=Math.round(score/QUIZ.length*100);
+  document.getElementById('rScore').textContent=score+' / '+QUIZ.length;
+  document.getElementById('rPct').textContent='正确率 '+pct+'%';
+  var stars = pct>=90?'⭐⭐⭐':pct>=70?'⭐⭐':'⭐';
+  document.getElementById('rStars').textContent=stars;
+  var pass = score/QUIZ.length>=0.8;
+  document.getElementById('rPass').innerHTML = pass?'<span class="pass">🎊 通关！词语小博士</span>':'<span class="fail">再练练，争取通关 80%</span>';
+  if(score>(store.best||0)){ store.best=score; setStore(store); }
+  if(pass) showCeleb();
+  setScreen('scrReport');
+}
+function resetBest(){ if(confirm('确定清空最佳对题记录？')){ setStore({best:0}); store={best:0}; document.getElementById('bestNum').textContent='0'; } }
+function goMenu(){ setScreen('scrMenu'); }
+function showCeleb(){ var c=document.getElementById('celeb'); c.style.display='flex'; }
+function closeCeleb(){ document.getElementById('celeb').style.display='none'; }
+(function init(){
+  var s=Portal.getSession(); CHILD=(s&&s.child)?s.child:'user'; KEY='synant-'+CHILD; store=getStore();
+  document.getElementById('dateStr').textContent=new Date().toLocaleDateString('zh-CN');
+  document.getElementById('totalNum').textContent=QUIZ.length;
+  document.getElementById('bestNum').textContent=store.best||0;
+})();
+</script>
+<script src="handwrite.js"></script>
+</body>
+</html>

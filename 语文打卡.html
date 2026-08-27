@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📖 语文每日打卡小精灵</title>
+<style>
+  :root{
+    --pink:#ff8fab; --yellow:#ffd166; --green:#06d6a0; --blue:#4cc9f0;
+    --purple:#b292ff; --orange:#ff9f1c; --cream:#fff8ef; --ink:#3d3a4b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(135deg,#fff8ef,#fdeff4);color:var(--ink);
+    padding:18px;max-width:560px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  header{background:linear-gradient(120deg,var(--pink),var(--orange));color:#fff;
+    border-radius:24px;padding:20px;text-align:center;box-shadow:0 8px 22px rgba(255,143,171,.4)}
+  header h1{font-size:22px}
+  .date{font-size:14px;opacity:.95;margin-top:4px}
+  .stats{display:flex;gap:10px;margin:14px 0}
+  .stat{flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center;
+    box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .stat .num{font-size:26px;font-weight:800;color:var(--orange)}
+  .stat .lbl{font-size:12px;color:#999;margin-top:2px}
+  h2{font-size:17px;margin:18px 4px 10px;display:flex;align-items:center;gap:8px}
+  .tasks{display:flex;flex-direction:column;gap:10px}
+  .task{display:flex;align-items:center;gap:12px;background:#fff;border-radius:18px;
+    padding:14px 16px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.05);
+    transition:transform .12s,background .2s;border:3px solid transparent}
+  .task:active{transform:scale(.97)}
+  .task .emoji{font-size:30px;flex-shrink:0}
+  .task .txt{flex:1;font-size:15px}
+  .task .txt small{display:block;color:#aaa;font-size:12px;margin-top:2px}
+  .box{width:30px;height:30px;border-radius:50%;border:3px solid #ffd1dc;
+    flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff}
+  .task.done{background:#eafff6;border-color:var(--green)}
+  .task.done .box{background:var(--green);border-color:var(--green)}
+  .task.done .txt{color:#1a9e76;text-decoration:line-through;text-decoration-color:#9be8cf}
+  .progress{height:14px;background:#ffe3ec;border-radius:10px;overflow:hidden;margin:14px 0 4px}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--pink));
+    border-radius:10px;transition:width .4s}
+  .prog-txt{font-size:13px;color:#888;text-align:center}
+  .week{display:flex;gap:6px;margin-top:6px}
+  .day{flex:1;background:#fff;border-radius:14px;padding:10px 4px;text-align:center;
+    box-shadow:0 3px 8px rgba(0,0,0,.05);font-size:12px;position:relative}
+  .day .d{font-size:18px}
+  .day.done{background:linear-gradient(135deg,#fff3c4,#ffe08a)}
+  .day.today{outline:3px solid var(--pink)}
+  .day .star{position:absolute;top:-8px;right:-4px;font-size:14px}
+  .words{background:#fff;border-radius:18px;padding:16px;box-shadow:0 4px 12px rgba(0,0,0,.05);text-align:center}
+  .cardflip{font-size:40px;margin:8px 0;cursor:pointer;user-select:none}
+  .word-en{font-size:20px;font-weight:800;color:var(--purple)}
+  .word-cn{font-size:14px;color:#888;min-height:40px;margin-top:4px;line-height:1.5}
+  .wbtns{display:flex;gap:10px;margin-top:12px}
+  .wbtns button{flex:1;border:none;border-radius:14px;padding:11px;font-size:15px;
+    font-family:inherit;cursor:pointer;color:#fff;font-weight:700}
+  .wnext{background:var(--purple)}
+  .wknow{background:var(--green)}
+  .tip{font-size:12px;color:#aaa;text-align:center;margin-top:14px;line-height:1.6}
+  .reset{background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;
+    text-decoration:underline;display:block;margin:10px auto 0;font-family:inherit}
+  .confetti{position:fixed;top:-40px;font-size:24px;pointer-events:none;z-index:99;
+    animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:.2}}
+  .celebrate{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;
+    align-items:center;justify-content:center;z-index:100}
+  .celebrate .box2{background:#fff;border-radius:24px;padding:28px 34px;text-align:center;animation:pop .4s}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate h3{font-size:24px;margin-bottom:8px}
+  .celebrate p{color:#888;font-size:14px}
+  .celebrate button{margin-top:16px;border:none;background:var(--orange);color:#fff;
+    padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📖 语文每日打卡小精灵</h1>
+  <div class="date" id="dateStr">今天</div>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="num" id="streakNum">0</div><div class="lbl">🔥 连续打卡天数</div></div>
+  <div class="stat"><div class="num" id="starNum">0</div><div class="lbl">⭐ 收集星星</div></div>
+  <div class="stat"><div class="num" id="doneNum">0</div><div class="lbl">✅ 完成天数</div></div>
+</div>
+
+<h2>📝 今日打卡任务</h2>
+<div class="tasks" id="tasks"></div>
+
+<div class="progress"><i id="progBar"></i></div>
+<div class="prog-txt" id="progTxt">完成 0 / 6 项</div>
+
+<h2>📅 本周打卡日历</h2>
+<div class="week" id="week"></div>
+
+<h2>🃏 抽一张好词卡</h2>
+<div class="words">
+  <div class="cardflip" id="wEmoji" onclick="flip()">🌟</div>
+  <div class="word-en" id="wEn">好词</div>
+  <div class="word-cn" id="wCn">点上面的图翻面 👆</div>
+  <div class="wbtns">
+    <button class="wnext" onclick="nextWord()">下一个 ➡️</button>
+    <button class="wknow" onclick="knowWord()">记下来 ✅</button>
+  </div>
+</div>
+
+<button class="reset" onclick="resetToday()">↺ 重置今天的打卡</button>
+<div class="tip">数据只保存在这台设备的浏览器里，不会上传。<br>每天读一读、写一写，语文越来越棒！</div>
+
+<div class="celebrate" id="celeb">
+  <div class="box2">
+    <h3>🎉 太棒啦！</h3>
+    <p>今天 6 项全完成，获得 ⭐ 星星一枚！</p>
+    <button onclick="closeCeleb()">继续加油 💪</button>
+  </div>
+</div>
+
+<script>
+const TASKS=[
+  {id:'read',emoji:'📖',name:'大声朗读 1 篇短文 / 绘本',tip:'读出声音来'},
+  {id:'comp',emoji:'🧩',name:'回答 3 个阅读理解问题',tip:'谁？在哪？发生什么？'},
+  {id:'map',emoji:'🗺️',name:'画一张“故事地图”',tip:'人物/地点/问题/办法'},
+  {id:'write',emoji:'✏️',name:'看图写话 3~5 句',tip:'先说再写'},
+  {id:'word',emoji:'🌟',name:'记 1 个好词好句',tip:'抄进好词本'},
+  {id:'together',emoji:'👨‍👩‍👦',name:'亲子共读 15 分钟',tip:'和爸妈一起读'}
+];
+var CHILD=(window.Portal&&Portal.getSession&&Portal.getSession().child)||'user';
+const KEY='chineseCheckIn_'+CHILD+'_v1';
+const WORDS=[
+  {e:'金灿灿',c:'形容阳光或稻谷很亮很美。例：太阳金灿灿的。',em:'🌟'},
+  {e:'兴高采烈',c:'形容非常高兴、开心的样子。',em:'😄'},
+  {e:'五颜六色',c:'形容颜色很多很好看。',em:'🌈'},
+  {e:'小心翼翼',c:'形容做事很小心，怕弄坏。',em:'🤲'},
+  {e:'生机勃勃',c:'形容充满生命力，很有活力。',em:'🌱'},
+  {e:'翩翩起舞',c:'形容轻快地跳起舞来。',em:'💃'},
+  {e:'清澈见底',c:'形容水很清，能看见底。',em:'💧'},
+  {e:'依依不舍',c:'形容舍不得离开。',em:'🤗'},
+  {e:'千姿百态',c:'形容姿态很多、各不相同。',em:'🦋'},
+  {e:'硕果累累',c:'形容果实很多，丰收的样子。',em:'🍎'},
+  {e:'欢声笑语',c:'形容大家又说又笑，很热闹。',em:'🎉'},
+  {e:'无忧无虑',c:'形容没有烦恼，很轻松。',em:'☁️'}
+];
+let data=load();
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{records:{}}}catch(e){return{records:{}}}}
+function save(){localStorage.setItem(KEY,JSON.stringify(data))}
+function todayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function dateKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+
+function render(){
+  const tk=todayKey();const rec=data.records[tk]||{};
+  const now=new Date();
+  const wk=['周日','周一','周二','周三','周四','周五','周六'][now.getDay()];
+  document.getElementById('dateStr').textContent=now.getMonth()+1+'月'+now.getDate()+'日 '+wk;
+  const box=document.getElementById('tasks');box.innerHTML='';let done=0;
+  TASKS.forEach(t=>{const isDone=!!rec[t.id];if(isDone)done++;
+    const el=document.createElement('div');el.className='task'+(isDone?' done':'');
+    el.innerHTML=`<div class="emoji">${t.emoji}</div><div class="txt">${t.name}<small>${t.tip}</small></div><div class="box">${isDone?'✔':''}</div>`;
+    el.onclick=()=>toggle(t.id);box.appendChild(el);});
+  document.getElementById('progBar').style.width=(done/6*100)+'%';
+  document.getElementById('progTxt').textContent='完成 '+done+' / 6 项';
+  document.getElementById('starNum').textContent=countStars();
+  document.getElementById('doneNum').textContent=countDoneDays();
+  document.getElementById('streakNum').textContent=countStreak();
+  renderWeek();
+}
+function toggle(id){const tk=todayKey();if(!data.records[tk])data.records[tk]={};
+  if(data.records[tk][id]){delete data.records[tk][id]}else{data.records[tk][id]=1}
+  save();render();if(Object.keys(data.records[tk]).length===6)celebrate();}
+function countStars(){let s=0;for(const k in data.records)s+=Object.keys(data.records[k]).length;return s}
+function countDoneDays(){let n=0;for(const k in data.records)if(Object.keys(data.records[k]).length===6)n++;return n}
+function countStreak(){let s=0;const d=new Date();
+  if(!(data.records[todayKey()]&&Object.keys(data.records[todayKey()]).length===6))d.setDate(d.getDate()-1);
+  while(true){const k=dateKey(d);
+    if(data.records[k]&&Object.keys(data.records[k]).length===6){s++;d.setDate(d.getDate()-1)}else break;}
+  return s;}
+function renderWeek(){const wk=document.getElementById('week');wk.innerHTML='';
+  const now=new Date();const monday=new Date(now);monday.setDate(now.getDate()-(now.getDay()+6)%7);
+  const labels=['一','二','三','四','五','六','日'];
+  for(let i=0;i<7;i++){const d=new Date(monday);d.setDate(monday.getDate()+i);const k=dateKey(d);
+    const full=data.records[k]&&Object.keys(data.records[k]).length===6;const isToday=k===todayKey();
+    const el=document.createElement('div');el.className='day'+(full?' done':'')+(isToday?' today':'');
+    el.innerHTML=`<div>${labels[i]}</div><div class="d">${d.getDate()}</div>`+(full?'<span class="star">⭐</span>':'');
+    wk.appendChild(el);}}
+let wi=Math.floor(Math.random()*WORDS.length),flipped=false;
+function showWord(){const w=WORDS[wi];document.getElementById('wEmoji').textContent=w.em;
+  document.getElementById('wEn').textContent=w.e;document.getElementById('wCn').textContent='点上面的图翻面 👆';flipped=false;}
+function flip(){const w=WORDS[wi];flipped=!flipped;
+  if(flipped){document.getElementById('wCn').textContent=w.c}else{document.getElementById('wCn').textContent='点上面的图翻面 👆'}}
+function nextWord(){wi=(wi+1)%WORDS.length;showWord()}
+function knowWord(){wi=(wi+1)%WORDS.length;showWord();popStar()}
+function celebrate(){document.getElementById('celeb').style.display='flex';confetti()}
+function closeCeleb(){document.getElementById('celeb').style.display='none'}
+function confetti(){const emojis=['⭐','🎉','🌟','💛','🎊','✨'];
+  for(let i=0;i<40;i++){const c=document.createElement('div');c.className='confetti';c.textContent=emojis[i%emojis.length];
+    c.style.left=Math.random()*100+'vw';c.style.animationDuration=(2+Math.random()*2)+'s';c.style.fontSize=(18+Math.random()*20)+'px';
+    document.body.appendChild(c);setTimeout(()=>c.remove(),4200);}}
+function popStar(){const s=document.createElement('div');s.className='confetti';s.textContent='⭐';s.style.left='50%';s.style.animationDuration='1.5s';
+  document.body.appendChild(s);setTimeout(()=>s.remove(),1600);}
+function resetToday(){const tk=todayKey();delete data.records[tk];save();render();}
+showWord();render();
+</script>
+</body>
+</html>

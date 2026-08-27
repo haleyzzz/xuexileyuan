@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' https://api.github.com https:; worker-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'">
+
+<script src="portal-common.js"></script>
+<script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🩺 语句诊治</title>
+<style>
+  :root{ --c1:#e07a5f; --c2:#f2a65a; --green:#06d6a0; --ink:#3d3a4b; }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#fff3ec,#fdf0e6);color:var(--ink);padding:18px;max-width:560px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+  header{background:linear-gradient(120deg,var(--c1),var(--c2));color:#fff;border-radius:24px;padding:20px;text-align:center;box-shadow:0 8px 22px rgba(224,122,95,.4)}
+  header h1{font-size:22px}
+  .date{font-size:14px;opacity:.95;margin-top:4px}
+  .stats{display:flex;gap:10px;margin:14px 0}
+  .stat{flex:1;background:#fff;border-radius:18px;padding:12px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .stat .num{font-size:26px;font-weight:800;color:var(--c1)}
+  .stat .lbl{font-size:12px;color:#999;margin-top:2px}
+  .screen{display:none}
+  .screen.on{display:block}
+  .btn{display:block;width:100%;border:none;border-radius:16px;padding:14px;font-size:16px;font-family:inherit;cursor:pointer;font-weight:800;color:#fff;background:var(--c1);margin-top:8px}
+  .btn.gh{background:var(--c2)}
+  .btn.sec{background:#fff3ec;color:var(--c1)}
+  .prog-wrap{margin:6px 0 14px}
+  .progress{height:14px;background:#ffe6da;border-radius:10px;overflow:hidden}
+  .progress > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--c1),var(--c2));border-radius:10px;transition:width .4s}
+  .prog-txt{font-size:13px;color:#888;text-align:center;margin-top:4px}
+  .q{background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.06);padding:14px;margin-bottom:12px;border:3px solid transparent;transition:border-color .2s}
+  .q.done-ok{border-color:var(--green)}
+  .q.done-no{border-color:#ff6b6b}
+  .q .qt{font-size:15px;font-weight:700;margin-bottom:10px;line-height:1.6}
+  .q .qt .qn{color:var(--c1);margin-right:6px}
+  .q .qt .spk{border:none;background:#fff3ec;color:var(--c1);border-radius:10px;padding:2px 9px;font-size:13px;cursor:pointer;font-family:inherit;margin-left:6px}
+  .q .sentence{font-size:17px;font-weight:800;color:var(--ink);background:#fff8f3;border-radius:12px;padding:10px 12px;margin-bottom:10px;line-height:1.7}
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{border:none;border-radius:12px;padding:11px 14px;font-size:14px;text-align:left;font-family:inherit;cursor:pointer;background:#fff3ec;color:var(--ink);transition:.15s}
+  .opt:active{transform:scale(.98)}
+  .opt.ok{background:var(--green);color:#fff}
+  .opt.no{background:#ff6b6b;color:#fff}
+  .opt.dim{opacity:.45;pointer-events:none}
+  .why{font-size:13px;color:#888;margin-top:10px;background:#f6f8fb;border-radius:10px;padding:9px;line-height:1.6;display:none}
+  .why.on{display:block}
+  .report{background:#fff;border-radius:24px;box-shadow:0 8px 22px rgba(0,0,0,.08);padding:24px;text-align:center;margin-top:14px}
+  .report .stars{font-size:34px;letter-spacing:4px;margin:6px 0}
+  .report .score{font-size:30px;font-weight:800;color:var(--c1)}
+  .report .sub{font-size:14px;color:#888;margin-top:4px}
+  .report .line{font-size:15px;color:var(--ink);margin-top:10px}
+  .report .pass{color:var(--green);font-weight:800}
+  .report .fail{color:#ff6b6b;font-weight:800}
+  .reset{background:none;border:none;color:#bbb;font-size:12px;cursor:pointer;text-decoration:underline;display:block;margin:10px auto 0;font-family:inherit}
+  .tip{font-size:12px;color:#aaa;text-align:center;margin-top:14px;line-height:1.6}
+  .confetti{position:fixed;top:-40px;font-size:24px;pointer-events:none;z-index:99;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:.2}}
+  .celebrate{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:100}
+  .celebrate .box2{background:#fff;border-radius:24px;padding:28px 34px;text-align:center;animation:pop .4s;max-width:320px}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .celebrate h3{font-size:24px;margin-bottom:8px}
+  .celebrate p{color:#888;font-size:14px;line-height:1.6}
+  .celebrate button{margin-top:16px;border:none;background:var(--c2);color:#fff;padding:11px 26px;border-radius:14px;font-size:15px;font-family:inherit;cursor:pointer;font-weight:700}
+</style>
+<script>
+/* iOS 朗读稳定性补丁：保留 utterance 全局引用防 GC 静音 + 朗读前 resume()（与 speech.js 同逻辑，本页未引 speech.js 故内联） */
+(function(){ if(window.__ttsPatched) return; window.__ttsPatched=true;
+  if(!window.speechSynthesis) return;
+  var _sp=window.speechSynthesis.speak.bind(window.speechSynthesis);
+  window.speechSynthesis.speak=function(u){ try{window.speechSynthesis.resume();}catch(e){} window.__ttsUtt=u; return _sp(u); };
+})();
+</script>
+</head>
+<body>
+
+<header><h1>🩺 语句诊治</h1><div class="date" id="dateStr">今天</div></header>
+<div class="stats">
+  <div class="stat"><div class="num" id="bestNum">0</div><div class="lbl">🏆 本模式最佳</div></div>
+  <div class="stat"><div class="num" id="totalNum">0</div><div class="lbl">📝 题目总数</div></div>
+  <div class="stat"><div class="num" id="passNum">80%</div><div class="lbl">✅ 通关线</div></div>
+</div>
+<div class="screen on" id="scrMenu">
+  <h2 style="font-size:17px;margin:6px 4px 10px">🎯 修改病句 · 加标点</h2>
+  <div class="tip" style="margin:0 0 12px">两关任选：把有毛病的句子改对，或给句子加上正确标点。点 🔊 听句子。选对 80% 通关！</div>
+  <button class="btn" onclick="start('bug')">🩹 修改病句</button>
+  <button class="btn gh" onclick="start('punc')">🔣 加标点</button>
+  <button class="btn sec" onclick="resetBest()">↺ 清空最佳记录</button>
+</div>
+<div class="screen" id="scrQuiz">
+  <div class="prog-wrap"><div class="progress"><i id="progBar"></i></div><div class="prog-txt" id="progTxt">已答 0 / 0</div></div>
+  <div id="quizArea"></div>
+  <button class="btn gh" id="finishBtn" onclick="finish()" style="display:none">🏁 查看战报</button>
+</div>
+<div class="screen" id="scrReport">
+  <div class="report">
+    <div class="stars" id="rStars">⭐⭐⭐</div>
+    <div class="score" id="rScore">0 / 0</div>
+    <div class="sub" id="rPct">正确率 0%</div>
+    <div class="line" id="rPass"></div>
+  </div>
+  <button class="btn" onclick="goMenu()">🔄 选模式再练</button>
+  <button class="btn sec" onclick="goMenu()">🏠 回到首页</button>
+</div>
+<div class="tip">数据按小朋友分别保存，不会上传。</div>
+<div class="celebrate" id="celeb"><div class="box2"><h3>🎉 语句小医生！</h3><p>病句改对、标点加好，表达更清楚啦！</p><button onclick="closeCeleb()">继续闯关 💪</button></div></div>
+<script>
+var CHILD='user', KEY='', store={}, currentMode='bug', currentArr=[];
+var QUIZ_BUG=[
+  {"word":"在公园里玩得很高兴。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["我们在公园里玩得很高兴。","在公园里玩得高兴。","在公园玩得很高兴。","公园里玩得高兴了。"],"ans":0,"why":"这句话缺主语，加上『我们』才完整。"},
+  {"word":"他的写作水平明显改进了。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["他的写作水平明显提高了。","他的写作水平明显改变了。","他的写作水平明显改好了。","他的写作水平明显改掉了。"],"ans":0,"why":"『水平』和『改进』搭配不当，应是『提高水平』。"},
+  {"word":"语文对我很感兴趣。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["我对语文很感兴趣。","语文对我有兴趣。","我对语文感兴趣着。","语文被我感兴趣。"],"ans":0,"why":"词序颠倒，应是『我对语文』感兴趣。"},
+  {"word":"他经常一贯帮助同学。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["他一贯帮助同学。","他经常一贯地帮同学。","他一贯经常帮助着同学。","他帮同学一贯经常。"],"ans":0,"why":"『经常』和『一贯』意思重复，去掉一个。"},
+  {"word":"全班同学都到了，只有小明没来。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["全班同学除了小明都到了。","全班同学都到了，小明也到了。","全班同学到了，只有小明没来。","全班都到了，小明没来。"],"ans":0,"why":"前后矛盾，『都到了』又『小明没来』冲突，应说明小明除外。"},
+  {"word":"菜园里种了西红柿、黄瓜、苹果和茄子。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["菜园里种了西红柿、黄瓜和茄子。","菜园里种了西红柿、黄瓜、苹果、茄子。","菜园里种了黄瓜、苹果和茄子。","菜园里种了西红柿、苹果和茄子。"],"ans":0,"why":"苹果是水果不是蔬菜，归类不当应去掉。"},
+  {"word":"我们要克苦学习。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["我们要刻苦学习。","我们要刻克学习。","我们要克学苦练。","我们要苦刻学习。"],"ans":0,"why":"『克』是错别字，应为『刻』（刻苦）。"},
+  {"word":"因为今天下雨，所以要去公园。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["因为今天下雨，所以不去公园。","因为今天下雨，所以去公园。","今天下雨，去公园。","下雨了，要去公园。"],"ans":0,"why":"关联词和意思矛盾，下雨应『不去』公园。"},
+  {"word":"我断定他可能生病了。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["我猜想他可能生病了。","我断定他一定生病了。","我断定可能他病了。","我可能断定他生病。"],"ans":0,"why":"『断定』（肯定）和『可能』（不确定）矛盾，改『断定』为『猜想』。"},
+  {"word":"操场上飘着五颜六色的红旗。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["操场上飘着红旗。","操场上飘着五颜六色的旗。","操场上飘着五颜六色的红。","操场上飘着颜色红的旗。"],"ans":0,"why":"『五颜六色』和『红』矛盾，红旗只有一种颜色。"},
+  {"word":"香山的秋天是令人向往的地方。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["秋天的香山是令人向往的地方。","香山的秋天是令人向往的季节。","香山秋天是向往地方。","秋天香山令人向往的地方。"],"ans":0,"why":"主语『秋天』和宾语『地方』搭配不当，应为『香山』是地方。"},
+  {"word":"昨天傍晚下了一夜的雨。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["昨天下了一夜的雨。","昨天傍晚下了一阵雨。","昨天傍晚下了一夜雨。","傍晚下了一夜的雨。"],"ans":0,"why":"『傍晚』和『一夜』矛盾，去掉一个。"},
+  {"word":"这本书对我很感兴趣。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["我对这本书很感兴趣。","这本书使我感兴趣。","这本书对我有兴趣。","我对书很感兴趣着。"],"ans":0,"why":"词序颠倒，应是『我对这本书』感兴趣。"},
+  {"word":"他穿了一件灰色的上衣和帽子。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["他穿了一件灰色上衣，戴了一顶帽子。","他穿了一件灰色上衣和戴帽子。","他穿了灰色上衣和帽子。","他穿了一件上衣和帽子。"],"ans":0,"why":"『穿』和『帽子』搭配不当，帽子要『戴』。"},
+  {"word":"造纸是中国的四大发明。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["造纸术是中国的四大发明之一。","造纸是中国的四大发明。","造纸是中国四大发明。","造纸是四大发明的中国。"],"ans":0,"why":"造纸只是四大发明『之一』，不能说就是四大发明。"},
+  {"word":"我的作业几乎全部做完了。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["我的作业全部做完了。","我的作业几乎做完了。","我的作业几乎全都做完。","我的作业全部几乎做完。"],"ans":0,"why":"『几乎』（差不多）和『全部』矛盾，留一个。"},
+  {"word":"联欢会上，大家表演了许多一个个精彩的节目。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["联欢会上，大家表演了许多精彩的节目。","联欢会上，大家表演了一个个精彩的节目。","联欢会上，大家表演了许多一个节目。","联欢会上，大家表演了精彩许多节目。"],"ans":0,"why":"『许多』和『一个个』重复，去掉一个。"},
+  {"word":"树上结满了许许多多又红又大的苹果。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["树上结满了又红又大的苹果。","树上结了许许多多又红大的苹果。","树上结满了许多又红又大苹果。","树上结了又红又大许许多多苹果。"],"ans":0,"why":"『结满』和『许许多多』重复，去掉一个。"},
+  {"word":"校园里生满了白的、红的、黄的等五颜六色的花。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["校园里开满了五颜六色的花。","校园里生满了花五颜六色。","校园里生满白红黄等花。","校园里开满花五颜六色。"],"ans":0,"why":"『白的、红的、黄的』已说明颜色，不应再加『五颜六色』；『开满』比『生满』更通顺。"},
+  {"word":"经过努力，我的错别字大大进步了。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["经过努力，我的错别字大大减少了。","经过努力，我的错别字大大进步了。","经过努力，我的错字进步了。","经过努力，我的错别字进步很多。"],"ans":0,"why":"『错别字』和『进步』搭配不当，应是『减少』错别字。"},
+  {"word":"妈妈买了西瓜、苹果、黄瓜和葡萄等水果。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["妈妈买了西瓜、苹果和葡萄等水果。","妈妈买了西瓜、苹果、黄瓜、葡萄水果。","妈妈买了西瓜苹果葡萄水果。","妈妈买了西瓜、葡萄和黄瓜等水果。"],"ans":0,"why":"黄瓜是蔬菜不是水果，归类不当应去掉。"},
+  {"word":"他经常回忆过去的往事。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["他经常回忆往事。","他经常回忆过去的事。","他经常回忆往事过去。","他回忆过去经常往事。"],"ans":0,"why":"『回忆』和『往事』都含『过去』意思，重复，留一个。"},
+  {"word":"我估计他这道题一定做错了。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["我估计他这道题做错了。","我一定估计他做错了。","我估计他一定错做。","我一定他做错了估计。"],"ans":0,"why":"『估计』（不确定）和『一定』（肯定）矛盾，去掉『一定』。"},
+  {"word":"听了报告，受到了教育。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["听了报告，我受到了教育。","听了报告，受到了教育了。","听报告，受到了教育。","听了报告受教育和。"],"ans":0,"why":"这句话缺主语，加上『我』才完整。"},
+  {"word":"大概他今天肯定不来了。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["大概他今天不来了。","他今天肯定不来了大概。","他大概今天肯定不来。","今天大概他肯定不来了。"],"ans":0,"why":"『大概』（推测）和『肯定』（确定）矛盾，去掉『肯定』。"},
+  {"word":"夏天的北京是一年中最美丽的季节。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["北京的夏天是一年中最美丽的季节。","夏天的北京是美丽的城市。","夏天北京是季节最美丽。","北京的夏天是季节美丽的。"],"ans":0,"why":"主语『夏天的北京』是地方，宾语『季节』搭配不当，应说『北京的夏天』。"},
+  {"word":"我们从小要养成讲卫生。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["我们从小要养成讲卫生的习惯。","我们从小要讲卫生的养成。","我们从小养成了讲卫生了。","我们要从小讲卫生养成的。"],"ans":0,"why":"『养成』缺少宾语，要补上『的习惯』才完整。"},
+  {"word":"他的口语水平和写作水平都进步了。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["他的口语水平和写作水平都提高了。","他的口语水平和写作水平都进步了。","他的水平口语和写作都进步。","他口语水平和水平写作进步了。"],"ans":0,"why":"『水平』应搭配『提高』，不能说『进步』。"},
+  {"word":"博物馆里陈列着两千多年前新出土的文物。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["博物馆里陈列着新出土的两千多年前的文物。","博物馆里陈列两千年多前新出土的文物。","博物馆里新陈列着两千多年出土的文物。","博物馆里陈列着出土两千多年的新文物。"],"ans":0,"why":"词序不当，『新出土』应放在『两千多年前』前面。"},
+  {"word":"小明忍不住不禁笑出了声。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["小明忍不住笑出了声。","小明不禁忍不住笑出声。","小明忍不住禁不住笑了声。","小明不禁忍住笑出了声。"],"ans":0,"why":"『忍不住』和『不禁』意思重复，留一个。"},
+  {"word":"各行各业都涌现出了许多雷锋式的好人好事。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["各行各业都涌现出了许多雷锋式的好人。","各行各业都涌现出了许多雷锋式的好事。","各行各业涌现许多雷锋式好人好事了。","各行各业都涌现出好人好事雷锋式的。"],"ans":0,"why":"『好人』和『好事』不能同时做『雷锋式的』的搭配，只留一个。"},
+  {"word":"能否刻苦学习，是取得好成绩的关键。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["刻苦学习，是取得好成绩的关键。","能否刻苦学习，是取得好成绩。","刻苦学习是否是关键成绩好。","能否学习刻苦，取得好成绩关键。"],"ans":0,"why":"『能否』包含正反两面，后半句只有正面，前后不对称，去掉『能否』。"},
+  {"word":"星期天，我在家里写完作业，就去做了很多家务，还读了书。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["星期天，我在家写完作业后做了很多家务，还读了书。","星期天，我写完在家里作业，就做了家务很多。","星期天，我写完作业在家里，就家务做了很多。","星期天，我在家里写作业完，就做了很多家务书。"],"ans":0,"why":"词序混乱，『在家里』应放在『写完作业』前面。"},
+  {"word":"春天来了，桃花、杏花、梨花都开了，真是百花盛开、争奇斗艳。","q":"😷 这句话有毛病，请选出改正确的版本：","opts":["春天来了，桃花、杏花、梨花争奇斗艳地开了。","春天来了，桃花杏花梨花开了真是百花。","春天来了，都开了桃花杏花梨花争奇斗艳。","春天桃花杏花梨花来了，开了争奇斗艳。"],"ans":0,"why":"『真是百花盛开』与前文重复啰嗦，改用『争奇斗艳地开了』更简洁。"}
+];/*opts-shuffle:QUIZ_BUG*/(function(){for(var i=0;i<QUIZ_BUG.length;i++){var it=QUIZ_BUG[i];if(!it||!it.opts||!it.opts.length)continue;var ok=it.opts[it.ans];for(var j=it.opts.length-1;j>0;j--){var r=Math.floor(Math.random()*(j+1));var t=it.opts[j];it.opts[j]=it.opts[r];it.opts[r]=t;}it.ans=it.opts.indexOf(ok);}})();
+;
+var QUIZ_PUNC=[
+  {"word":"你吃饭了吗","q":"🔣 给句子加上正确的标点：","opts":["你吃饭了吗？","你吃饭了吗。","你吃饭了吗！","你吃饭了吗，"],"ans":0,"why":"这是一句问话，末尾用问号。"},
+  {"word":"今天的天气真好啊","q":"🔣 给句子加上正确的标点：","opts":["今天的天气真好啊！","今天的天气真好啊。","今天的天气真好啊？","今天的天气真好啊，"],"ans":0,"why":"带有『啊』的赞叹句，末尾用感叹号。"},
+  {"word":"妈妈说 我们明天去公园","q":"🔣 给句子加上正确的标点：","opts":["妈妈说：“我们明天去公园。”","妈妈说，我们明天去公园。","妈妈说我们明天去公园？","妈妈说明天去公园。"],"ans":0,"why":"提示语『妈妈说』后面用冒号，人物说的话用双引号。"},
+  {"word":"春天来了 花儿开了 鸟儿也叫了","q":"🔣 给句子加上正确的标点：","opts":["春天来了，花儿开了，鸟儿也叫了。","春天来了。花儿开了。鸟儿也叫了。","春天来了，花儿开了鸟儿也叫了。","春天来了花儿开了鸟儿也叫了。"],"ans":0,"why":"句中短句之间用逗号，一句话结束用句号。"},
+  {"word":"北京的市花是月季","q":"🔣 给句子加上正确的标点：","opts":["北京的市花是月季。","北京的市花是月季？","北京的市花是月季！","北京的市花是月季，"],"ans":0,"why":"陈述一个事实，末尾用句号。"},
+  {"word":"你知道这是什么吗","q":"🔣 给句子加上正确的标点：","opts":["你知道这是什么吗？","你知道这是什么吗。","你知道这是什么吗！","你知道这是什么吗，"],"ans":0,"why":"这是问句，末尾用问号。"},
+  {"word":"这本书多好看呀","q":"🔣 给句子加上正确的标点：","opts":["这本书多好看呀！","这本书多好看呀。","这本书多好看呀？","这本书多好看呀，"],"ans":0,"why":"赞叹语气，用感叹号。"},
+  {"word":"小明 小华和小红是好朋友","q":"🔣 给句子加上正确的标点：","opts":["小明、小华和小红是好朋友。","小明，小华和小红是好朋友。","小明小华和小红是好朋友。","小明。小华和小红是好朋友。"],"ans":0,"why":"并列的人名之间用顿号。"},
+  {"word":"花园里有红的 黄的 紫的花","q":"🔣 给句子加上正确的标点：","opts":["花园里有红的、黄的、紫的花。","花园里有红的，黄的，紫的花。","花园里有红的黄的紫的花。","花园里有红黄紫的花。"],"ans":0,"why":"并列的词语之间用顿号。"},
+  {"word":"爷爷喜欢下棋 奶奶喜欢跳舞","q":"🔣 给句子加上正确的标点：","opts":["爷爷喜欢下棋，奶奶喜欢跳舞。","爷爷喜欢下棋。奶奶喜欢跳舞。","爷爷喜欢下棋奶奶喜欢跳舞。","爷爷喜欢下棋、奶奶喜欢跳舞。"],"ans":0,"why":"两个分句之间用逗号连接，句末用句号。"},
+  {"word":"牛顿是著名的科学家","q":"🔣 给句子加上正确的标点：","opts":["牛顿是著名的科学家。","牛顿是著名的科学家？","牛顿是著名的科学家！","牛顿是著名的科学家，"],"ans":0,"why":"陈述事实，末尾用句号。"},
+  {"word":"这道题怎么做呢","q":"🔣 给句子加上正确的标点：","opts":["这道题怎么做呢？","这道题怎么做呢。","这道题怎么做呢！","这道题怎么做呢，"],"ans":0,"why":"疑问语气，用问号。"},
+  {"word":"多么美丽的彩虹啊","q":"🔣 给句子加上正确的标点：","opts":["多么美丽的彩虹啊！","多么美丽的彩虹啊。","多么美丽的彩虹啊？","多么美丽的彩虹啊，"],"ans":0,"why":"赞叹句，用感叹号。"},
+  {"word":"爸爸给我买了书 笔和本子","q":"🔣 给句子加上正确的标点：","opts":["爸爸给我买了书、笔和本子。","爸爸给我买了书，笔和本子。","爸爸给我买了书笔和本子。","爸爸给我买了书。笔和本子。"],"ans":0,"why":"并列的物品之间用顿号。"},
+  {"word":"小白兔 你为什么跑得这么快","q":"🔣 给句子加上正确的标点：","opts":["小白兔，你为什么跑得这么快？","小白兔你为什么跑得这么快？","小白兔，你为什么跑得这么快。","小白兔你为什么跑得这么快！"],"ans":0,"why":"称呼后用逗号，问句末尾用问号。"},
+  {"word":"老师问 谁会背这首诗","q":"🔣 给句子加上正确的标点：","opts":["老师问：“谁会背这首诗？”","老师问，谁会背这首诗。","老师问谁会背这首诗？","老师问谁会背这首诗。"],"ans":0,"why":"『问』后用冒号，问话用双引号并加问号。"},
+  {"word":"西湖的景色真美呀","q":"🔣 给句子加上正确的标点：","opts":["西湖的景色真美呀！","西湖的景色真美呀。","西湖的景色真美呀？","西湖的景色真美呀，"],"ans":0,"why":"赞叹句，用感叹号。"},
+  {"word":"你知道端午节吃粽子吗","q":"🔣 给句子加上正确的标点：","opts":["你知道端午节吃粽子吗？","你知道端午节吃粽子吗。","你知道端午节吃粽子吗！","你知道端午节吃粽子吗，"],"ans":0,"why":"这是问句，末尾用问号。"},
+  {"word":"早晨 我背着书包上学去","q":"🔣 给句子加上正确的标点：","opts":["早晨，我背着书包上学去。","早晨。我背着书包上学去。","早晨我背着书包上学去。","早晨，我背着书包上学去，"],"ans":0,"why":"时间状语后逗号，句末句号。"},
+  {"word":"小猫 小狗和小鸭在玩耍","q":"🔣 给句子加上正确的标点：","opts":["小猫、小狗和小鸭在玩耍。","小猫，小狗和小鸭在玩耍。","小猫小狗和小鸭在玩耍。","小猫。小狗和小鸭在玩耍。"],"ans":0,"why":"并列动物名之间用顿号。"},
+  {"word":"这是什么动物呢","q":"🔣 给句子加上正确的标点：","opts":["这是什么动物呢？","这是什么动物呢。","这是什么动物呢！","这是什么动物呢，"],"ans":0,"why":"疑问语气，用问号。"},
+  {"word":"这里的风景太迷人了","q":"🔣 给句子加上正确的标点：","opts":["这里的风景太迷人了！","这里的风景太迷人了。","这里的风景太迷人了？","这里的风景太迷人了，"],"ans":0,"why":"赞叹语气，用感叹号。"},
+  {"word":"妈妈喊 快回家吃饭","q":"🔣 给句子加上正确的标点：","opts":["妈妈喊：“快回家吃饭！”","妈妈喊，快回家吃饭。","妈妈喊快回家吃饭？","妈妈喊快回家吃饭。"],"ans":0,"why":"『喊』后用冒号，催促的话用双引号加感叹号。"},
+  {"word":"我们爱祖国 爱人民 爱家乡","q":"🔣 给句子加上正确的标点：","opts":["我们爱祖国、爱人民、爱家乡。","我们爱祖国，爱人民，爱家乡。","我们爱祖国爱人民爱家乡。","我们爱祖国。爱人民。爱家乡。"],"ans":0,"why":"并列的动宾短语之间用顿号。"},
+  {"word":"小鸟在树上叽叽喳喳地叫","q":"🔣 给句子加上正确的标点：","opts":["小鸟在树上叽叽喳喳地叫。","小鸟在树上叽叽喳喳地叫？","小鸟在树上叽叽喳喳地叫！","小鸟在树上叽叽喳喳地叫，"],"ans":0,"why":"陈述鸟在叫这件事，末尾用句号。"},
+  {"word":"你不是已经吃过早饭了吗","q":"🔣 给句子加上正确的标点：","opts":["你不是已经吃过早饭了吗？","你不是已经吃过早饭了吗。","你不是已经吃过早饭了吗！","你不是已经吃过早饭了吗，"],"ans":0,"why":"反问句，末尾用问号。"},
+  {"word":"弟弟大声喊 我也要去","q":"🔣 给句子加上正确的标点：","opts":["弟弟大声喊：“我也要去！”","弟弟大声喊，我也要去。","弟弟大声喊我也要去？","弟弟大声喊我也要去。"],"ans":0,"why":"『喊』后用冒号，说的话用双引号加感叹号。"},
+  {"word":"这台机器真神奇呀","q":"🔣 给句子加上正确的标点：","opts":["这台机器真神奇呀！","这台机器真神奇呀。","这台机器真神奇呀？","这台机器真神奇呀，"],"ans":0,"why":"带『呀』的赞叹句，末尾用感叹号。"},
+  {"word":"香蕉 苹果 橘子都是我爱吃的水果","q":"🔣 给句子加上正确的标点：","opts":["香蕉、苹果、橘子都是我爱吃的水果。","香蕉，苹果，橘子都是我爱吃的水果。","香蕉苹果橘子都是我爱吃的水果。","香蕉。苹果。橘子都是我爱吃的水果。"],"ans":0,"why":"并列的水果名之间用顿号，句末用句号。"},
+  {"word":"你知道熊猫最爱吃什么吗","q":"🔣 给句子加上正确的标点：","opts":["你知道熊猫最爱吃什么吗？","你知道熊猫最爱吃什么吗。","你知道熊猫最爱吃什么吗！","你知道熊猫最爱吃什么吗，"],"ans":0,"why":"疑问句，末尾用问号。"},
+  {"word":"放学后 我们先写作业 再出去玩","q":"🔣 给句子加上正确的标点：","opts":["放学后，我们先写作业，再出去玩。","放学后。我们先写作业。再出去玩。","放学后我们先写作业再出去玩。","放学后、我们先写作业、再出去玩。"],"ans":0,"why":"时间状语后用逗号，两个分句间用逗号，句末用句号。"},
+  {"word":"小红说 我明天要早起","q":"🔣 给句子加上正确的标点：","opts":["小红说：“我明天要早起。”","小红说，我明天要早起。","小红说我明天要早起？","小红说我明天要早起。"],"ans":0,"why":"提示语『小红说』后用冒号，说话内容用双引号，句末句号放引号里。"},
+  {"word":"天边的晚霞多么绚烂啊","q":"🔣 给句子加上正确的标点：","opts":["天边的晚霞多么绚烂啊！","天边的晚霞多么绚烂啊。","天边的晚霞多么绚烂啊？","天边的晚霞多么绚烂啊，"],"ans":0,"why":"带『多么……啊』的赞叹句，末尾用感叹号。"},
+  {"word":"书包里有语文书 数学书和英语书","q":"🔣 给句子加上正确的标点：","opts":["书包里有语文书、数学书和英语书。","书包里有语文书，数学书和英语书。","书包里有语文书数学书和英语书。","书包里有语文书。数学书和英语书。"],"ans":0,"why":"并列的书名之间用顿号，最后两个之间用『和』。"}
+];/*opts-shuffle:QUIZ_PUNC*/(function(){for(var i=0;i<QUIZ_PUNC.length;i++){var it=QUIZ_PUNC[i];if(!it||!it.opts||!it.opts.length)continue;var ok=it.opts[it.ans];for(var j=it.opts.length-1;j>0;j--){var r=Math.floor(Math.random()*(j+1));var t=it.opts[j];it.opts[j]=it.opts[r];it.opts[r]=t;}it.ans=it.opts.indexOf(ok);}})();
+;
+function speak(t){ try{ if(!('speechSynthesis'in window))return; window.speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance(t); u.lang='zh-CN'; u.rate=.9; window.speechSynthesis.speak(u); }catch(e){} }
+function getStore(){ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; } }
+function setStore(o){ try{ localStorage.setItem(KEY, JSON.stringify(o)); }catch(e){} }
+function setScreen(id){ document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('on');}); document.getElementById(id).classList.add('on'); }
+var score=0, answered=0;
+function start(mode){
+  currentMode=mode; currentArr=(mode==='bug')?QUIZ_BUG:QUIZ_PUNC;
+  score=0; answered=0;
+  document.getElementById('totalNum').textContent=currentArr.length;
+  document.getElementById('bestNum').textContent=store['best_'+mode]||0;
+  setScreen('scrQuiz'); renderQuiz();
+}
+function renderQuiz(){
+  var html='';
+  currentArr.forEach(function(it,idx){
+    html+='<div class="q" id="q'+idx+'"><div class="qt"><span class="qn">'+(idx+1)+'.</span>'+it.q+'<button class="spk" onclick="speak(\''+it.word+'\')">🔊</button></div>';
+    html+='<div class="sentence">'+it.word+'</div>';
+    html+='<div class="opts">';
+    it.opts.forEach(function(op,oi){ html+='<button class="opt" onclick="choose('+idx+','+oi+')" id="o'+idx+'_'+oi+'">'+op+'</button>'; });
+    html+='</div><div class="why" id="w'+idx+'"></div><div id="hw'+idx+'" class="hw-slot"></div></div>';
+  });
+  document.getElementById('quizArea').innerHTML=html;
+  document.getElementById('finishBtn').style.display='none';
+  updateProg();
+  if(window.Handwrite){
+    currentArr.forEach(function(it, idx){
+      var hw=Handwrite.create({revealText: it.opts[it.ans], placeholder:'✍️ 在这里用手写答案'});
+      document.getElementById('hw'+idx).appendChild(hw.el);
+      var rb=hw.el.querySelector('.hw-tools .hw-btn:last-child');
+      if(rb) rb.addEventListener('click', function(){ markHW(it, idx, currentArr.length); });
+    });
+  }
+}
+function choose(idx,oi){
+  var it=currentArr[idx]; var q=document.getElementById('q'+idx);
+  if(q.classList.contains('done-ok')||q.classList.contains('done-no')) return;
+  answered++;
+  var ok = (oi===it.ans);
+  var opts=q.querySelectorAll('.opt');
+  opts.forEach(function(b,i){ b.classList.add('dim'); if(i===it.ans) b.classList.add('ok'); });
+  if(ok){ q.classList.add('done-ok'); score++; } else { q.classList.add('done-no'); opts[oi].classList.add('no'); }
+  var w=document.getElementById('w'+idx); w.textContent='💡 '+it.why; w.classList.add('on');
+  updateProg();
+  if(answered>=currentArr.length) document.getElementById('finishBtn').style.display='block';
+}
+function markHW(it, idx, total){
+  var q=document.getElementById('q'+idx);
+  if(q.classList.contains('done-ok')||q.classList.contains('done-no')||q.classList.contains('done-hw')) return;
+  answered++;
+  q.classList.add('done-hw');
+  var w=document.getElementById('w'+idx);
+  if(w){ w.innerHTML='💡 '+it.why; w.classList.add('on'); }
+  updateProg();
+  if(answered>=total) document.getElementById('finishBtn').style.display='block';
+}
+function updateProg(){
+  document.getElementById('progBar').style.width=(answered/currentArr.length*100)+'%';
+  document.getElementById('progTxt').textContent='已答 '+answered+' / '+currentArr.length;
+}
+function finish(){
+  var pct=Math.round(score/currentArr.length*100);
+  document.getElementById('rScore').textContent=score+' / '+currentArr.length;
+  document.getElementById('rPct').textContent='正确率 '+pct+'%';
+  var stars = pct>=90?'⭐⭐⭐':pct>=70?'⭐⭐':'⭐';
+  document.getElementById('rStars').textContent=stars;
+  var pass = score/currentArr.length>=0.8;
+  document.getElementById('rPass').innerHTML = pass?'<span class="pass">🎊 通关！语句小医生</span>':'<span class="fail">再练练，争取通关 80%</span>';
+  if(score>(store['best_'+currentMode]||0)){ store['best_'+currentMode]=score; setStore(store); }
+  if(pass) showCeleb();
+  setScreen('scrReport');
+}
+function resetBest(){ if(confirm('确定清空最佳记录？')){ store={}; setStore({}); document.getElementById('bestNum').textContent='0'; } }
+function goMenu(){ setScreen('scrMenu'); }
+function showCeleb(){ var c=document.getElementById('celeb'); c.style.display='flex'; }
+function closeCeleb(){ document.getElementById('celeb').style.display='none'; }
+(function init(){
+  var s=Portal.getSession(); CHILD=(s&&s.child)?s.child:'user'; KEY='sentence-fix-'+CHILD; store=getStore();
+  document.getElementById('dateStr').textContent=new Date().toLocaleDateString('zh-CN');
+  document.getElementById('totalNum').textContent=QUIZ_BUG.length;
+})();
+</script>
+<script src="handwrite.js"></script>
+</body>
+</html>

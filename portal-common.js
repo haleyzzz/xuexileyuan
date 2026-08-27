@@ -103,6 +103,36 @@
   };
 })();
 
+/* ---------------- 移动端（iPad/iPhone）体验修复 ----------------
+ * 统一处理 iOS Safari 通病：① 输入框聚焦时整页被自动放大（viewport
+ * 未禁缩放）→ 给所有页面补 maximum-scale=1,user-scalable=no；
+ * ② 点按灰闪 / 双击缩放 / 300ms 延迟 → 全局 touch-action:manipulation
+ * 与 -webkit-tap-highlight-color:transparent。
+ * 说明：手写 canvas(.hw-canvas) 自带更高优先级的 touch-action:none，不受影响；
+ * 关闭双指缩放对小学学习 App 利大于弊（输入聚焦乱缩放才是真痛点）。 */
+(function () {
+  'use strict';
+  try {
+    var mv = document.querySelector('meta[name="viewport"]');
+    if (mv) {
+      var c = mv.getAttribute('content') || '';
+      if (c.indexOf('user-scalable=no') === -1) {
+        c = c.replace(/,\s*maximum-scale=[0-9.]+/g, '').replace(/,\s*user-scalable=\w+/g, '');
+        c = c.replace(/,\s*$/, '').trim();
+        c += ', maximum-scale=1, user-scalable=no';
+        mv.setAttribute('content', c);
+      }
+    }
+    var g = document.createElement('style');
+    g.id = '__mob_fix';
+    g.textContent =
+      'a,button,input,select,textarea,label{touch-action:manipulation}' +
+      'a,button,input,select,textarea,label{-webkit-tap-highlight-color:transparent}' +
+      'html{-webkit-text-size-adjust:100%}';
+    document.head.appendChild(g);
+  } catch (e) {}
+})();
+
 /* ---------------- 统一返回导航栏（全站子页面） ----------------
  * 由 portal-common.js 在每个加载它的页面自动注入，保证：
  *   · 所有「详情页 / 子页面 / 弹窗页」左上角统一出现一个固定顶栏；
@@ -144,7 +174,7 @@
         }
       });
       var css = ''
-        + '.rope-backbar{position:fixed;top:0;left:0;right:0;height:52px;z-index:100000;'
+        + '.rope-backbar{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;height:52px;z-index:100000;'
         + 'display:flex;align-items:center;gap:10px;padding:0 12px;'
         + 'background:rgba(255,255,255,.95);box-shadow:0 2px 12px rgba(31,42,68,.16);'
         + 'font-family:inherit;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);'
@@ -164,7 +194,7 @@
         + '.rope-backbar .rk-title{flex:1;font-size:15px;font-weight:800;color:#3d3a4b;'
         + 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:4px;'
         + 'user-select:none}';
-      document.body.style.paddingTop = '52px';
+      document.body.style.paddingTop = 'calc(52px + env(safe-area-inset-top, 0px))';
       var st = document.createElement('style');
       st.textContent = css;
       document.head.appendChild(st);

@@ -1438,6 +1438,9 @@ function renderPassage(){
   html+='<div style="margin-top:10px"><button onclick="nextReveal()" style="border:none;border-radius:14px;padding:10px 18px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;color:#fff;background:#3a7bd5">➡️ 下一关（对照答案）</button></div>';
   document.getElementById('quizArea').innerHTML=html;
   updateProg();
+  // 原文点读：把短文每个英文单词包成可点读 .gw（点词发音，不展开翻译）
+  var ptEl=document.getElementById('ptext-'+current);
+  if(ptEl && window.Gloss) Gloss.wrapOriginalWords(ptEl);
   // 手写区：每道小题一块手写板，写完点「对照答案」看正确选项+解析
   p.qa.forEach(function(q,qi){
     var gi=current*2+qi;

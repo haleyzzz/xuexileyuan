@@ -2480,6 +2480,42 @@
     }, false);
   }
 
+  // 把容器内纯文本里的每个英文单词包成可点读 .gw（短文原文直接点词发音）
+  // 保留标点/空格/中文，不破坏已有 HTML 标签；复用全局 .gw 点击委托朗读
+  function wrapOriginalWords(root){
+    if(!root || !root.nodeType) return;
+    if(root.querySelector && root.querySelector('.gw')) return; // 已处理则跳过，避免重复嵌套
+    var WORD=/[A-Za-z][A-Za-z'’\-]*[A-Za-z]|[A-Za-z]/g; // 英文词（含 don't / I'm / well-known）
+    var walker=document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+    var nodes=[];
+    while(walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function(tn){
+      var p=tn.parentNode;
+      if(p && p.nodeType===1 && p.classList && (p.classList.contains('gw')||p.classList.contains('gc'))) return;
+      var s=tn.nodeValue;
+      if(!s || !/[A-Za-z]/.test(s)) return;
+      var frag=document.createDocumentFragment();
+      var last=0, m, changed=false;
+      WORD.lastIndex=0;
+      while((m=WORD.exec(s))){
+        var st=m.index;
+        if(st>last) frag.appendChild(document.createTextNode(s.slice(last,st)));
+        var w=m[0];
+        var sp=document.createElement('span');
+        sp.className='gw';
+        sp.setAttribute('data-w', w);
+        sp.textContent=w;
+        frag.appendChild(sp);
+        last=st+w.length;
+        changed=true;
+      }
+      if(changed){
+        if(last<s.length) frag.appendChild(document.createTextNode(s.slice(last)));
+        tn.parentNode.replaceChild(frag, tn);
+      }
+    });
+  }
+
   // 自动注入所需样式（任何页面引入即生效，无需重复写 CSS）
   function injectCSS(){
     if(document.getElementById('gloss-css')) return;
@@ -2503,5 +2539,5 @@
   else document.addEventListener('DOMContentLoaded', injectCSS);
   initSpeak();
 
-  window.Gloss = { DICT:DICT, gloss:gloss, buildPGlossHTML:buildPGlossHTML, injectCSS:injectCSS, speak:speak };
+  window.Gloss = { DICT:DICT, gloss:gloss, buildPGlossHTML:buildPGlossHTML, injectCSS:injectCSS, speak:speak, wrapOriginalWords:wrapOriginalWords };
 })();

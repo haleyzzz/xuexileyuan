@@ -529,7 +529,10 @@ function renderPage(){
   var spans=[]; var wstart=[]; var ci=0;
   parts.forEach(function(part){
     if(part===''||/^\s+$/.test(part)){ var sp=document.createElement('span'); sp.textContent=part; host.appendChild(sp); return; }
-    var s=document.createElement('span'); s.className='w'; s.textContent=part; host.appendChild(s);
+    var s=document.createElement('span'); s.className='w'; s.textContent=part;
+    s.setAttribute('data-w', part);
+    s.addEventListener('click', function(e){ e.stopPropagation(); if(window.Speech) Speech.speak(part); });
+    host.appendChild(s);
     spans.push(s); wstart.push(ci); ci+=part.length;
   });
   state.pageSpans=spans; state.pageStart=wstart;

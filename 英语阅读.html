@@ -366,7 +366,7 @@ function renderWords(container, text){
   text.split(/(\s+)/).forEach(function(tok){
     if (tok==='') return;
     if (/^\s+$/.test(tok)){ container.appendChild(document.createTextNode(tok)); return; }
-    var s=document.createElement('span'); s.className='w'; s.textContent=tok;
+    var s=document.createElement('span'); s.className='w gw'; s.textContent=tok;
     s.onclick=function(e){ e.stopPropagation(); stopAudio(); speakWord(tok); };
     container.appendChild(s); spans.push(s);
   });

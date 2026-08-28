@@ -10,6 +10,7 @@
 <script>try{if(window.Portal&&Portal.require)Portal.require(["student","parent"],location.href);}catch(e){}</script>
 <script src="accounts.js"></script>
 <script src="rewards.js"></script>
+<script src="module-checkin.js"></script>
 <style>
 :root{--e:#4cc9f0;--c:#ff8fab;--m:#06d6a0;--s:#b292ff;--o:#ff9f1c;--ink:#3d3a4b;--mut:#8a8a93;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -86,6 +87,7 @@ iframe{width:100%;height:78vh;border:0;border-radius:16px;background:#fff}
 <div class="tabs">
   <div class="tab on" id="tabCheckinBtn" onclick="switchTab('checkin')">📅 本周打卡</div>
   <div class="tab" id="tabProgressBtn" onclick="switchTab('progress')">📊 学习进度</div>
+  <div class="tab" id="tabModulesBtn" onclick="switchTab('modules')">🧩 全部模块</div>
 </div>
 
 <div id="tabCheckin">
@@ -109,6 +111,8 @@ iframe{width:100%;height:78vh;border:0;border-radius:16px;background:#fff}
   <div id="iframeWrap"><iframe src="进度看板.html" title="学习进度看板"></iframe></div>
   <div class="fallback"><a href="进度看板.html" target="_blank">↗ 在新页面打开学习进度看板</a></div>
 </div>
+
+<div id="tabModules" style="display:none"></div>
 
 <script>
 var APP='unified-checkin';
@@ -736,8 +740,56 @@ function render(){
 function switchTab(t){
   document.getElementById('tabCheckin').style.display = t==='checkin'?'block':'none';
   document.getElementById('tabProgress').style.display = t==='progress'?'block':'none';
+  document.getElementById('tabModules').style.display = t==='modules'?'block':'none';
   document.getElementById('tabCheckinBtn').classList.toggle('on', t==='checkin');
   document.getElementById('tabProgressBtn').classList.toggle('on', t==='progress');
+  document.getElementById('tabModulesBtn').classList.toggle('on', t==='modules');
+  if (t==='modules') renderModules();
+}
+
+/* ===== 全部模块打卡（按进度循环，与门户共享同一数据层） ===== */
+function renderModules(){
+  var wrap = document.getElementById('tabModules');
+  if (!wrap) return;
+  if (!ModuleCheckin.uid()){ wrap.innerHTML='<div class="empty">请先以小朋友身份登录后再打卡</div>'; return; }
+  var ids = ModuleCheckin.visibleIds();
+  var apps = {}; (Portal.APPS||[]).forEach(function(a){ apps[a.id]=a; });
+  var p = ModuleCheckin.progress();
+  var html = '';
+  html += '<div class="sec"><h2>🧩 全部模块打卡 <span class="cnt">第 '+p.round+' 轮 · '+p.done+'/'+p.total+'</span></h2>';
+  html += '<div class="wbar" style="margin:8px 0 14px"><i id="modFill" style="width:'+(p.total?Math.round(p.done/p.total*100):0)+'%"></i></div>';
+  if (p.total>0 && p.done>=p.total){
+    html += '<div class="mcheck-done" style="margin:0 0 14px;padding:12px 16px;border-radius:14px;background:linear-gradient(120deg,#d3f9d8,#b2f2e6);color:#0b6b4f;font-size:14px;font-weight:800;text-align:center">🎉 第 '+p.round+' 轮全部完成！已自动重置，开始第 '+(p.round+1)+' 轮</div>';
+  }
+  html += '<div id="modList">';
+  ids.forEach(function(id){
+    var a = apps[id]; if (!a) return;
+    var done = ModuleCheckin.isDone(id);
+    var col = (window.SUBJ_COLOR && SUBJ_COLOR[a.subject]) || 'var(--o)';
+    html += '<div class="tcard'+(done?' done':'')+'" data-mod="'+id+'" style="border-left-color:'+col+'">'
+      + '<span class="big">'+a.icon+'</span>'
+      + '<div class="mid"><div class="name">'+a.name+'</div><span class="subj" style="background:'+col+'">'+a.subject+'</span></div>'
+      + '<div class="btns"><button class="'+(done?'ok did':'go')+'" onclick="toggleModuleFromCenter(\''+id+'\')">'+(done?'已完成 ✓':'打卡')+'</button>'
+      + (a.url?'<button class="go" style="background:#eef2f9;color:#5c6b85" onclick="location.href=\\''+a.url+'\\'">打开 →</button>':'')
+      + '</div></div>';
+  });
+  html += '</div></div>';
+  wrap.innerHTML = html;
+  var fu = ModuleCheckin.firstUndone();
+  if (fu){ setTimeout(function(){ var el=wrap.querySelector('[data-mod="'+fu+'"]'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); }, 120); }
+}
+function toggleModuleFromCenter(id){
+  if (!ModuleCheckin.uid()) return;
+  var r = ModuleCheckin.toggle(id);
+  renderModules();
+  if (r === 'newround'){ mToastCenter('🎉 第 '+(ModuleCheckin.progress().round-1)+' 轮全部完成！开始第 '+ModuleCheckin.progress().round+' 轮'); }
+  var fu = ModuleCheckin.firstUndone();
+  if (fu){ setTimeout(function(){ var el=document.querySelector('#tabModules [data-mod="'+fu+'"]'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); }, 120); }
+}
+function mToastCenter(msg){
+  var t = document.getElementById('mToastC');
+  if (!t){ t=document.createElement('div'); t.id='mToastC'; t.style.cssText='position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:rgba(31,42,68,.92);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;font-weight:700;z-index:9999;max-width:82%;text-align:center;box-shadow:0 6px 18px rgba(0,0,0,.3);transition:opacity .3s'; document.body.appendChild(t); }
+  t.textContent=msg; t.style.opacity='1'; clearTimeout(t._t); t._t=setTimeout(function(){ t.style.opacity='0'; },2400);
 }
 
 function bootstrap(){

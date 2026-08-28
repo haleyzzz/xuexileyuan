@@ -7,6 +7,7 @@
 <title>备战清华 · 学习门户</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <script src="portal-common.js"></script>
+<script src="module-checkin.js"></script>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   [hidden]{display:none !important}
@@ -143,6 +144,24 @@
   .banner{margin:0 0 12px;padding:10px 14px;border-radius:14px;
     background:linear-gradient(120deg,#e8f4ff,#eafaf1);color:#2b4a6f;font-size:13px;font-weight:700;
     box-shadow:0 2px 8px rgba(0,0,0,.05);line-height:1.5}
+  /* ===== 模块打卡（按进度循环） ===== */
+  .card.done{box-shadow:0 8px 22px rgba(6,214,160,.20);border-color:#bfe9d5}
+  .card.done .nm::after{content:' ✓';color:var(--green);font-size:13px}
+  .card .chkbtn{position:absolute;top:7px;right:46px;border:1px solid var(--line);border-radius:10px;
+    padding:4px 9px;font-size:11px;font-weight:800;background:#fff;color:var(--sub);cursor:pointer;
+    font-family:inherit;line-height:1.2;white-space:nowrap}
+  .card .chkbtn.did{background:var(--green);color:#fff;border-color:var(--green)}
+  .mcheck-bar{background:linear-gradient(120deg,#eafaf1,#e8f4ff);border:1px solid #d6ecdf;border-radius:14px;
+    padding:10px 14px;margin:0 0 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .mcheck-bar .mi{font-size:13px;font-weight:800;color:#2b6a4f}
+  .mcheck-bar .mi b{color:var(--green);font-size:15px}
+  .mcheck-go{border:none;border-radius:10px;padding:7px 12px;font-size:13px;font-weight:800;
+    background:var(--green);color:#fff;cursor:pointer;font-family:inherit}
+  .mcheck-go:active{transform:scale(.96)}
+  .mcheck-track{flex:1;min-width:120px;height:8px;background:rgba(0,0,0,.06);border-radius:99px;overflow:hidden}
+  .mcheck-track i{display:block;height:100%;background:linear-gradient(90deg,#06d6a0,#4cc9f0);transition:width .4s}
+  .mcheck-done{margin:0 0 14px;padding:12px 16px;border-radius:14px;background:linear-gradient(120deg,#d3f9d8,#b2f2e6);
+    color:#0b6b4f;font-size:14px;font-weight:800;text-align:center;box-shadow:0 4px 12px rgba(6,214,160,.2)}
   /* ===== 总打卡入口（学科栏最前） ===== */
   .sub.daily-sub{background:linear-gradient(120deg,#ffd43b,#ff9f1c);color:#fff;font-weight:900;
     box-shadow:0 3px 8px rgba(255,159,28,.35)}
@@ -180,6 +199,8 @@
 
   <!-- 应用工作台 -->
   <section id="apps" hidden>
+    <div class="mcheck-bar" id="mcheckBar" hidden></div>
+    <div class="mcheck-done" id="mcheckDone" hidden></div>
     <div class="toolbar">
       <div class="chips" id="cats"></div>
       <div class="chips" id="tags"></div>
@@ -365,6 +386,7 @@ function showApps(){
   var scb = document.getElementById('switchChildBtn');
   if (scb) scb.hidden = !(s.role === 'student' && s.child);
   renderStageBanner();
+  window.__mcheckAutofocus = true;   // 打开/登录时自动聚焦第一个未打卡模块
   render();
 }
 /* 学生视图顶部阶段提示：弟弟显示当前阶段与开放数量；升小学后提示全部开放 */
@@ -545,6 +567,67 @@ function render(){
   // 自定义排序按钮态
   document.getElementById('editBtn').textContent = state.edit ? '✅ 完成排序' : '✏️ 自定义排序';
   document.querySelectorAll('.card').forEach(function(c){ c.classList.toggle('editing', state.edit); });
+
+  updateMCheck();
+}
+
+/* ===== 模块打卡（按进度循环） ===== */
+function updateMCheck(){
+  var bar = document.getElementById('mcheckBar');
+  var doneEl = document.getElementById('mcheckDone');
+  if (!bar) return;
+  if (!ModuleCheckin.uid()){ bar.hidden = true; if (doneEl) doneEl.hidden = true; return; }
+  var p = ModuleCheckin.progress();
+  bar.hidden = false;
+  bar.innerHTML = '<span class="mi">本轮打卡 <b>'+p.done+'</b>/'+p.total+' · 第 '+p.round+' 轮</span>'
+    + '<button class="mcheck-go" onclick="focusNextUndone()">▶ 去打卡下一个</button>'
+    + '<div class="mcheck-track"><i style="width:'+(p.total?Math.round(p.done/p.total*100):0)+'%"></i></div>';
+  if (doneEl){
+    if (p.total>0 && p.done>=p.total){ doneEl.hidden=false; doneEl.textContent='🎉 第 '+p.round+' 轮已全部打卡完成！已自动重置，开始第 '+(p.round+1)+' 轮'; }
+    else doneEl.hidden = true;
+  }
+  // 仅“打开/登录”那一刻自动滚到当前学科第一个未打卡模块
+  if (window.__mcheckAutofocus){
+    window.__mcheckAutofocus = false;
+    var id = ModuleCheckin.firstUndone();
+    if (id){
+      var el = document.querySelector('[data-app="'+id+'"]');
+      if (el) setTimeout(function(){ el.scrollIntoView({behavior:'smooth', block:'center'}); }, 90);
+    }
+  }
+}
+function toggleModuleCheckin(id){
+  if (!ModuleCheckin.uid()) return;
+  var r = ModuleCheckin.toggle(id);
+  render();
+  if (r === 'newround'){
+    var p = ModuleCheckin.progress();
+    mToast('🎉 第 '+(p.round-1)+' 轮全部完成！开始第 '+p.round+' 轮打卡');
+  }
+  focusNextUndone();
+}
+/* 跨学科跳到第一个未打卡模块并高亮 */
+function focusNextUndone(){
+  var id = ModuleCheckin.firstUndone();
+  if (!id){ mToast('🎉 本轮已全部打卡完成！'); return; }
+  var a = (Portal.APPS||[]).find(function(x){ return x.id===id; });
+  if (!a) return;
+  var subj = subjectOf(a);
+  if (subj !== state.subject){ setSubject(subj); }   // 切学科并重渲染
+  setTimeout(function(){
+    var el = document.querySelector('[data-app="'+id+'"]');
+    if (el) el.scrollIntoView({behavior:'smooth', block:'center'});
+  }, 130);
+}
+function mToast(msg){
+  var t = document.getElementById('mToast');
+  if (!t){
+    t = document.createElement('div'); t.id='mToast';
+    t.style.cssText='position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:rgba(31,42,68,.92);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;font-weight:700;z-index:9999;max-width:82%;text-align:center;box-shadow:0 6px 18px rgba(0,0,0,.3);transition:opacity .3s';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg; t.style.opacity='1';
+  clearTimeout(t._t); t._t = setTimeout(function(){ t.style.opacity='0'; }, 2400);
 }
 
 function cardHTML(a, uses){
@@ -553,9 +636,14 @@ function cardHTML(a, uses){
   var ord = state.edit
     ? '<div class="ord"><button onclick="event.stopPropagation();move(\''+a.id+'\',-1)">↑</button><button onclick="event.stopPropagation();move(\''+a.id+'\',1)">↓</button></div>'
     : '';
-  return '<div class="card" style="--c:'+a.color+'" onclick="openApp(\''+a.id+'\')">'
+  var chk = ModuleCheckin.uid()
+    ? '<button class="chkbtn'+(ModuleCheckin.isDone(a.id)?' did':'')+'" onclick="event.stopPropagation();toggleModuleCheckin(\''+a.id+'\')">'+(ModuleCheckin.isDone(a.id)?'✓ 已打卡':'打卡✓')+'</button>'
+    : '';
+  var doneCls = (ModuleCheckin.uid() && ModuleCheckin.isDone(a.id)) ? ' done' : '';
+  return '<div class="card'+doneCls+'" data-app="'+a.id+'" style="--c:'+a.color+'" onclick="openApp(\''+a.id+'\')">'
     + ord
     + '<button class="star'+(fav?' on':'')+'" onclick="event.stopPropagation();toggleFav(\''+a.id+'\')">'+(fav?'★':'☆')+'</button>'
+    + chk
     + '<div class="ico">'+a.icon+'</div>'
     + '<div class="nm">'+a.name+'</div>'
     + '<div class="ds">'+a.desc+'</div>'

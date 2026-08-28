@@ -7,7 +7,7 @@
  *      · 其它同源静态资源：stale-while-revalidate（先用缓存秒开，后台静默更新，告别忘升版本号导致旧版）
  *  - activate：清理旧版本缓存并立即接管所有页面
  */
-const CACHE = 'summer-checkin-v101';
+const CACHE = 'summer-checkin-v102';
 const PRECACHE = [
   './',
   'index.html',

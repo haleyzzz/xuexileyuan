@@ -48,12 +48,12 @@
     if(_voicePref){ var c=list.find(function(v){return (v.voiceURI||v.name)===_voicePref;}); if(c) return c; }
     return list.slice().sort(function(a,b){return voiceScore(b)-voiceScore(a);})[0];
   }
-  // 完全没有英文语音时提示装语音包，绝不让中文引擎乱念
+  // 提示：未检测到英文语音包时，iOS 仍可借 lang='en-US' 用系统默认英文发声，
+  // 因此这里【只提示、不中止】，避免"点了没声音"。仅首次提示一次。
   function ensureEnVoice(){
     if(enVoices().length===0 && !_voiceWarned){
       _voiceWarned=true;
-      if(window.toast) window.toast('未检测到英文语音，请在系统设置里安装英语语音包');
-      return false;
+      if(window.toast) window.toast('未检测到英文语音包，将使用系统默认英文发音；若仍听不到，请在 iPad「设置-辅助功能-语音内容-嗓音」中下载英语嗓音');
     }
     return true;
   }
@@ -92,9 +92,14 @@
   var _pendingTimer=null;   // 上一次朗读的"未发声检测"定时器
   var _speakTimer=null;     // cancel→speak 延迟定时器
   var _noSoundWarned=false; // 每页只提示一次"听不到声音"排查建议
+  var _vtries=0;            // iOS 首屏 getVoices 异步为空的重试计数
   function speak(text, rate){
     if(!window.speechSynthesis){ if(window.toast) window.toast('当前浏览器不支持发音'); return; }
-    if(!ensureEnVoice()) return;   // 无英文嗓音直接中止，绝不让中文引擎把单词当字母拼
+    ensureEnVoice();   // 仅提示，不中止：iOS 即使 getVoices 未列出 en 嗓音，设 lang 仍可用系统英文发声
+    // iOS 首屏 getVoices 常异步为空 → 触发加载后最多重试 2 次；仍无则交由系统默认英文发音
+    if(enVoices().length===0 && speechSynthesis.getVoices().length===0){
+      if(_vtries < 2){ _vtries++; try{ speechSynthesis.getVoices(); }catch(e){} setTimeout(function(){ speak(text, rate); }, 280); return; }
+    }
     try{ speechSynthesis.cancel(); }catch(e){}
     if(_pendingTimer){ clearTimeout(_pendingTimer); _pendingTimer=null; }
     if(_speakTimer){ clearTimeout(_speakTimer); _speakTimer=null; }

@@ -2451,6 +2451,9 @@
     if(!word) return;
     try{
       if(!('speechSynthesis' in window)) return;
+      // 优先复用共享发音引擎（含 iOS 静音修复：resume + 全局引用 + 英文嗓音指派 + 防竞态）
+      if(window.Speech && window.Speech.speak){ window.Speech.speak(word, 0.85); return; }
+      // 兜底：自实现（旧逻辑 + iOS 修复）
       window.speechSynthesis.cancel();
       var u=new SpeechSynthesisUtterance(word);
       u.lang='en-US'; u.rate=0.85; u.pitch=1;
@@ -2460,7 +2463,9 @@
           if(/^en[-_]?US/i.test(vs[i].lang)||/^en/i.test(vs[i].lang)){ u.voice=vs[i]; break; }
         }
       }
-      window.speechSynthesis.speak(u);
+      window.__ttsUtt=u;
+      try{ window.speechSynthesis.resume(); }catch(e){}
+      setTimeout(function(){ try{ window.speechSynthesis.speak(u); }catch(e){} }, 60);
     }catch(e){}
   }
   // 事件委托：所有 .gw（含英语-阅读理解内联版未改源码的 span）点击即朗读该词

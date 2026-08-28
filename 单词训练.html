@@ -55,7 +55,7 @@
   .m-read .r-front{background:linear-gradient(160deg,#ffffff,#f4f8ff);}
   .m-read .r-back{background:linear-gradient(160deg,#fff6fb,#f3efff);transform:rotateY(180deg);}
   .m-read .r-cat{display:inline-block;align-self:flex-start;font-size:14px;font-weight:800;padding:7px 16px;border-radius:99px;color:#fff;background:var(--blue);}
-  .m-read .r-word{font-size:80px;font-weight:900;letter-spacing:.5px;margin:26px 0 10px;line-height:1.04;word-break:break-word;}
+  .m-read .r-word{font-size:80px;font-weight:900;letter-spacing:.5px;margin:26px 0 10px;line-height:1.04;word-break:break-word;cursor:pointer}
   .m-read .r-ipa{font-size:32px;color:var(--blue);font-weight:700;margin-top:4px;}
   .m-read .r-cn{font-size:30px;color:var(--ink);margin-top:12px;font-weight:700;}
   .m-read .r-ex{margin-top:auto;font-size:17px;color:var(--sub);background:#f1f4fb;border-radius:14px;padding:16px 18px;line-height:1.5;}
@@ -374,6 +374,8 @@ var ReadMod = (function () {
     var done=isMastered(cur.w);
     var mb=$('mastered'); mb.classList.toggle('done',done); mb.textContent=done?'✅ 已认识':'○ 标记认识';
     $('pos').textContent='第 '+(idx+1)+' / '+list.length+' 词';
+    // 例句英文逐词可点读（点词发音）
+    if(window.Gloss){ var _ex=document.getElementById('read-ex'); if(_ex) Gloss.wrapOriginalWords(_ex); }
   }
   function speakWord(){ if(cur && window.Speech) Speech.speak(cur.w,0.9); }
   function speakSlow(){ if(cur && window.Speech) Speech.speak(cur.w,0.6); }
@@ -393,7 +395,7 @@ var ReadMod = (function () {
       +   '<div class="r-stage"><div class="r-flip" id="read-flip"><div class="r-inner">'
       +     '<div class="r-face r-front">'
       +       '<span class="r-cat" id="read-cat"></span>'
-      +       '<div class="r-word" id="read-word"></div>'
+      +       '<div class="r-word" id="read-word" onclick="__read.speakWord()"></div>'
       +       '<div class="r-ipa" id="read-ipa"></div>'
       +       '<div class="r-cn" id="read-cn"></div>'
       +       '<div class="r-ex" id="read-ex"></div>'
@@ -415,7 +417,7 @@ var ReadMod = (function () {
       +     '</div>'
       +     '<div class="r-face r-back">'
       +       '<span class="r-cat">中文 / 例句</span>'
-      +       '<div class="r-word" id="read-word2"></div>'
+      +       '<div class="r-word" id="read-word2" onclick="__read.speakWord()"></div>'
       +       '<div class="r-cn" id="read-cn2"></div>'
       +       '<div class="r-ex" id="read-ex2"></div>'
       +     '</div>'
@@ -430,7 +432,7 @@ var ReadMod = (function () {
     loadCard();
     renderProgress();
     // 背面同步
-    var syncBack=function(){ $('word2').textContent=cur?cur.w:''; $('cn2').textContent=cur?cur.cn:''; $('ex2').innerHTML=cur?((cur.ex?('<div class="en">'+cur.ex+'</div>'):'')+(cur.exc?('<div class="cn">'+cur.exc+'</div>'):'')):''; };
+    var syncBack=function(){ $('word2').textContent=cur?cur.w:''; $('cn2').textContent=cur?cur.cn:''; $('ex2').innerHTML=cur?((cur.ex?('<div class="en">'+cur.ex+'</div>'):'')+(cur.exc?('<div class="cn">'+cur.exc+'</div>'):'')):''; if(window.Gloss){ var _ex2=document.getElementById('read-ex2'); if(_ex2) Gloss.wrapOriginalWords(_ex2); } };
     var _loadCard=loadCard;
     loadCard=function(){ _loadCard(); syncBack(); renderGrid(); renderTracker(); };
     loadCard();
@@ -440,8 +442,8 @@ var ReadMod = (function () {
     var box=$('grid'); box.innerHTML='';
     list.forEach(function(w,i){
       var d=document.createElement('div'); d.className='r-cell'+(i===idx?' on':'')+(isMastered(w.w)?' done':'');
-      d.innerHTML='<div class="cw">'+w.w+'</div><div class="ci">'+(w.cn||'')+'</div><div class="chk">✓</div>';
-      d.onclick=function(){ idx=i; loadCard(); renderGrid(); };
+      d.innerHTML='<div class="cw" onclick="if(window.Speech)Speech.speak(\''+w.w+'\',0.9)">'+w.w+'</div><div class="ci">'+(w.cn||'')+'</div><div class="chk">✓</div>';
+      d.onclick=function(e){ if(e.target&&e.target.classList&&e.target.classList.contains('cw')) return; idx=i; loadCard(); renderGrid(); };
       box.appendChild(d);
     });
   }

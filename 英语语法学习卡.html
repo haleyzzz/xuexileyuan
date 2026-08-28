@@ -216,7 +216,8 @@ function renderPoint(){
   POINT.examples.forEach(function(e){
     var d=document.createElement('div'); d.className='ex';
     d.innerHTML='<span class="play">🔊</span><div class="en">'+e.en+'</div><div class="cn">'+e.cn+'</div>';
-    d.onclick=function(){ speak(e.en); };
+    d.onclick=function(ev){ if(ev.target.closest && ev.target.closest('.gw')) return; speak(e.en); };
+    if(window.Gloss){ var _en=d.querySelector('.en'); if(_en) Gloss.wrapOriginalWords(_en); }
     ex.appendChild(d);
   });
   var gex=document.getElementById('gramExGloss');

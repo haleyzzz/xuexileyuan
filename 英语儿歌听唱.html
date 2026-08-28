@@ -172,6 +172,7 @@ function selectSong(i){
       '<button class="spk" onclick="speakLine('+idx+')">🔊</button></div>';
   });
   document.getElementById('lines').innerHTML=html;
+  if(window.Gloss) Gloss.wrapOriginalWords(document.getElementById('lines'));
   if(window.Speech && Speech.speak) Speech.speak(SONGS[i].lines[0].en, 0.8); // 选歌先听第一句
 }
 function startGuide(){

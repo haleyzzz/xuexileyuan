@@ -729,6 +729,7 @@ function renderTalks(){
         <button class="b-speak" ${SR?'':'disabled'} onclick="startTalk('${encodeURIComponent(t.en)}', this)">🎤 跟读</button>
       </div>
       <div class="talk-fb"></div>`;
+    if(window.Gloss){ var _te=card.querySelector('.talk-en'); if(_te) Gloss.wrapOriginalWords(_te); }
     list.appendChild(card);
   });
 }

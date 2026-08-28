@@ -568,6 +568,7 @@ function renderQuestion(){
   document.getElementById('qBadge').textContent='第 '+(idx+1)+' 题';
   document.getElementById('qCat').textContent=q.cat;
   document.getElementById('sentence').innerHTML=q.s.replace('___','<span class="blank">＿＿</span>');
+  if(window.Gloss) Gloss.wrapOriginalWords(document.getElementById('sentence'));
   document.getElementById('cnTip').textContent=q.cn;
   var lg=document.getElementById('lfGloss'); if(lg){ lg.setAttribute('data-en', q.s); lg.removeAttribute('data-filled'); lg.classList.remove('on'); }
   locked=false;

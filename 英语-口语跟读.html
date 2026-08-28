@@ -379,6 +379,7 @@ function renderList(){
       '<div class="pgloss" id="gloss-'+s.id+'" data-en="'+esc(s.en)+'"></div>';
     box.appendChild(d);
   });
+  if(window.Gloss) Gloss.wrapOriginalWords(box);
 }
 function esc(t){return String(t).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
 // 逐字翻译：显示该句英文的词对词中文（依赖 gloss.js 的 Gloss.buildPGlossHTML）
@@ -512,9 +513,10 @@ function renderParaList(){
     var d=document.createElement('div'); d.className='card';
     d.innerHTML='<div class="en">📄 '+esc(p.title)+'</div><div class="zh">'+esc(p.zh)+'</div>'+
       (all?'<div class="best">✓ 已读完</div>':'<div class="zh">'+p.sents.length+' 句 · 点开逐句跟读</div>');
-    d.onclick=function(){ curParaIdx=PARAS.indexOf(p); if(window.Resume){ Resume.set('oral', CHILD, 'last_para', curParaIdx); Resume.set('oral', CHILD, 'last_mode', 'para'); } renderList(); };
+    d.onclick=function(ev){ if(ev.target.closest && ev.target.closest('.gw')) return; curParaIdx=PARAS.indexOf(p); if(window.Resume){ Resume.set('oral', CHILD, 'last_para', curParaIdx); Resume.set('oral', CHILD, 'last_mode', 'para'); } renderList(); };
     box.appendChild(d);
   });
+  if(window.Gloss) Gloss.wrapOriginalWords(box);
 }
 function renderParaDetail(){
   var p=PARAS[curParaIdx]; if(!p){ curParaIdx=null; renderList(); return; }
@@ -536,6 +538,7 @@ function renderParaDetail(){
       '<div class="pgloss" id="gloss-para-'+p.id+'-'+i+'" data-en="'+esc(s.en)+'"></div>';
     box.appendChild(row);
   });
+  if(window.Gloss) Gloss.wrapOriginalWords(box);
 }
 function paraListen(pId,i){ var p=PARAS.find(function(x){return x.id===pId;}); if(p&&window.Speech&&Speech.speak) Speech.speak(p.sents[i].en,0.9); }
 

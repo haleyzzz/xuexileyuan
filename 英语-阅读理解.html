@@ -97,8 +97,9 @@
   .wtrans .lab{font-weight:800;color:#ff7a59;display:block;margin:2px 0 4px}
   .wtrans .optline{margin:1px 0}
   .wtrans .optline b{color:#4895ef;margin-right:4px}
-  .gw{margin:0 1px}
-  .gw .gc{color:#ff7a59;font-size:11px;margin-left:1px}
+  .gw{margin:0 1px;cursor:pointer;text-decoration:underline dotted #ffb199;text-underline-offset:2px;touch-action:manipulation}
+  .gw:active{background:#ffd2bf}
+  .gw .gc{color:#ff7a59;font-size:11px;margin-left:1px;pointer-events:none}
 
   .report{background:#fff;border-radius:24px;box-shadow:0 8px 22px rgba(0,0,0,.08);
     padding:24px;text-align:center;margin-top:14px}
@@ -1328,8 +1329,8 @@ function gloss(text){
     var zh=DICT[key];
     if(!zh && window.Gloss && window.Gloss.DICT) zh=window.Gloss.DICT[key]; /* 兜底：共享大词典 */
     out+=pre;
-    if(zh) out+='<span class="gw">'+word+'<span class="gc">'+zh+'</span></span>';
-    else out+='<span class="gw">'+word+'</span>';
+    if(zh) out+='<span class="gw" data-w="'+word+'">'+word+'<span class="gc">'+zh+'</span></span>';
+    else out+='<span class="gw" data-w="'+word+'">'+word+'</span>';
     out+=post;
   }
   return out;

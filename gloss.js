@@ -2491,8 +2491,9 @@
       '.pgloss .sline{padding:5px 0;border-bottom:1px dashed #ffd9c7}'+
       '.pgloss .sline:last-child{border-bottom:none}'+
       '.pgloss .sn{display:inline-block;min-width:19px;color:#ff9f1c;font-weight:800;font-size:12px}'+
-      '.gw{margin:0 1px;cursor:pointer;border-radius:4px;transition:background .12s}'+
+      '.gw{margin:0 1px;cursor:pointer;border-radius:4px;transition:background .12s;text-decoration:underline dotted #ffb199;text-underline-offset:2px;touch-action:manipulation}'+
       '.gw:hover{background:#ffe9e0}'+
+      '.gw:active{background:#ffd2bf}'+
       '.gw .gc{color:#ff7a59;font-size:11px;margin-left:1px;pointer-events:none}';
     var st=document.createElement('style');
     st.id='gloss-css'; st.textContent=css;
